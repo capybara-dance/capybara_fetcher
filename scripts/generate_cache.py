@@ -31,6 +31,12 @@ def build_korea_full_universe(target_date=None):
             if len(kospi) > 0 or len(kosdaq) > 0:
                 print(f"Target Date: {str_date}")
                 print(f"KOSPI: {len(kospi)} items, KOSDAQ: {len(kosdaq)} items")
+                
+                # TEMPORARY: Limit to 5 KOSPI + 5 KOSDAQ for quick verification
+                print("!! QUICK VERIFICATION MODE: Limiting to 5 KOSPI + 5 KOSDAQ tickers !!")
+                kospi = kospi[:5]
+                kosdaq = kosdaq[:5]
+                
                 return sorted(list(set(kospi + kosdaq)))
         except Exception as e:
             pass
@@ -39,8 +45,13 @@ def build_korea_full_universe(target_date=None):
         target_date -= datetime.timedelta(days=1)
     
     print("Warning: Could not find tickers via pykrx. Using fallback list for testing.")
-    # Fallback list (Samsung, SK Hynix, Naver, Kakao, Hyundai Motor, Celltrion)
-    return ["005930", "000660", "035420", "035720", "005380", "068270"]
+    # Fallback list (5 KOSPI + 5 KOSDAQ)
+    # KOSPI: Samsung, SK Hynix, Naver, Kakao, Hyundai Motor
+    # KOSDAQ: Ecopro BM, Ecopro, HLB, Pearl Abyss, Celltrion Pharm
+    return [
+        "005930", "000660", "035420", "035720", "005380", # KOSPI
+        "247540", "086520", "028300", "263750", "068760"  # KOSDAQ
+    ]
 
 def fetch_data(ticker, start_date, end_date):
     """
