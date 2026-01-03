@@ -1,0 +1,71 @@
+name: Update Feature Cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Start Date (YYYYMMDD)'
+        required: false
+        default: '20251201'
+      end_date:
+        description: 'End Date (YYYYMMDD) - Defaults to Today'
+        required: false
+        default: ''
+
+jobs:
+  generate-cache:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Generate Feature Cache
+      run: |
+        # Handle inputs with defaults
+        START_DATE="${{ inputs.start_date }}"
+        if [ -z "$START_DATE" ]; then
+          START_DATE="20251201"
+        fi
+        
+        END_DATE="${{ inputs.end_date }}"
+        if [ -z "$END_DATE" ]; then
+          END_DATE=$(date +'%Y%m%d')
+        fi
+        
+        echo "Generating cache from $START_DATE to $END_DATE"
+        
+        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: feature-cache-parquet
+        path: cache/korea_universe_feature_frame.parquet
+        retention-days: 7
+
+    - name: Generate Tag Name
+      id: tag
+      run: echo "tag_name=data-$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.tag.outputs.tag_name }}
+        name: Feature Cache ${{ steps.tag.outputs.tag_name }}
+        files: cache/korea_universe_feature_frame.parquet
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
