@@ -6,9 +6,9 @@ on:
       start_date:
         description: 'Start Date (YYYYMMDD)'
         required: false
-        default: ''
+        default: '20251201'
       end_date:
-        description: 'End Date (YYYYMMDD)'
+        description: 'End Date (YYYYMMDD) - Defaults to Today'
         required: false
         default: ''
 
@@ -33,18 +33,20 @@ jobs:
         
     - name: Generate Feature Cache
       run: |
-        # 입력값이 없으면 기본값 사용 (스크립트 내부 로직 따름)
-        START_ARG=""
-        if [ -n "${{ inputs.start_date }}" ]; then
-          START_ARG="--start-date ${{ inputs.start_date }}"
+        # Handle inputs with defaults
+        START_DATE="${{ inputs.start_date }}"
+        if [ -z "$START_DATE" ]; then
+          START_DATE="20251201"
         fi
         
-        END_ARG=""
-        if [ -n "${{ inputs.end_date }}" ]; then
-          END_ARG="--end-date ${{ inputs.end_date }}"
+        END_DATE="${{ inputs.end_date }}"
+        if [ -z "$END_DATE" ]; then
+          END_DATE=$(date +'%Y%m%d')
         fi
         
-        python scripts/generate_cache.py $START_ARG $END_ARG --output cache/korea_universe_feature_frame.parquet
+        echo "Generating cache from $START_DATE to $END_DATE"
+        
+        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
