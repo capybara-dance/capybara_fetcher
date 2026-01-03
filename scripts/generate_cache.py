@@ -44,14 +44,8 @@ def build_korea_full_universe(target_date=None):
         # 하루 전으로 이동
         target_date -= datetime.timedelta(days=1)
     
-    print("Warning: Could not find tickers via pykrx. Using fallback list for testing.")
-    # Fallback list (5 KOSPI + 5 KOSDAQ)
-    # KOSPI: Samsung, SK Hynix, Naver, Kakao, Hyundai Motor
-    # KOSDAQ: Ecopro BM, Ecopro, HLB, Pearl Abyss, Celltrion Pharm
-    return [
-        "005930", "000660", "035420", "035720", "005380", # KOSPI
-        "247540", "086520", "028300", "263750", "068760"  # KOSDAQ
-    ]
+    print("Error: Could not find tickers via pykrx after multiple attempts.")
+    return []
 
 def fetch_data(ticker, start_date, end_date):
     """
