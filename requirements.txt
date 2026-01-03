@@ -2,3 +2,5 @@ pandas>=2.0.0
 pykrx>=1.0.0
 pyarrow>=12.0.0
 tqdm>=4.65.0
+streamlit>=1.30.0
+requests>=2.31.0

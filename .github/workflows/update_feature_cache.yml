@@ -52,3 +52,18 @@ jobs:
         name: feature-cache-parquet
         path: cache/korea_universe_feature_frame.parquet
         retention-days: 7
+
+    - name: Generate Tag Name
+      id: tag
+      run: echo "tag_name=data-$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.tag.outputs.tag_name }}
+        name: Feature Cache ${{ steps.tag.outputs.tag_name }}
+        files: cache/korea_universe_feature_frame.parquet
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
