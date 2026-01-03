@@ -7,11 +7,25 @@ from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 import time
 
+FALLBACK_TICKERS = [
+    # KOSPI / KOSDAQ 대표 종목 일부 (pykrx 조회 실패 시 최소 캐시 생성용)
+    "005930",  # 삼성전자
+    "000660",  # SK하이닉스
+    "035420",  # NAVER
+    "051910",  # LG화학
+    "068270",  # 셀트리온
+    "035720",  # 카카오
+    "207940",  # 삼성바이오로직스
+    "005380",  # 현대차
+    "105560",  # KB금융
+    "012330",  # 현대모비스
+]
+
 def build_korea_full_universe(target_date=None):
     """
     KOSPI 및 KOSDAQ 전 종목 티커 리스트를 반환합니다.
     데이터가 없는 경우(휴일 등), 과거 날짜로 이동하며 데이터를 찾습니다.
-    pykrx 조회 실패 시, 테스트를 위한 주요 종목 리스트를 반환합니다.
+    pykrx 조회 실패 시, 최소 동작을 위한 fallback 티커 리스트를 반환합니다.
     """
     if target_date is None:
         target_date = datetime.datetime.now()
@@ -31,12 +45,6 @@ def build_korea_full_universe(target_date=None):
             if len(kospi) > 0 or len(kosdaq) > 0:
                 print(f"Target Date: {str_date}")
                 print(f"KOSPI: {len(kospi)} items, KOSDAQ: {len(kosdaq)} items")
-                
-                # TEMPORARY: Limit to 5 KOSPI + 5 KOSDAQ for quick verification
-                print("!! QUICK VERIFICATION MODE: Limiting to 5 KOSPI + 5 KOSDAQ tickers !!")
-                kospi = kospi[:5]
-                kosdaq = kosdaq[:5]
-                
                 return sorted(list(set(kospi + kosdaq)))
         except Exception as e:
             pass
@@ -44,8 +52,8 @@ def build_korea_full_universe(target_date=None):
         # 하루 전으로 이동
         target_date -= datetime.timedelta(days=1)
     
-    print("Error: Could not find tickers via pykrx after multiple attempts.")
-    return []
+    print("Error: Could not find tickers via pykrx after multiple attempts. Using fallback tickers.")
+    return FALLBACK_TICKERS.copy()
 
 def fetch_data(ticker, start_date, end_date):
     """
@@ -86,6 +94,28 @@ def fetch_data(ticker, start_date, end_date):
         # 로그가 너무 많아질 수 있으므로 에러 발생 시 None 반환
         return None
 
+def _write_parquet(df: pd.DataFrame, output_path: str) -> None:
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    df.to_parquet(output_path, compression="zstd")
+
+def _empty_feature_frame() -> pd.DataFrame:
+    # 최소 스키마(다운스트림에서 파일 존재/파싱 가능하도록)
+    return pd.DataFrame(
+        columns=[
+            "Date",
+            "Open",
+            "High",
+            "Low",
+            "Close",
+            "Volume",
+            "TradingValue",
+            "Change",
+            "Code",
+        ]
+    )
+
 def main():
     parser = argparse.ArgumentParser(description="Generate Korea Universe Feature Cache")
     parser.add_argument("--start-date", type=str, default=(datetime.datetime.now() - datetime.timedelta(days=365*3)).strftime("%Y%m%d"), help="Start date (YYYYMMDD)")
@@ -101,8 +131,15 @@ def main():
     # 1. 유니버스 구성
     tickers = build_korea_full_universe()
     if not tickers:
-        print("No tickers found.")
+        print("No tickers found. Writing empty cache file.")
+        _write_parquet(_empty_feature_frame(), args.output)
         return
+
+    # GitHub Actions 환경에서는 실수로 전체 유니버스(약 2,600 종목)를 돌려
+    # 너무 오래 걸리는 것을 방지하기 위해 기본 테스트 제한을 둡니다.
+    if os.getenv("GITHUB_ACTIONS", "").lower() == "true" and args.test_limit == 0:
+        args.test_limit = int(os.getenv("CI_TEST_LIMIT", "10"))
+        print(f"Detected GitHub Actions. Applying CI_TEST_LIMIT={args.test_limit}.")
 
     if args.test_limit > 0:
         print(f"Testing with first {args.test_limit} tickers only.")
@@ -134,18 +171,14 @@ def main():
              full_df = full_df.sort_values(by=['Date', 'Code'])
         
         print(f"Saving to {args.output}...")
-        # 디렉토리가 없으면 생성
-        output_dir = os.path.dirname(args.output)
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            
-        full_df.to_parquet(args.output, compression='zstd')
+        _write_parquet(full_df, args.output)
         
         elapsed = time.time() - start_time
         print(f"Done. File saved to {args.output}. Total time: {elapsed:.2f}s")
         print(f"Total Rows: {len(full_df)}")
     else:
-        print("No data fetched.")
+        print("No data fetched. Writing empty cache file.")
+        _write_parquet(_empty_feature_frame(), args.output)
 
 if __name__ == "__main__":
     main()

@@ -12,6 +12,9 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: write
+
 jobs:
   generate-cache:
     runs-on: ubuntu-latest
