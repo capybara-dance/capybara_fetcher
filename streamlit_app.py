@@ -12,7 +12,7 @@ st.title("📊 Korea Stock Feature Cache Inspector")
 st.sidebar.header("Settings")
 # 기본값은 현재 사용자 이름/레포 이름 패턴을 가정하거나 비워둡니다.
 # 사용자가 직접 입력하도록 안내하는 것이 가장 확실합니다.
-default_repo = "cursor-ai/capybara_fetcher" # 예시 값
+default_repo = "yunu-lee/capybara_fetcher" # 예시 값
 repo_name = st.sidebar.text_input("Repository (owner/repo)", value=default_repo) 
 github_token = st.sidebar.text_input("GitHub Token (Optional, for private repos)", type="password")
 
