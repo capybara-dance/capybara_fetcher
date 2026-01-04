@@ -87,12 +87,8 @@ def fetch_data(ticker, start_date, end_date):
         df.index.name = 'Date'
         df = df.reset_index()
         
-        # 티커/종목명 컬럼 추가
+        # 티커 컬럼 추가 (종목명은 별도 맵 파일로 저장)
         df["Ticker"] = ticker
-        try:
-            df["Name"] = stock.get_market_ticker_name(ticker) or ""
-        except Exception:
-            df["Name"] = ""
         
         # TODO: Feature Calculation Logic here
         # e.g., df['sma_20'] = df['Close'].rolling(20).mean()
@@ -128,9 +124,32 @@ def _empty_feature_frame() -> pd.DataFrame:
             "TradingValue",
             "Change",
             "Ticker",
-            "Name",
         ]
     )
+
+def _build_ticker_name_map(tickers: list[str]) -> pd.DataFrame:
+    """
+    티커-종목명 매핑을 별도 DF로 구성합니다.
+    (메인 데이터에 종목명을 중복 저장하지 않기 위함)
+    """
+    rows: list[dict[str, str]] = []
+    for t in tickers:
+        try:
+            name = stock.get_market_ticker_name(t) or ""
+        except Exception:
+            name = ""
+        rows.append({"Ticker": t, "Name": name})
+    return pd.DataFrame(rows).drop_duplicates(subset=["Ticker"]).sort_values("Ticker")
+
+def _empty_ticker_name_map() -> pd.DataFrame:
+    return pd.DataFrame(columns=["Ticker", "Name"])
+
+def _default_ticker_name_map_path(output_parquet_path: str) -> str:
+    # e.g. cache/foo.parquet -> cache/foo_ticker_name_map.parquet
+    base, ext = os.path.splitext(output_parquet_path)
+    if not ext:
+        return f"{output_parquet_path}_ticker_name_map.parquet"
+    return f"{base}_ticker_name_map{ext}"
 
 def _safe_pkg_version(dist_name: str) -> str | None:
     try:
@@ -155,6 +174,12 @@ def main():
     parser.add_argument("--end-date", type=str, default=datetime.datetime.now().strftime("%Y%m%d"), help="End date (YYYYMMDD)")
     parser.add_argument("--output", type=str, default="korea_universe_feature_frame.parquet", help="Output parquet file path")
     parser.add_argument("--meta-output", type=str, default="", help="Output metadata json file path (default: <output>.meta.json)")
+    parser.add_argument(
+        "--ticker-name-map-output",
+        type=str,
+        default="",
+        help="Output parquet file path for ticker-name map (default: <output>_ticker_name_map.parquet)",
+    )
     parser.add_argument("--max-workers", type=int, default=8, help="Number of threads")
     parser.add_argument("--test-limit", type=int, default=0, help="Limit number of tickers for testing (0 for all)")
     
@@ -163,12 +188,14 @@ def main():
     print(f"Start generating cache from {args.start_date} to {args.end_date}...")
     started_at = datetime.datetime.now(datetime.timezone.utc)
     meta_output = args.meta_output or f"{args.output}.meta.json"
+    ticker_name_map_output = args.ticker_name_map_output or _default_ticker_name_map_path(args.output)
     
     # 1. 유니버스 구성
     tickers = build_korea_full_universe()
     if not tickers:
         print("No tickers found. Writing empty cache file.")
         _write_parquet(_empty_feature_frame(), args.output)
+        _write_parquet(_empty_ticker_name_map(), ticker_name_map_output)
         _write_json(
             {
                 "generated_at_utc": started_at.isoformat(),
@@ -182,6 +209,11 @@ def main():
                 "data_file": {
                     "path": args.output,
                     "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
+                },
+                "ticker_name_map": {
+                    "path": ticker_name_map_output,
+                    "rows": 0,
+                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(ticker_name_map_output)),
                 },
                 "notes": "No tickers found via data source; wrote empty cache.",
                 "env": {
@@ -205,6 +237,10 @@ def main():
     if args.test_limit > 0:
         print(f"Testing with first {args.test_limit} tickers only.")
         tickers = tickers[:args.test_limit]
+
+    # 티커-종목명 매핑 저장 (메인 데이터와 분리)
+    ticker_name_map_df = _build_ticker_name_map(tickers)
+    _write_parquet(ticker_name_map_df, ticker_name_map_output)
     
     # 2. 병렬 데이터 수집
     results = []
@@ -251,11 +287,17 @@ def main():
                     "path": args.output,
                     "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
                 },
+                "ticker_name_map": {
+                    "path": ticker_name_map_output,
+                    "rows": int(len(ticker_name_map_df)),
+                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(ticker_name_map_output)),
+                },
                 "args": {
                     "max_workers": args.max_workers,
                     "test_limit": args.test_limit,
                     "output": args.output,
                     "meta_output": meta_output,
+                    "ticker_name_map_output": ticker_name_map_output,
                 },
                 "env": {
                     "python": sys.version.split()[0],
@@ -289,12 +331,18 @@ def main():
                     "path": args.output,
                     "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
                 },
+                "ticker_name_map": {
+                    "path": ticker_name_map_output,
+                    "rows": int(len(ticker_name_map_df)),
+                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(ticker_name_map_output)),
+                },
                 "notes": "No OHLCV data fetched; wrote empty cache.",
                 "args": {
                     "max_workers": args.max_workers,
                     "test_limit": args.test_limit,
                     "output": args.output,
                     "meta_output": meta_output,
+                    "ticker_name_map_output": ticker_name_map_output,
                 },
                 "env": {
                     "python": sys.version.split()[0],

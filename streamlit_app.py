@@ -87,6 +87,12 @@ def find_meta_asset(assets, parquet_asset_name: str):
             return a
     return None
 
+def find_asset_by_name(assets, asset_name: str):
+    for a in assets:
+        if a.get("name") == asset_name:
+            return a
+    return None
+
 # 메인 로직
 if repo_name:
     releases = get_releases(repo_name, github_token)
@@ -133,6 +139,25 @@ if repo_name:
 
                             st.markdown("#### Raw metadata")
                             st.json(meta)
+
+                            # 티커-종목명 매핑 파일(별도 DF) 미리보기
+                            tn = meta.get("ticker_name_map") or {}
+                            tn_path = tn.get("path") or ""
+                            tn_asset_name = os.path.basename(tn_path) if tn_path else ""
+                            if tn_asset_name:
+                                tn_asset = find_asset_by_name(assets, tn_asset_name)
+                                if tn_asset:
+                                    st.markdown("#### Ticker-Name Map")
+                                    st.write(
+                                        f"- **Asset**: `{tn_asset_name}`\n"
+                                        f"- **Rows**: {tn.get('rows', '-')}\n"
+                                        f"- **Size (MB)**: {tn.get('size_mb', '-')}"
+                                    )
+                                    if st.button("Load Ticker-Name Map Preview"):
+                                        with st.spinner("Downloading ticker-name map..."):
+                                            tndf = load_parquet_from_url(tn_asset["browser_download_url"], github_token)
+                                            if tndf is not None:
+                                                st.dataframe(tndf.head(200), use_container_width=True)
                     else:
                         st.info("No matching meta json found for this parquet asset.")
                 
