@@ -93,6 +93,10 @@ def find_asset_by_name(assets, asset_name: str):
             return a
     return None
 
+def is_ticker_name_map_asset(asset_name: str) -> bool:
+    n = (asset_name or "").lower()
+    return n.endswith("_ticker_name_map.parquet") or ("ticker_name_map" in n) or ("ticker-name-map" in n)
+
 # 메인 로직
 if repo_name:
     releases = get_releases(repo_name, github_token)
@@ -124,6 +128,26 @@ if repo_name:
                     format_func=lambda x: f"{x['name']} ({x['size']/1024/1024:.2f} MB)"
                 )
 
+                # 릴리즈 내 티커-종목명 맵 파일을 별도로 확인/로드
+                ticker_name_map_assets = [a for a in assets if a.get("name", "").endswith(".parquet") and is_ticker_name_map_asset(a.get("name", ""))]
+                with st.expander("Ticker-Name Map (separate parquet)", expanded=bool(ticker_name_map_assets)):
+                    if ticker_name_map_assets:
+                        selected_map_asset = st.selectbox(
+                            "Select Ticker-Name Map Asset",
+                            ticker_name_map_assets,
+                            key="ticker_name_map_select",
+                            format_func=lambda x: f"{x['name']} ({x['size']/1024/1024:.2f} MB)",
+                        )
+                        if st.button("Load Ticker-Name Map", key="load_ticker_name_map"):
+                            with st.spinner("Downloading ticker-name map..."):
+                                tndf = load_parquet_from_url(selected_map_asset["browser_download_url"], github_token)
+                                if tndf is not None:
+                                    st.success("Ticker-Name map loaded successfully!")
+                                    st.write(f"**Shape:** {tndf.shape}")
+                                    st.dataframe(tndf.head(500), use_container_width=True)
+                    else:
+                        st.info("No ticker-name map parquet found in this release.")
+
                 # 메타데이터 표시 (가능한 경우)
                 meta_asset = find_meta_asset(assets, selected_asset["name"]) if selected_asset else None
                 with st.expander("Metadata (meta.json)", expanded=True):
@@ -153,7 +177,7 @@ if repo_name:
                                         f"- **Rows**: {tn.get('rows', '-')}\n"
                                         f"- **Size (MB)**: {tn.get('size_mb', '-')}"
                                     )
-                                    if st.button("Load Ticker-Name Map Preview"):
+                                    if st.button("Load Ticker-Name Map Preview", key="load_ticker_name_map_preview"):
                                         with st.spinner("Downloading ticker-name map..."):
                                             tndf = load_parquet_from_url(tn_asset["browser_download_url"], github_token)
                                             if tndf is not None:
