@@ -1,11 +1,15 @@
 import os
 import argparse
 import datetime
+import json
+import platform
+import sys
 import pandas as pd
 from pykrx import stock
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 import time
+from importlib.metadata import version as pkg_version, PackageNotFoundError
 
 FALLBACK_TICKERS = [
     # KOSPI / KOSDAQ 대표 종목 일부 (pykrx 조회 실패 시 최소 캐시 생성용)
@@ -100,6 +104,13 @@ def _write_parquet(df: pd.DataFrame, output_path: str) -> None:
         os.makedirs(output_dir, exist_ok=True)
     df.to_parquet(output_path, compression="zstd")
 
+def _write_json(data: dict, output_path: str) -> None:
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2, sort_keys=True)
+
 def _empty_feature_frame() -> pd.DataFrame:
     # 최소 스키마(다운스트림에서 파일 존재/파싱 가능하도록)
     return pd.DataFrame(
@@ -116,23 +127,53 @@ def _empty_feature_frame() -> pd.DataFrame:
         ]
     )
 
+def _safe_pkg_version(dist_name: str) -> str | None:
+    try:
+        return pkg_version(dist_name)
+    except PackageNotFoundError:
+        return None
+
 def main():
     parser = argparse.ArgumentParser(description="Generate Korea Universe Feature Cache")
     parser.add_argument("--start-date", type=str, default=(datetime.datetime.now() - datetime.timedelta(days=365*3)).strftime("%Y%m%d"), help="Start date (YYYYMMDD)")
     parser.add_argument("--end-date", type=str, default=datetime.datetime.now().strftime("%Y%m%d"), help="End date (YYYYMMDD)")
     parser.add_argument("--output", type=str, default="korea_universe_feature_frame.parquet", help="Output parquet file path")
+    parser.add_argument("--meta-output", type=str, default="", help="Output metadata json file path (default: <output>.meta.json)")
     parser.add_argument("--max-workers", type=int, default=8, help="Number of threads")
     parser.add_argument("--test-limit", type=int, default=0, help="Limit number of tickers for testing (0 for all)")
     
     args = parser.parse_args()
     
     print(f"Start generating cache from {args.start_date} to {args.end_date}...")
+    started_at = datetime.datetime.now(datetime.timezone.utc)
+    meta_output = args.meta_output or f"{args.output}.meta.json"
     
     # 1. 유니버스 구성
     tickers = build_korea_full_universe()
     if not tickers:
         print("No tickers found. Writing empty cache file.")
         _write_parquet(_empty_feature_frame(), args.output)
+        _write_json(
+            {
+                "generated_at_utc": started_at.isoformat(),
+                "start_date": args.start_date,
+                "end_date": args.end_date,
+                "tickers": [],
+                "ticker_count": 0,
+                "rows": 0,
+                "columns": list(_empty_feature_frame().columns),
+                "features": [],
+                "notes": "No tickers found via data source; wrote empty cache.",
+                "env": {
+                    "python": sys.version.split()[0],
+                    "platform": platform.platform(),
+                    "pandas": _safe_pkg_version("pandas"),
+                    "pyarrow": _safe_pkg_version("pyarrow"),
+                    "pykrx": _safe_pkg_version("pykrx"),
+                },
+            },
+            meta_output,
+        )
         return
 
     # GitHub Actions 환경에서는 실수로 전체 유니버스(약 2,600 종목)를 돌려
@@ -172,6 +213,36 @@ def main():
         
         print(f"Saving to {args.output}...")
         _write_parquet(full_df, args.output)
+
+        # 메타데이터 저장
+        _write_json(
+            {
+                "generated_at_utc": started_at.isoformat(),
+                "start_date": args.start_date,
+                "end_date": args.end_date,
+                "tickers": tickers,
+                "ticker_count": len(tickers),
+                "fetched_ticker_count": len(results),
+                "rows": int(len(full_df)),
+                "columns": list(full_df.columns),
+                # 현재 스크립트는 별도 지표 계산을 하지 않으므로, "features"는 컬럼으로부터 추정하거나 빈 리스트로 둡니다.
+                "features": [],
+                "args": {
+                    "max_workers": args.max_workers,
+                    "test_limit": args.test_limit,
+                    "output": args.output,
+                    "meta_output": meta_output,
+                },
+                "env": {
+                    "python": sys.version.split()[0],
+                    "platform": platform.platform(),
+                    "pandas": _safe_pkg_version("pandas"),
+                    "pyarrow": _safe_pkg_version("pyarrow"),
+                    "pykrx": _safe_pkg_version("pykrx"),
+                },
+            },
+            meta_output,
+        )
         
         elapsed = time.time() - start_time
         print(f"Done. File saved to {args.output}. Total time: {elapsed:.2f}s")
@@ -179,6 +250,34 @@ def main():
     else:
         print("No data fetched. Writing empty cache file.")
         _write_parquet(_empty_feature_frame(), args.output)
+        _write_json(
+            {
+                "generated_at_utc": started_at.isoformat(),
+                "start_date": args.start_date,
+                "end_date": args.end_date,
+                "tickers": tickers,
+                "ticker_count": len(tickers),
+                "fetched_ticker_count": 0,
+                "rows": 0,
+                "columns": list(_empty_feature_frame().columns),
+                "features": [],
+                "notes": "No OHLCV data fetched; wrote empty cache.",
+                "args": {
+                    "max_workers": args.max_workers,
+                    "test_limit": args.test_limit,
+                    "output": args.output,
+                    "meta_output": meta_output,
+                },
+                "env": {
+                    "python": sys.version.split()[0],
+                    "platform": platform.platform(),
+                    "pandas": _safe_pkg_version("pandas"),
+                    "pyarrow": _safe_pkg_version("pyarrow"),
+                    "pykrx": _safe_pkg_version("pykrx"),
+                },
+            },
+            meta_output,
+        )
 
 if __name__ == "__main__":
     main()
