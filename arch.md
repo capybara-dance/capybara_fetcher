@@ -10,6 +10,7 @@
 1.  **Universe Construction**: `pykrx`로 KOSPI/KOSDAQ 전 종목 티커 리스트 및 시장구분(KOSPI/KOSDAQ) 확보.
     - 조회가 실패하면 **fallback로 진행하지 않음**
     - 대신 `meta.json`에 실패 사유를 기록하고 **meta-only 릴리즈**로 남김
+    - 날짜를 지정하지 않고 `get_market_ticker_list(market=...)`를 호출하며, 과거 탐색은 **pykrx 내부 로직**에 맡김
 2.  **Ticker Info Map Build**: 티커별 메타(종목명, 시장구분)를 **별도 Parquet**(`Ticker Info Map`)으로 저장.
 3.  **Data Fetching**: `pykrx`를 통해 각 종목의 OHLCV 데이터 병렬 수집.
 4.  **Standardization**: 컬럼명 영문 변환 (`시가` -> `Open` 등) 및 날짜 인덱스 처리.

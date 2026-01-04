@@ -14,43 +14,28 @@ from importlib.metadata import version as pkg_version, PackageNotFoundError
 def build_korea_full_universe(target_date=None):
     """
     KOSPI 및 KOSDAQ 전 종목 티커 리스트를 반환합니다.
-    데이터가 없는 경우(휴일 등), 과거 날짜로 이동하며 데이터를 찾습니다.
-    pykrx 조회 실패 시, 빈 리스트를 반환하고 에러 정보를 함께 제공합니다.
-    """
-    if target_date is None:
-        target_date = datetime.datetime.now()
-    else:
-        try:
-            target_date = datetime.datetime.strptime(target_date, "%Y%m%d")
-        except:
-            target_date = datetime.datetime.now()
+    `pykrx.stock.get_market_ticker_list()`에 날짜를 지정하지 않으면
+    라이브러리 내부에서 과거 날짜를 탐색하므로, 별도의 날짜/재시도 로직을 두지 않습니다.
 
-    # 최대 10일 전까지 조회 시도
-    last_error: str | None = None
-    for _ in range(10):
-        str_date = target_date.strftime("%Y%m%d")
-        try:
-            kospi = stock.get_market_ticker_list(str_date, market="KOSPI")
-            kosdaq = stock.get_market_ticker_list(str_date, market="KOSDAQ")
-            
-            if len(kospi) > 0 or len(kosdaq) > 0:
-                print(f"Target Date: {str_date}")
-                print(f"KOSPI: {len(kospi)} items, KOSDAQ: {len(kosdaq)} items")
-                tickers = sorted(list(set(kospi + kosdaq)))
-                market_by_ticker: dict[str, str] = {}
-                for t in kospi:
-                    market_by_ticker[t] = "KOSPI"
-                for t in kosdaq:
-                    market_by_ticker[t] = "KOSDAQ"
-                return tickers, market_by_ticker, str_date, None
-        except Exception as e:
-            last_error = f"{type(e).__name__}: {e}"
-        
-        # 하루 전으로 이동
-        target_date -= datetime.timedelta(days=1)
-    
-    print("Error: Could not find tickers via pykrx after multiple attempts.")
-    return [], {}, None, last_error
+    조회 실패 시, 빈 리스트를 반환하고 에러 정보를 함께 제공합니다.
+    """
+    try:
+        kospi = stock.get_market_ticker_list(market="KOSPI")
+        kosdaq = stock.get_market_ticker_list(market="KOSDAQ")
+
+        tickers = sorted(list(set(kospi + kosdaq)))
+        if not tickers:
+            return [], {}, None, "EmptyUniverseError: pykrx returned empty ticker list"
+
+        market_by_ticker: dict[str, str] = {}
+        for t in kospi:
+            market_by_ticker[t] = "KOSPI"
+        for t in kosdaq:
+            market_by_ticker[t] = "KOSDAQ"
+        # pykrx 내부 탐색을 사용하므로, 실제 사용된 기준일은 외부에서 알 수 없습니다.
+        return tickers, market_by_ticker, None, None
+    except Exception as e:
+        return [], {}, None, f"{type(e).__name__}: {e}"
 
 def fetch_data(ticker, start_date, end_date):
     """
@@ -205,7 +190,6 @@ def main():
                 "universe_date": universe_date,
                 "universe_fetch": {
                     "success": False,
-                    "attempted_lookback_days": 10,
                     "last_error": universe_error,
                 },
                 "tickers": [],
@@ -288,7 +272,6 @@ def main():
                 "universe_date": universe_date,
                 "universe_fetch": {
                     "success": True,
-                    "attempted_lookback_days": 10,
                     "last_error": None,
                 },
                 "tickers": tickers,
@@ -340,7 +323,6 @@ def main():
                 "universe_date": universe_date,
                 "universe_fetch": {
                     "success": True,
-                    "attempted_lookback_days": 10,
                     "last_error": None,
                 },
                 "tickers": tickers,
