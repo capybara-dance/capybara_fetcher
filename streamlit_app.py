@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 import io
 import os
+import json
 
 st.set_page_config(page_title="Korea Stock Feature Cache Inspector", layout="wide")
 
@@ -16,6 +17,7 @@ default_repo = "yunu-lee/capybara_fetcher" # 예시 값
 repo_name = st.sidebar.text_input("Repository (owner/repo)", value=default_repo) 
 github_token = st.sidebar.text_input("GitHub Token (Optional, for private repos)", type="password")
 
+@st.cache_data(ttl=60)
 def get_releases(repo, token=None):
     if not repo:
         return []
@@ -39,6 +41,7 @@ def get_releases(repo, token=None):
         st.error(f"Connection error: {e}")
         return []
 
+@st.cache_data(ttl=300)
 def load_parquet_from_url(url, token=None):
     headers = {}
     # Private asset 다운로드 시에는 token 헤더와 Accept 헤더가 필요할 수 있음
@@ -58,6 +61,31 @@ def load_parquet_from_url(url, token=None):
     except Exception as e:
         st.error(f"Error loading parquet: {e}")
         return None
+
+@st.cache_data(ttl=300)
+def load_json_from_url(url, token=None):
+    headers = {}
+    if token:
+        headers["Authorization"] = f"token {token}"
+
+    try:
+        response = requests.get(url, headers=headers, stream=True)
+        response.raise_for_status()
+        return json.loads(response.content.decode("utf-8"))
+    except Exception as e:
+        st.error(f"Error loading metadata json: {e}")
+        return None
+
+def find_meta_asset(assets, parquet_asset_name: str):
+    """
+    parquet 자산과 짝이 되는 meta json을 찾습니다.
+    기본 규칙: <name>.parquet -> <name>.meta.json
+    """
+    expected = parquet_asset_name.replace(".parquet", ".meta.json")
+    for a in assets:
+        if a.get("name") == expected:
+            return a
+    return None
 
 # 메인 로직
 if repo_name:
@@ -89,6 +117,24 @@ if repo_name:
                     parquet_assets, 
                     format_func=lambda x: f"{x['name']} ({x['size']/1024/1024:.2f} MB)"
                 )
+
+                # 메타데이터 표시 (가능한 경우)
+                meta_asset = find_meta_asset(assets, selected_asset["name"]) if selected_asset else None
+                with st.expander("Metadata (meta.json)", expanded=True):
+                    if meta_asset:
+                        meta = load_json_from_url(meta_asset["browser_download_url"], github_token)
+                        if meta:
+                            # 핵심 요약
+                            col_a, col_b, col_c, col_d = st.columns(4)
+                            col_a.metric("Start", meta.get("start_date", "-"))
+                            col_b.metric("End", meta.get("end_date", "-"))
+                            col_c.metric("Tickers", meta.get("ticker_count", 0))
+                            col_d.metric("Rows", meta.get("rows", 0))
+
+                            st.markdown("#### Raw metadata")
+                            st.json(meta)
+                    else:
+                        st.info("No matching meta json found for this parquet asset.")
                 
                 if st.button("Load Data & Inspect"):
                     with st.spinner("Downloading and loading Parquet file..."):
