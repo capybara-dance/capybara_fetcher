@@ -138,6 +138,12 @@ def _safe_pkg_version(dist_name: str) -> str | None:
     except PackageNotFoundError:
         return None
 
+def _safe_file_size_bytes(path: str) -> int | None:
+    try:
+        return int(os.path.getsize(path))
+    except OSError:
+        return None
+
 def main():
     parser = argparse.ArgumentParser(description="Generate Korea Universe Feature Cache")
     parser.add_argument("--start-date", type=str, default=(datetime.datetime.now() - datetime.timedelta(days=365*3)).strftime("%Y%m%d"), help="Start date (YYYYMMDD)")
@@ -168,6 +174,10 @@ def main():
                 "rows": 0,
                 "columns": list(_empty_feature_frame().columns),
                 "features": [],
+                "data_file": {
+                    "path": args.output,
+                    "size_bytes": _safe_file_size_bytes(args.output),
+                },
                 "notes": "No tickers found via data source; wrote empty cache.",
                 "env": {
                     "python": sys.version.split()[0],
@@ -232,6 +242,10 @@ def main():
                 "columns": list(full_df.columns),
                 # 현재 스크립트는 별도 지표 계산을 하지 않으므로, "features"는 컬럼으로부터 추정하거나 빈 리스트로 둡니다.
                 "features": [],
+                "data_file": {
+                    "path": args.output,
+                    "size_bytes": _safe_file_size_bytes(args.output),
+                },
                 "args": {
                     "max_workers": args.max_workers,
                     "test_limit": args.test_limit,
@@ -266,6 +280,10 @@ def main():
                 "rows": 0,
                 "columns": list(_empty_feature_frame().columns),
                 "features": [],
+                "data_file": {
+                    "path": args.output,
+                    "size_bytes": _safe_file_size_bytes(args.output),
+                },
                 "notes": "No OHLCV data fetched; wrote empty cache.",
                 "args": {
                     "max_workers": args.max_workers,
