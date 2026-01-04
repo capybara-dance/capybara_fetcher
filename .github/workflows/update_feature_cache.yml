@@ -49,7 +49,7 @@ jobs:
         
         echo "Generating cache from $START_DATE to $END_DATE"
         
-        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet --meta-output cache/korea_universe_feature_frame.meta.json --ticker-name-map-output cache/korea_universe_ticker_name_map.parquet
+        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet --meta-output cache/korea_universe_feature_frame.meta.json --ticker-info-map-output cache/korea_universe_ticker_info_map.parquet
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -58,7 +58,7 @@ jobs:
         path: |
           cache/korea_universe_feature_frame.parquet
           cache/korea_universe_feature_frame.meta.json
-          cache/korea_universe_ticker_name_map.parquet
+          cache/korea_universe_ticker_info_map.parquet
         retention-days: 7
 
     - name: Generate Tag Name
@@ -73,7 +73,7 @@ jobs:
         files: |
           cache/korea_universe_feature_frame.parquet
           cache/korea_universe_feature_frame.meta.json
-          cache/korea_universe_ticker_name_map.parquet
+          cache/korea_universe_ticker_info_map.parquet
         draft: false
         prerelease: false
       env:

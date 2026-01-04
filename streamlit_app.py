@@ -93,9 +93,17 @@ def find_asset_by_name(assets, asset_name: str):
             return a
     return None
 
-def is_ticker_name_map_asset(asset_name: str) -> bool:
+def is_ticker_info_map_asset(asset_name: str) -> bool:
     n = (asset_name or "").lower()
-    return n.endswith("_ticker_name_map.parquet") or ("ticker_name_map" in n) or ("ticker-name-map" in n)
+    return (
+        n.endswith("_ticker_info_map.parquet")
+        or ("ticker_info_map" in n)
+        or ("ticker-info-map" in n)
+        # backward compat
+        or n.endswith("_ticker_name_map.parquet")
+        or ("ticker_name_map" in n)
+        or ("ticker-name-map" in n)
+    )
 
 def pick_meta_asset(assets):
     meta_assets = [a for a in assets if a.get("name", "").endswith(".meta.json")]
@@ -114,7 +122,7 @@ def pick_meta_asset(assets):
 
 def pick_feature_asset(assets):
     parquet_assets = [a for a in assets if a.get("name", "").endswith(".parquet")]
-    feature_assets = [a for a in parquet_assets if not is_ticker_name_map_asset(a.get("name", ""))]
+    feature_assets = [a for a in parquet_assets if not is_ticker_info_map_asset(a.get("name", ""))]
     if not feature_assets:
         return None
     # Prefer the known default name if present
@@ -128,13 +136,13 @@ def pick_feature_asset(assets):
             return a
     return feature_assets[0]
 
-def pick_ticker_name_map_asset(assets):
+def pick_ticker_info_map_asset(assets):
     parquet_assets = [a for a in assets if a.get("name", "").endswith(".parquet")]
-    map_assets = [a for a in parquet_assets if is_ticker_name_map_asset(a.get("name", ""))]
+    map_assets = [a for a in parquet_assets if is_ticker_info_map_asset(a.get("name", ""))]
     if not map_assets:
         return None
     for a in map_assets:
-        if a.get("name") == "korea_universe_ticker_name_map.parquet":
+        if a.get("name") == "korea_universe_ticker_info_map.parquet":
             return a
     return map_assets[0]
 
@@ -165,7 +173,7 @@ if repo_name:
                 st.subheader("📦 Assets")
                 meta_asset = pick_meta_asset(assets)
                 feature_asset = pick_feature_asset(assets)
-                ticker_name_map_asset = pick_ticker_name_map_asset(assets)
+                ticker_info_map_asset = pick_ticker_info_map_asset(assets)
 
                 # 1) 메타데이터: 릴리즈 선택 시 자동 로드/표시
                 with st.expander("Metadata (meta.json)", expanded=True):
@@ -182,19 +190,19 @@ if repo_name:
                     else:
                         st.info("No meta json found in this release.")
 
-                # 2) 티커-종목명 맵: 버튼 클릭 시 로드
-                with st.expander("Ticker-Name Map (separate parquet)", expanded=True):
-                    if ticker_name_map_asset:
-                        st.write(f"**Map asset:** `{ticker_name_map_asset['name']}`")
-                        if st.button("Load Ticker-Name Map", key="load_ticker_name_map"):
-                            with st.spinner("Downloading ticker-name map..."):
-                                tndf = load_parquet_from_url(ticker_name_map_asset["browser_download_url"], github_token)
+                # 2) 티커 정보 맵: 버튼 클릭 시 로드
+                with st.expander("Ticker Info Map (separate parquet)", expanded=True):
+                    if ticker_info_map_asset:
+                        st.write(f"**Info map asset:** `{ticker_info_map_asset['name']}`")
+                        if st.button("Load Ticker Info Map", key="load_ticker_info_map"):
+                            with st.spinner("Downloading ticker info map..."):
+                                tndf = load_parquet_from_url(ticker_info_map_asset["browser_download_url"], github_token)
                                 if tndf is not None:
-                                    st.success("Ticker-Name map loaded successfully!")
+                                    st.success("Ticker info map loaded successfully!")
                                     st.write(f"**Shape:** {tndf.shape}")
                                     st.dataframe(tndf.head(500), use_container_width=True)
                     else:
-                        st.info("No ticker-name map parquet found in this release.")
+                        st.info("No ticker info map parquet found in this release.")
 
                 # 3) Feature data: 버튼 클릭 시 로드
                 with st.expander("Feature Data (parquet)", expanded=True):
