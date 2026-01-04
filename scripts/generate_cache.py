@@ -87,8 +87,12 @@ def fetch_data(ticker, start_date, end_date):
         df.index.name = 'Date'
         df = df.reset_index()
         
-        # 티커 컬럼 추가
-        df['Code'] = ticker
+        # 티커/종목명 컬럼 추가
+        df["Ticker"] = ticker
+        try:
+            df["Name"] = stock.get_market_ticker_name(ticker) or ""
+        except Exception:
+            df["Name"] = ""
         
         # TODO: Feature Calculation Logic here
         # e.g., df['sma_20'] = df['Close'].rolling(20).mean()
@@ -123,7 +127,8 @@ def _empty_feature_frame() -> pd.DataFrame:
             "Volume",
             "TradingValue",
             "Change",
-            "Code",
+            "Ticker",
+            "Name",
         ]
     )
 
@@ -207,9 +212,9 @@ def main():
         print("Concatenating data...")
         full_df = pd.concat(results, ignore_index=True)
         
-        # Date, Code 기준으로 정렬
-        if 'Date' in full_df.columns and 'Code' in full_df.columns:
-             full_df = full_df.sort_values(by=['Date', 'Code'])
+        # Date, Ticker 기준으로 정렬
+        if "Date" in full_df.columns and "Ticker" in full_df.columns:
+            full_df = full_df.sort_values(by=["Date", "Ticker"])
         
         print(f"Saving to {args.output}...")
         _write_parquet(full_df, args.output)
