@@ -7,7 +7,9 @@
 ## 2. Architecture
 
 ### Data Flow
-1.  **Universe Construction**: `pykrx`로 KOSPI/KOSDAQ 전 종목 티커 리스트 및 시장구분(KOSPI/KOSDAQ) 확보. (조회 실패 시 fallback 티커 사용)
+1.  **Universe Construction**: `pykrx`로 KOSPI/KOSDAQ 전 종목 티커 리스트 및 시장구분(KOSPI/KOSDAQ) 확보.
+    - 조회가 실패하면 **fallback로 진행하지 않음**
+    - 대신 `meta.json`에 실패 사유를 기록하고 **meta-only 릴리즈**로 남김
 2.  **Ticker Info Map Build**: 티커별 메타(종목명, 시장구분)를 **별도 Parquet**(`Ticker Info Map`)으로 저장.
 3.  **Data Fetching**: `pykrx`를 통해 각 종목의 OHLCV 데이터 병렬 수집.
 4.  **Standardization**: 컬럼명 영문 변환 (`시가` -> `Open` 등) 및 날짜 인덱스 처리.
@@ -42,7 +44,7 @@
 
 ### ⚠️ Temporary Limitations
 *   **Basic Data Only**: 현재는 OHLCV(가격/거래량) 데이터만 포함하며, 이동평균선 등 파생 변수(Feature)는 계산하지 않음.
-*   **PyKrx Ticker Issue**: `pykrx`의 티커 리스트 조회 불안정 시 Fallback 리스트 사용 로직 포함.
+*   **PyKrx Ticker Issue**: `pykrx`의 티커 리스트 조회가 실패할 수 있음. 이 경우 data/map 파일은 생성하지 않고 `meta.json`에 실패 정보를 남김.
 
 ## 5. Remaining Tasks
 

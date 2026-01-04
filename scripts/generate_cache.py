@@ -11,25 +11,11 @@ from tqdm import tqdm
 import time
 from importlib.metadata import version as pkg_version, PackageNotFoundError
 
-FALLBACK_TICKERS = [
-    # KOSPI / KOSDAQ 대표 종목 일부 (pykrx 조회 실패 시 최소 캐시 생성용)
-    "005930",  # 삼성전자
-    "000660",  # SK하이닉스
-    "035420",  # NAVER
-    "051910",  # LG화학
-    "068270",  # 셀트리온
-    "035720",  # 카카오
-    "207940",  # 삼성바이오로직스
-    "005380",  # 현대차
-    "105560",  # KB금융
-    "012330",  # 현대모비스
-]
-
 def build_korea_full_universe(target_date=None):
     """
     KOSPI 및 KOSDAQ 전 종목 티커 리스트를 반환합니다.
     데이터가 없는 경우(휴일 등), 과거 날짜로 이동하며 데이터를 찾습니다.
-    pykrx 조회 실패 시, 최소 동작을 위한 fallback 티커 리스트를 반환합니다.
+    pykrx 조회 실패 시, 빈 리스트를 반환하고 에러 정보를 함께 제공합니다.
     """
     if target_date is None:
         target_date = datetime.datetime.now()
@@ -40,6 +26,7 @@ def build_korea_full_universe(target_date=None):
             target_date = datetime.datetime.now()
 
     # 최대 10일 전까지 조회 시도
+    last_error: str | None = None
     for _ in range(10):
         str_date = target_date.strftime("%Y%m%d")
         try:
@@ -55,15 +42,15 @@ def build_korea_full_universe(target_date=None):
                     market_by_ticker[t] = "KOSPI"
                 for t in kosdaq:
                     market_by_ticker[t] = "KOSDAQ"
-                return tickers, market_by_ticker, str_date
+                return tickers, market_by_ticker, str_date, None
         except Exception as e:
-            pass
+            last_error = f"{type(e).__name__}: {e}"
         
         # 하루 전으로 이동
         target_date -= datetime.timedelta(days=1)
     
-    print("Error: Could not find tickers via pykrx after multiple attempts. Using fallback tickers.")
-    return FALLBACK_TICKERS.copy(), {}, None
+    print("Error: Could not find tickers via pykrx after multiple attempts.")
+    return [], {}, None, last_error
 
 def fetch_data(ticker, start_date, end_date):
     """
@@ -207,17 +194,20 @@ def main():
     ticker_info_map_output = args.ticker_info_map_output or _default_ticker_info_map_path(args.output)
     
     # 1. 유니버스 구성
-    tickers, market_by_ticker, universe_date = build_korea_full_universe()
+    tickers, market_by_ticker, universe_date, universe_error = build_korea_full_universe()
     if not tickers:
-        print("No tickers found. Writing empty cache file.")
-        _write_parquet(_empty_feature_frame(), args.output)
-        _write_parquet(_empty_ticker_info_map(), ticker_info_map_output)
+        print("No tickers found. Writing metadata only.")
         _write_json(
             {
                 "generated_at_utc": started_at.isoformat(),
                 "start_date": args.start_date,
                 "end_date": args.end_date,
                 "universe_date": universe_date,
+                "universe_fetch": {
+                    "success": False,
+                    "attempted_lookback_days": 10,
+                    "last_error": universe_error,
+                },
                 "tickers": [],
                 "ticker_count": 0,
                 "rows": 0,
@@ -225,14 +215,16 @@ def main():
                 "features": [],
                 "data_file": {
                     "path": args.output,
-                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
+                    "generated": False,
+                    "size_mb": None,
                 },
                 "ticker_info_map": {
                     "path": ticker_info_map_output,
                     "rows": 0,
-                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(ticker_info_map_output)),
+                    "generated": False,
+                    "size_mb": None,
                 },
-                "notes": "No tickers found via data source; wrote empty cache.",
+                "notes": "Universe fetch failed; metadata-only release.",
                 "env": {
                     "python": sys.version.split()[0],
                     "platform": platform.platform(),
@@ -294,6 +286,11 @@ def main():
                 "start_date": args.start_date,
                 "end_date": args.end_date,
                 "universe_date": universe_date,
+                "universe_fetch": {
+                    "success": True,
+                    "attempted_lookback_days": 10,
+                    "last_error": None,
+                },
                 "tickers": tickers,
                 "ticker_count": len(tickers),
                 "fetched_ticker_count": len(results),
@@ -303,11 +300,13 @@ def main():
                 "features": [],
                 "data_file": {
                     "path": args.output,
+                    "generated": True,
                     "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
                 },
                 "ticker_info_map": {
                     "path": ticker_info_map_output,
                     "rows": int(len(ticker_info_map_df)),
+                    "generated": True,
                     "size_mb": _bytes_to_mb(_safe_file_size_bytes(ticker_info_map_output)),
                 },
                 "args": {
@@ -332,14 +331,18 @@ def main():
         print(f"Done. File saved to {args.output}. Total time: {elapsed:.2f}s")
         print(f"Total Rows: {len(full_df)}")
     else:
-        print("No data fetched. Writing empty cache file.")
-        _write_parquet(_empty_feature_frame(), args.output)
+        print("No data fetched. Writing metadata only.")
         _write_json(
             {
                 "generated_at_utc": started_at.isoformat(),
                 "start_date": args.start_date,
                 "end_date": args.end_date,
                 "universe_date": universe_date,
+                "universe_fetch": {
+                    "success": True,
+                    "attempted_lookback_days": 10,
+                    "last_error": None,
+                },
                 "tickers": tickers,
                 "ticker_count": len(tickers),
                 "fetched_ticker_count": 0,
@@ -348,14 +351,16 @@ def main():
                 "features": [],
                 "data_file": {
                     "path": args.output,
-                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
+                    "generated": False,
+                    "size_mb": None,
                 },
                 "ticker_info_map": {
                     "path": ticker_info_map_output,
                     "rows": int(len(ticker_info_map_df)),
+                    "generated": True,
                     "size_mb": _bytes_to_mb(_safe_file_size_bytes(ticker_info_map_output)),
                 },
-                "notes": "No OHLCV data fetched; wrote empty cache.",
+                "notes": "No OHLCV data fetched; metadata-only release.",
                 "args": {
                     "max_workers": args.max_workers,
                     "test_limit": args.test_limit,

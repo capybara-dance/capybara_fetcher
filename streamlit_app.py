@@ -167,66 +167,62 @@ if repo_name:
             
             # Asset 찾기
             assets = selected_release.get('assets', [])
-            parquet_assets = [a for a in assets if a['name'].endswith('.parquet')]
-            
-            if parquet_assets:
-                st.subheader("📦 Assets")
-                meta_asset = pick_meta_asset(assets)
-                feature_asset = pick_feature_asset(assets)
-                ticker_info_map_asset = pick_ticker_info_map_asset(assets)
 
-                # 1) 메타데이터: 릴리즈 선택 시 자동 로드/표시
-                with st.expander("Metadata (meta.json)", expanded=True):
-                    if meta_asset:
-                        st.write(f"**Meta asset:** `{meta_asset['name']}`")
-                        meta = load_json_from_url(meta_asset["browser_download_url"], github_token)
-                        if meta:
-                            col_a, col_b, col_c, col_d = st.columns(4)
-                            col_a.metric("Start", meta.get("start_date", "-"))
-                            col_b.metric("End", meta.get("end_date", "-"))
-                            col_c.metric("Tickers", meta.get("ticker_count", 0))
-                            col_d.metric("Rows", meta.get("rows", 0))
-                            st.json(meta)
-                    else:
-                        st.info("No meta json found in this release.")
+            st.subheader("📦 Assets")
+            meta_asset = pick_meta_asset(assets)
+            feature_asset = pick_feature_asset(assets)
+            ticker_info_map_asset = pick_ticker_info_map_asset(assets)
 
-                # 2) 티커 정보 맵: 버튼 클릭 시 로드
-                with st.expander("Ticker Info Map (separate parquet)", expanded=True):
-                    if ticker_info_map_asset:
-                        st.write(f"**Info map asset:** `{ticker_info_map_asset['name']}`")
-                        if st.button("Load Ticker Info Map", key="load_ticker_info_map"):
-                            with st.spinner("Downloading ticker info map..."):
-                                tndf = load_parquet_from_url(ticker_info_map_asset["browser_download_url"], github_token)
-                                if tndf is not None:
-                                    st.success("Ticker info map loaded successfully!")
-                                    st.write(f"**Shape:** {tndf.shape}")
-                                    st.dataframe(tndf.head(500), use_container_width=True)
-                    else:
-                        st.info("No ticker info map parquet found in this release.")
+            # 1) 메타데이터: 릴리즈 선택 시 자동 로드/표시 (meta-only 릴리즈 지원)
+            with st.expander("Metadata (meta.json)", expanded=True):
+                if meta_asset:
+                    st.write(f"**Meta asset:** `{meta_asset['name']}`")
+                    meta = load_json_from_url(meta_asset["browser_download_url"], github_token)
+                    if meta:
+                        col_a, col_b, col_c, col_d = st.columns(4)
+                        col_a.metric("Start", meta.get("start_date", "-"))
+                        col_b.metric("End", meta.get("end_date", "-"))
+                        col_c.metric("Tickers", meta.get("ticker_count", 0))
+                        col_d.metric("Rows", meta.get("rows", 0))
+                        st.json(meta)
+                else:
+                    st.info("No meta json found in this release.")
 
-                # 3) Feature data: 버튼 클릭 시 로드
-                with st.expander("Feature Data (parquet)", expanded=True):
-                    if feature_asset:
-                        st.write(f"**Feature asset:** `{feature_asset['name']}`")
-                        if st.button("Load Feature Data", key="load_feature_data"):
-                            with st.spinner("Downloading and loading feature parquet..."):
-                                df = load_parquet_from_url(feature_asset["browser_download_url"], github_token)
-                                if df is not None:
-                                    st.success("Feature data loaded successfully!")
-                                    st.write(f"**Shape:** {df.shape}")
-                                    st.dataframe(df.head(200), use_container_width=True)
+            # 2) 티커 정보 맵: 버튼 클릭 시 로드
+            with st.expander("Ticker Info Map (separate parquet)", expanded=True):
+                if ticker_info_map_asset:
+                    st.write(f"**Info map asset:** `{ticker_info_map_asset['name']}`")
+                    if st.button("Load Ticker Info Map", key="load_ticker_info_map"):
+                        with st.spinner("Downloading ticker info map..."):
+                            tndf = load_parquet_from_url(ticker_info_map_asset["browser_download_url"], github_token)
+                            if tndf is not None:
+                                st.success("Ticker info map loaded successfully!")
+                                st.write(f"**Shape:** {tndf.shape}")
+                                st.dataframe(tndf.head(500), use_container_width=True)
+                else:
+                    st.info("No ticker info map parquet found in this release.")
 
-                                    col1, col2 = st.columns(2)
-                                    with col1:
-                                        st.markdown("#### Data Types")
-                                        st.write(df.dtypes)
-                                    with col2:
-                                        st.markdown("#### Descriptive Statistics")
-                                        st.write(df.describe())
-                    else:
-                        st.info("No feature parquet found in this release.")
-            else:
-                st.warning("No .parquet files found in this release.")
+            # 3) Feature data: 버튼 클릭 시 로드
+            with st.expander("Feature Data (parquet)", expanded=True):
+                if feature_asset:
+                    st.write(f"**Feature asset:** `{feature_asset['name']}`")
+                    if st.button("Load Feature Data", key="load_feature_data"):
+                        with st.spinner("Downloading and loading feature parquet..."):
+                            df = load_parquet_from_url(feature_asset["browser_download_url"], github_token)
+                            if df is not None:
+                                st.success("Feature data loaded successfully!")
+                                st.write(f"**Shape:** {df.shape}")
+                                st.dataframe(df.head(200), use_container_width=True)
+
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    st.markdown("#### Data Types")
+                                    st.write(df.dtypes)
+                                with col2:
+                                    st.markdown("#### Descriptive Statistics")
+                                    st.write(df.describe())
+                else:
+                    st.info("No feature parquet found in this release.")
     else:
         if repo_name != default_repo:
             st.info("No releases found. Please check the repository name or token.")

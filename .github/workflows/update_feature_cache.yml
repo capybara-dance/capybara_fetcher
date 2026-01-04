@@ -50,8 +50,36 @@ jobs:
         echo "Generating cache from $START_DATE to $END_DATE"
         
         python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet --meta-output cache/korea_universe_feature_frame.meta.json --ticker-info-map-output cache/korea_universe_ticker_info_map.parquet
+
+    - name: Detect Generated Files
+      id: files
+      run: |
+        if [ -f "cache/korea_universe_feature_frame.parquet" ]; then
+          echo "has_feature=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_feature=false" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f "cache/korea_universe_ticker_info_map.parquet" ]; then
+          echo "has_ticker_info=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_ticker_info=false" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f "cache/korea_universe_feature_frame.meta.json" ]; then
+          echo "has_meta=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_meta=false" >> "$GITHUB_OUTPUT"
+        fi
         
-    - name: Upload Artifact
+    - name: Upload Artifact (meta only)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: feature-cache-meta
+        path: cache/korea_universe_feature_frame.meta.json
+        retention-days: 7
+
+    - name: Upload Artifact (full)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: feature-cache-parquet
@@ -65,7 +93,20 @@ jobs:
       id: tag
       run: echo "tag_name=data-$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
 
-    - name: Create Release
+    - name: Create Release (meta only)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.tag.outputs.tag_name }}
+        name: Feature Cache ${{ steps.tag.outputs.tag_name }}
+        files: cache/korea_universe_feature_frame.meta.json
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release (full)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.tag.outputs.tag_name }}
