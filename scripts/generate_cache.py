@@ -144,6 +144,11 @@ def _safe_file_size_bytes(path: str) -> int | None:
     except OSError:
         return None
 
+def _bytes_to_mb(size_bytes: int | None) -> float | None:
+    if size_bytes is None:
+        return None
+    return round(size_bytes / (1024 * 1024), 4)
+
 def main():
     parser = argparse.ArgumentParser(description="Generate Korea Universe Feature Cache")
     parser.add_argument("--start-date", type=str, default=(datetime.datetime.now() - datetime.timedelta(days=365*3)).strftime("%Y%m%d"), help="Start date (YYYYMMDD)")
@@ -176,7 +181,7 @@ def main():
                 "features": [],
                 "data_file": {
                     "path": args.output,
-                    "size_bytes": _safe_file_size_bytes(args.output),
+                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
                 },
                 "notes": "No tickers found via data source; wrote empty cache.",
                 "env": {
@@ -244,7 +249,7 @@ def main():
                 "features": [],
                 "data_file": {
                     "path": args.output,
-                    "size_bytes": _safe_file_size_bytes(args.output),
+                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
                 },
                 "args": {
                     "max_workers": args.max_workers,
@@ -282,7 +287,7 @@ def main():
                 "features": [],
                 "data_file": {
                     "path": args.output,
-                    "size_bytes": _safe_file_size_bytes(args.output),
+                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
                 },
                 "notes": "No OHLCV data fetched; wrote empty cache.",
                 "args": {
