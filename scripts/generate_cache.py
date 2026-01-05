@@ -11,31 +11,36 @@ from tqdm import tqdm
 import time
 from importlib.metadata import version as pkg_version, PackageNotFoundError
 
-def build_korea_full_universe(target_date=None):
+TEMP_KOSPI_TICKERS = [
+    # 임시 유니버스 (KOSPI 5)
+    "005930",  # 삼성전자
+    "000660",  # SK하이닉스
+    "005380",  # 현대차
+    "051910",  # LG화학
+    "035420",  # NAVER
+]
+
+TEMP_KOSDAQ_TICKERS = [
+    # 임시 유니버스 (KOSDAQ 5)
+    "247540",  # 에코프로비엠
+    "263750",  # 펄어비스
+    "293490",  # 카카오게임즈
+    "091990",  # 셀트리온헬스케어(과거 KOSDAQ, 현재는 변동 가능)
+    "278280",  # 천보
+]
+
+def build_korea_full_universe():
     """
-    KOSPI 및 KOSDAQ 전 종목 티커 리스트를 반환합니다.
-    `pykrx.stock.get_market_ticker_list()`에 날짜를 지정하지 않으면
-    라이브러리 내부에서 과거 날짜를 탐색하므로, 별도의 날짜/재시도 로직을 두지 않습니다.
-
-    조회 실패 시, 빈 리스트를 반환하고 에러 정보를 함께 제공합니다.
+    임시 유니버스: KOSPI 5개 + KOSDAQ 5개 티커를 반환합니다.
+    (stock.get_market_ticker_list 이슈는 추후 해결)
     """
-    try:
-        kospi = stock.get_market_ticker_list(market="KOSPI")
-        kosdaq = stock.get_market_ticker_list(market="KOSDAQ")
-
-        tickers = sorted(list(set(kospi + kosdaq)))
-        if not tickers:
-            return [], {}, None, "EmptyUniverseError: pykrx returned empty ticker list"
-
-        market_by_ticker: dict[str, str] = {}
-        for t in kospi:
-            market_by_ticker[t] = "KOSPI"
-        for t in kosdaq:
-            market_by_ticker[t] = "KOSDAQ"
-        # pykrx 내부 탐색을 사용하므로, 실제 사용된 기준일은 외부에서 알 수 없습니다.
-        return tickers, market_by_ticker, None, None
-    except Exception as e:
-        return [], {}, None, f"{type(e).__name__}: {e}"
+    tickers = sorted(list(set(TEMP_KOSPI_TICKERS + TEMP_KOSDAQ_TICKERS)))
+    market_by_ticker: dict[str, str] = {}
+    for t in TEMP_KOSPI_TICKERS:
+        market_by_ticker[t] = "KOSPI"
+    for t in TEMP_KOSDAQ_TICKERS:
+        market_by_ticker[t] = "KOSDAQ"
+    return tickers, market_by_ticker, None, None
 
 def fetch_data(ticker, start_date, end_date):
     """
@@ -192,6 +197,7 @@ def main():
                     "success": False,
                     "last_error": universe_error,
                 },
+                "universe_source": "temporary_static_list",
                 "tickers": [],
                 "ticker_count": 0,
                 "rows": 0,
@@ -274,6 +280,7 @@ def main():
                     "success": True,
                     "last_error": None,
                 },
+                "universe_source": "temporary_static_list",
                 "tickers": tickers,
                 "ticker_count": len(tickers),
                 "fetched_ticker_count": len(results),
@@ -325,6 +332,7 @@ def main():
                     "success": True,
                     "last_error": None,
                 },
+                "universe_source": "temporary_static_list",
                 "tickers": tickers,
                 "ticker_count": len(tickers),
                 "fetched_ticker_count": 0,
