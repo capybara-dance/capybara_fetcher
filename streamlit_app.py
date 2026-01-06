@@ -114,6 +114,41 @@ def _axis_assignment(df: pd.DataFrame, base_col: str, other_cols: list[str]) -> 
             left_cols.append(c)
     return left_cols, right_cols
 
+def _build_newhigh_marker_layer(
+    df: pd.DataFrame,
+    date_col: str,
+    y_col: str,
+    *,
+    title: str = "New High (1Y)",
+    color: str = "#f59e0b",
+    size: int = 90,
+):
+    if "IsNewHigh1Y" not in df.columns:
+        return None
+    if date_col not in df.columns:
+        return None
+    if y_col not in df.columns:
+        return None
+
+    m = df[df["IsNewHigh1Y"] == True].copy()  # noqa: E712 (pandas nullable boolean)
+    if m.empty:
+        return None
+
+    m = m[[date_col, y_col]].copy().sort_values(date_col)
+    return (
+        alt.Chart(m)
+        .mark_point(shape="triangle-up", filled=True, size=size, color=color)
+        .encode(
+            x=alt.X(f"{date_col}:T", title="Date"),
+            y=alt.Y(f"{y_col}:Q", title=None, axis=alt.Axis(labels=False, ticks=False)),
+            tooltip=[
+                alt.Tooltip(f"{date_col}:T"),
+                alt.Tooltip(f"{y_col}:Q", title=y_col),
+                alt.Tooltip(value=title, title="Event"),
+            ],
+        )
+    )
+
 def _build_dual_axis_chart(df: pd.DataFrame, date_col: str, left_cols: list[str], right_cols: list[str]):
     base = df[[date_col] + sorted(set(left_cols + right_cols))].copy()
     base = base.sort_values(date_col)
@@ -153,7 +188,7 @@ def _build_dual_axis_chart(df: pd.DataFrame, date_col: str, left_cols: list[str]
 
     return left
 
-def _build_candlestick_chart(df: pd.DataFrame, date_col: str = "Date"):
+def _build_candlestick_chart(df: pd.DataFrame, date_col: str = "Date", marker_layer=None):
     """
     Candlestick chart from OHLC columns.
     - Rule: Low..High
@@ -205,7 +240,10 @@ def _build_candlestick_chart(df: pd.DataFrame, date_col: str = "Date"):
         )
     )
 
-    return alt.layer(wick, body)
+    layers = [wick, body]
+    if marker_layer is not None:
+        layers.append(marker_layer)
+    return alt.layer(*layers)
 
 def _build_metric_overlay_lines(df: pd.DataFrame, date_col: str, cols: list[str], axis_orient: str, show_legend: bool):
     if not cols:
@@ -493,6 +531,11 @@ if repo_name:
                             if one.empty:
                                 st.warning("No data in selected date range.")
                             else:
+                                show_newhigh = st.checkbox("Show 1Y New High markers", value=True)
+                                marker_pos = st.selectbox("New High marker position", ["High", "Close"], index=0)
+                                marker_y_col = marker_pos if marker_pos in one.columns else "Close"
+                                newhigh_layer = _build_newhigh_marker_layer(one, "Date", marker_y_col) if show_newhigh else None
+
                                 tab_line, tab_candle = st.tabs(["Close & Metrics (Line)", "Candlestick (OHLC)"])
 
                                 with tab_line:
@@ -517,6 +560,9 @@ if repo_name:
                                         )
 
                                         chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols)
+                                        if newhigh_layer is not None:
+                                            # Add marker to the "left" side of the layered chart
+                                            chart = alt.layer(chart, newhigh_layer).resolve_scale(y="independent")
                                         st.altair_chart(chart, use_container_width=True)
 
                                 with tab_candle:
@@ -544,6 +590,8 @@ if repo_name:
                                         if candle is None:
                                             st.info("Could not build candlestick chart for this data.")
                                         else:
+                                            if newhigh_layer is not None:
+                                                candle = alt.layer(candle, newhigh_layer).resolve_scale(y="independent")
                                             st.altair_chart(candle, use_container_width=True)
     else:
         if repo_name != default_repo:
