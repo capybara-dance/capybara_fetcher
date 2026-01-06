@@ -53,7 +53,7 @@ jobs:
         
         echo "Generating cache from $START_DATE to $END_DATE"
         
-        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet --meta-output cache/korea_universe_feature_frame.meta.json --ticker-info-map-output cache/korea_universe_ticker_info_map.parquet
+        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet --meta-output cache/korea_universe_feature_frame.meta.json --krx-stock-master-json data/krx_stock_master.json
 
     - name: Detect Generated Files
       id: files
@@ -67,11 +67,6 @@ jobs:
           echo "has_feature=true" >> "$GITHUB_OUTPUT"
         else
           echo "has_feature=false" >> "$GITHUB_OUTPUT"
-        fi
-        if [ -f "cache/korea_universe_ticker_info_map.parquet" ]; then
-          echo "has_ticker_info=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "has_ticker_info=false" >> "$GITHUB_OUTPUT"
         fi
         if [ -f "cache/korea_universe_feature_frame.meta.json" ]; then
           echo "has_meta=true" >> "$GITHUB_OUTPUT"
@@ -97,7 +92,6 @@ jobs:
         path: |
           cache/korea_universe_feature_frame.parquet
           cache/korea_universe_feature_frame.meta.json
-          cache/korea_universe_ticker_info_map.parquet
           cache/krx_stock_master.parquet
         retention-days: 7
 
@@ -128,7 +122,6 @@ jobs:
         files: |
           cache/korea_universe_feature_frame.parquet
           cache/korea_universe_feature_frame.meta.json
-          cache/korea_universe_ticker_info_map.parquet
           cache/krx_stock_master.parquet
         draft: false
         prerelease: false

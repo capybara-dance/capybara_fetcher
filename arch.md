@@ -7,14 +7,12 @@
 ## 2. Architecture
 
 ### Data Flow
-1.  **Universe Construction (Temporary)**: 현재는 `stock.get_market_ticker_list` 이슈로 인해
-    **임시 유니버스(KOSPI 5 + KOSDAQ 5)** 고정 티커로만 진행.
-    - 전 종목 유니버스는 추후 `get_market_ticker_list` 안정화 후 재도입 예정
+1.  **Universe Construction (Full)**: `data/krx_stock_master.json`의 전 종목(KOSPI+KOSDAQ) 코드를 유니버스로 사용.
 2.  **KRX Stock Master Build (Static)**: Seibro에서 수집한 원본 엑셀(코스피/코스닥)로부터
     종목 마스터를 추출하여 레포에 `data/krx_stock_master.json`으로 저장.
     - 원본 엑셀 출처: `https://seibro.or.kr/websquare/control.jsp?w2xPath=/IPORTAL/user/stock/BIP_CNTS02004V.xml&menuNo=41`
     - 릴리즈 시에는 JSON을 DataFrame(Parquet)으로 변환하여 `cache/krx_stock_master.parquet`로 함께 배포
-3.  **Ticker Info Map Build**: 티커별 메타(종목명, 시장구분)를 **별도 Parquet**(`Ticker Info Map`)으로 저장.
+3.  **Ticker/Market Lookup**: 종목명/시장/업종 정보는 `KRX Stock Master`를 기준으로 조회(별도 ticker map 파일은 생성하지 않음).
 4.  **Data Fetching**: `pykrx`를 통해 각 종목의 OHLCV 데이터 병렬 수집.
 5.  **Standardization**: 컬럼명 영문 변환 (`시가` -> `Open` 등) 및 날짜 인덱스 처리.
 6.  **Indicator Calculation**:
@@ -53,13 +51,11 @@
 *   **Parquet Storage**: `pyarrow` 엔진을 사용한 고효율 데이터 저장.
 *   **Automated Workflow**: `workflow_dispatch` 트리거를 통한 수동 실행 및 GitHub Releases 자동 업로드.
 *   **Verification Tool**: `streamlit_app.py`를 통해 생성된 캐시 파일의 내용을 웹에서 즉시 확인 가능.
-*   **Meta + Map Artifacts**: `meta.json` 및 `Ticker Info Map`(Ticker/Name/Market) Parquet를 함께 배포.
-*   **CI Safety Limit**: GitHub Actions에서는 기본적으로 `CI_TEST_LIMIT`(기본 10)만 수집하도록 제한 가능.
+*   **Meta + Master Artifacts**: `meta.json` 및 `KRX Stock Master` Parquet를 함께 배포.
 *   **Release Permission Fix**: 워크플로에 `permissions: contents: write` 설정으로 릴리스 생성 403 방지.
 
 ### ⚠️ Temporary Limitations
-*   **Basic Data Only**: 현재는 OHLCV(가격/거래량) 데이터만 포함하며, 이동평균선 등 파생 변수(Feature)는 계산하지 않음.
-*   **Temporary Universe**: 현재는 임시 10개 티커만 수집/생성함. (KOSPI 5 + KOSDAQ 5)
+*   **Runtime/Scale**: 전 종목 수집은 시간이 오래 걸 수 있으며, 네트워크/소스 상태에 영향을 받음. (소요시간은 meta에 기록)
 
 ## 5. Remaining Tasks
 
@@ -77,8 +73,6 @@
   - 지표 컬럼: `SMA_5`, `SMA_10`, `SMA_20`, `SMA_60`, `SMA_120`, `SMA_200`, `MansfieldRS`, `IsNewHigh1Y`
 - **Metadata**: `cache/korea_universe_feature_frame.meta.json`
   - 날짜 범위, 티커 목록/개수, 파일 크기(MB), 실행 환경 버전, 유니버스 기준일(`universe_date`) 등
-- **Ticker Info Map**: `cache/korea_universe_ticker_info_map.parquet`
-  - 컬럼: `Ticker`, `Name`, `Market`(KOSPI/KOSDAQ/UNKNOWN)
 - **KRX Stock Master (DataFrame)**: `cache/krx_stock_master.parquet`
   - 원본: `data/코스피.xlsx`, `data/코스닥.xlsx` (Seibro 수집)
   - 컬럼: `Code`, `Name`, `Market`, `IndustryLarge`, `IndustryMid`, `IndustrySmall`

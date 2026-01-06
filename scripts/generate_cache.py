@@ -9,6 +9,7 @@ from pykrx import stock
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 import time
+from time import perf_counter
 from importlib.metadata import version as pkg_version, PackageNotFoundError
 
 MA_WINDOWS = [5, 10, 20, 60, 120, 200]
@@ -16,36 +17,32 @@ NEW_HIGH_WINDOW_TRADING_DAYS = 252
 MANSFIELD_BENCHMARK_TICKER = "069500"
 MANSFIELD_RS_SMA_WINDOW = 200
 
-TEMP_KOSPI_TICKERS = [
-    # 임시 유니버스 (KOSPI 5)
-    "005930",  # 삼성전자
-    "000660",  # SK하이닉스
-    "005380",  # 현대차
-    "051910",  # LG화학
-    "035420",  # NAVER
-]
+KRX_STOCK_MASTER_JSON_DEFAULT = "/workspace/data/krx_stock_master.json"
 
-TEMP_KOSDAQ_TICKERS = [
-    # 임시 유니버스 (KOSDAQ 5)
-    "247540",  # 에코프로비엠
-    "263750",  # 펄어비스
-    "293490",  # 카카오게임즈
-    "091990",  # 셀트리온헬스케어(과거 KOSDAQ, 현재는 변동 가능)
-    "278280",  # 천보
-]
-
-def build_korea_full_universe():
+def load_universe_from_krx_stock_master_json(path: str) -> tuple[list[str], dict[str, str], str | None]:
     """
-    임시 유니버스: KOSPI 5개 + KOSDAQ 5개 티커를 반환합니다.
-    (stock.get_market_ticker_list 이슈는 추후 해결)
+    KRX 종목 마스터(JSON)에서 유니버스를 구성합니다.
+    Returns:
+      - tickers: 종목코드(6자리 문자열) 리스트
+      - market_by_ticker: {종목코드: 시장(KOSPI/KOSDAQ)}
+      - error: 실패 시 에러 문자열, 성공 시 None
     """
-    tickers = sorted(list(set(TEMP_KOSPI_TICKERS + TEMP_KOSDAQ_TICKERS)))
-    market_by_ticker: dict[str, str] = {}
-    for t in TEMP_KOSPI_TICKERS:
-        market_by_ticker[t] = "KOSPI"
-    for t in TEMP_KOSDAQ_TICKERS:
-        market_by_ticker[t] = "KOSDAQ"
-    return tickers, market_by_ticker, None, None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        df = pd.DataFrame(data)
+        if df.empty:
+            return [], {}, "EmptyMasterError: krx_stock_master.json is empty"
+        if "Code" not in df.columns or "Market" not in df.columns:
+            return [], {}, "InvalidMasterError: missing Code/Market fields"
+        df["Code"] = df["Code"].astype(str).str.strip().str.zfill(6)
+        df["Market"] = df["Market"].astype(str).str.strip()
+        df = df.dropna(subset=["Code", "Market"])
+        tickers = sorted(df["Code"].unique().tolist())
+        market_by_ticker = dict(zip(df["Code"].tolist(), df["Market"].tolist()))
+        return tickers, market_by_ticker, None
+    except Exception as e:
+        return [], {}, f"{type(e).__name__}: {e}"
 
 def fetch_data(ticker: str, start_date: str, end_date: str, benchmark_close_by_date: pd.Series | None):
     """
@@ -77,7 +74,7 @@ def fetch_data(ticker: str, start_date: str, end_date: str, benchmark_close_by_d
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
         df = df.dropna(subset=["Date"]).sort_values("Date")
         
-        # 티커 컬럼 추가 (종목명은 별도 맵 파일로 저장)
+        # 티커 컬럼 추가
         df["Ticker"] = ticker
 
         # --- Indicators ---
@@ -139,31 +136,6 @@ def _empty_feature_frame() -> pd.DataFrame:
         ]
     )
 
-def _build_ticker_info_map(tickers: list[str], market_by_ticker: dict[str, str]) -> pd.DataFrame:
-    """
-    티커 정보를 별도 DF로 구성합니다. (Ticker/Name/Market)
-    (메인 데이터에 종목명을 중복 저장하지 않기 위함)
-    """
-    rows: list[dict[str, str]] = []
-    for t in tickers:
-        try:
-            name = stock.get_market_ticker_name(t) or ""
-        except Exception:
-            name = ""
-        market = market_by_ticker.get(t) or "UNKNOWN"
-        rows.append({"Ticker": t, "Name": name, "Market": market})
-    return pd.DataFrame(rows).drop_duplicates(subset=["Ticker"]).sort_values("Ticker")
-
-def _empty_ticker_info_map() -> pd.DataFrame:
-    return pd.DataFrame(columns=["Ticker", "Name", "Market"])
-
-def _default_ticker_info_map_path(output_parquet_path: str) -> str:
-    # e.g. cache/foo.parquet -> cache/foo_ticker_info_map.parquet
-    base, ext = os.path.splitext(output_parquet_path)
-    if not ext:
-        return f"{output_parquet_path}_ticker_info_map.parquet"
-    return f"{base}_ticker_info_map{ext}"
-
 def _safe_pkg_version(dist_name: str) -> str | None:
     try:
         return pkg_version(dist_name)
@@ -187,33 +159,21 @@ def main():
     parser.add_argument("--end-date", type=str, default=datetime.datetime.now().strftime("%Y%m%d"), help="End date (YYYYMMDD)")
     parser.add_argument("--output", type=str, default="korea_universe_feature_frame.parquet", help="Output parquet file path")
     parser.add_argument("--meta-output", type=str, default="", help="Output metadata json file path (default: <output>.meta.json)")
-    parser.add_argument(
-        "--ticker-info-map-output",
-        dest="ticker_info_map_output",
-        type=str,
-        default="",
-        help="Output parquet file path for ticker info map (default: <output>_ticker_info_map.parquet)",
-    )
-    # Backward-compatible alias
-    parser.add_argument(
-        "--ticker-name-map-output",
-        dest="ticker_info_map_output",
-        type=str,
-        default="",
-        help="DEPRECATED: use --ticker-info-map-output instead",
-    )
+    parser.add_argument("--krx-stock-master-json", type=str, default=KRX_STOCK_MASTER_JSON_DEFAULT, help="Path to krx_stock_master.json")
     parser.add_argument("--max-workers", type=int, default=8, help="Number of threads")
     parser.add_argument("--test-limit", type=int, default=0, help="Limit number of tickers for testing (0 for all)")
     
     args = parser.parse_args()
     
     print(f"Start generating cache from {args.start_date} to {args.end_date}...")
+    t0 = perf_counter()
     started_at = datetime.datetime.now(datetime.timezone.utc)
     meta_output = args.meta_output or f"{args.output}.meta.json"
-    ticker_info_map_output = args.ticker_info_map_output or _default_ticker_info_map_path(args.output)
     
-    # 1. 유니버스 구성
-    tickers, market_by_ticker, universe_date, universe_error = build_korea_full_universe()
+    # 1. 유니버스 구성 (KRX master JSON 기준)
+    t_universe0 = perf_counter()
+    tickers, market_by_ticker, universe_error = load_universe_from_krx_stock_master_json(args.krx_stock_master_json)
+    t_universe1 = perf_counter()
     if not tickers:
         print("No tickers found. Writing metadata only.")
         _write_json(
@@ -221,12 +181,14 @@ def main():
                 "generated_at_utc": started_at.isoformat(),
                 "start_date": args.start_date,
                 "end_date": args.end_date,
-                "universe_date": universe_date,
                 "universe_fetch": {
                     "success": False,
                     "last_error": universe_error,
                 },
-                "universe_source": "temporary_static_list",
+                "universe_source": "krx_stock_master_json",
+                "universe_input": {
+                    "krx_stock_master_json": args.krx_stock_master_json,
+                },
                 "tickers": [],
                 "ticker_count": 0,
                 "rows": 0,
@@ -248,13 +210,11 @@ def main():
                     "generated": False,
                     "size_mb": None,
                 },
-                "ticker_info_map": {
-                    "path": ticker_info_map_output,
-                    "rows": 0,
-                    "generated": False,
-                    "size_mb": None,
-                },
                 "notes": "Universe fetch failed; metadata-only release.",
+                "timing_seconds": {
+                    "universe_load": round(t_universe1 - t_universe0, 4),
+                    "total": round(perf_counter() - t0, 4),
+                },
                 "env": {
                     "python": sys.version.split()[0],
                     "platform": platform.platform(),
@@ -268,6 +228,7 @@ def main():
         return
 
     # Benchmark (for Mansfield RS)
+    t_bench0 = perf_counter()
     benchmark_fetch = {"success": True, "ticker": MANSFIELD_BENCHMARK_TICKER, "error": None}
     benchmark_close_by_date: pd.Series | None
     try:
@@ -284,26 +245,16 @@ def main():
     except Exception as e:
         benchmark_fetch = {"success": False, "ticker": MANSFIELD_BENCHMARK_TICKER, "error": f"{type(e).__name__}: {e}"}
         benchmark_close_by_date = None
-
-    # GitHub Actions 환경에서는 실수로 전체 유니버스(약 2,600 종목)를 돌려
-    # 너무 오래 걸리는 것을 방지하기 위해 기본 테스트 제한을 둡니다.
-    if os.getenv("GITHUB_ACTIONS", "").lower() == "true" and args.test_limit == 0:
-        args.test_limit = int(os.getenv("CI_TEST_LIMIT", "10"))
-        print(f"Detected GitHub Actions. Applying CI_TEST_LIMIT={args.test_limit}.")
+    t_bench1 = perf_counter()
 
     if args.test_limit > 0:
         print(f"Testing with first {args.test_limit} tickers only.")
         tickers = tickers[:args.test_limit]
 
-    # 티커 정보 맵 저장 (메인 데이터와 분리)
-    ticker_info_map_df = _build_ticker_info_map(tickers, market_by_ticker)
-    _write_parquet(ticker_info_map_df, ticker_info_map_output)
-    
     # 2. 병렬 데이터 수집
+    t_fetch0 = perf_counter()
     results = []
     print(f"Fetching data for {len(tickers)} tickers with {args.max_workers} workers...")
-    
-    start_time = time.time()
     
     with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
         futures = {
@@ -315,11 +266,13 @@ def main():
             res = future.result()
             if res is not None:
                 results.append(res)
+    t_fetch1 = perf_counter()
     
     print(f"Fetched {len(results)}/{len(tickers)} tickers successfully.")
     
     # 3. 병합 및 저장
     if results:
+        t_save0 = perf_counter()
         print("Concatenating data...")
         full_df = pd.concat(results, ignore_index=True)
         
@@ -329,19 +282,23 @@ def main():
         
         print(f"Saving to {args.output}...")
         _write_parquet(full_df, args.output)
+        t_save1 = perf_counter()
 
         # 메타데이터 저장
+        t_meta0 = perf_counter()
         _write_json(
             {
                 "generated_at_utc": started_at.isoformat(),
                 "start_date": args.start_date,
                 "end_date": args.end_date,
-                "universe_date": universe_date,
                 "universe_fetch": {
                     "success": True,
                     "last_error": None,
                 },
-                "universe_source": "temporary_static_list",
+                "universe_source": "krx_stock_master_json",
+                "universe_input": {
+                    "krx_stock_master_json": args.krx_stock_master_json,
+                },
                 "tickers": tickers,
                 "ticker_count": len(tickers),
                 "fetched_ticker_count": len(results),
@@ -364,18 +321,20 @@ def main():
                     "generated": True,
                     "size_mb": _bytes_to_mb(_safe_file_size_bytes(args.output)),
                 },
-                "ticker_info_map": {
-                    "path": ticker_info_map_output,
-                    "rows": int(len(ticker_info_map_df)),
-                    "generated": True,
-                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(ticker_info_map_output)),
-                },
                 "args": {
                     "max_workers": args.max_workers,
                     "test_limit": args.test_limit,
                     "output": args.output,
                     "meta_output": meta_output,
-                    "ticker_info_map_output": ticker_info_map_output,
+                    "krx_stock_master_json": args.krx_stock_master_json,
+                },
+                "timing_seconds": {
+                    "universe_load": round(t_universe1 - t_universe0, 4),
+                    "benchmark_fetch": round(t_bench1 - t_bench0, 4),
+                    "data_fetch_and_indicators": round(t_fetch1 - t_fetch0, 4),
+                    "concat_and_save": round(t_save1 - t_save0, 4),
+                    "meta_write": round(perf_counter() - t_meta0, 4),
+                    "total": round(perf_counter() - t0, 4),
                 },
                 "env": {
                     "python": sys.version.split()[0],
@@ -387,23 +346,26 @@ def main():
             },
             meta_output,
         )
+        elapsed = perf_counter() - t0
         
-        elapsed = time.time() - start_time
         print(f"Done. File saved to {args.output}. Total time: {elapsed:.2f}s")
         print(f"Total Rows: {len(full_df)}")
     else:
         print("No data fetched. Writing metadata only.")
+        t_meta0 = perf_counter()
         _write_json(
             {
                 "generated_at_utc": started_at.isoformat(),
                 "start_date": args.start_date,
                 "end_date": args.end_date,
-                "universe_date": universe_date,
                 "universe_fetch": {
                     "success": True,
                     "last_error": None,
                 },
-                "universe_source": "temporary_static_list",
+                "universe_source": "krx_stock_master_json",
+                "universe_input": {
+                    "krx_stock_master_json": args.krx_stock_master_json,
+                },
                 "tickers": tickers,
                 "ticker_count": len(tickers),
                 "fetched_ticker_count": 0,
@@ -426,19 +388,20 @@ def main():
                     "generated": False,
                     "size_mb": None,
                 },
-                "ticker_info_map": {
-                    "path": ticker_info_map_output,
-                    "rows": int(len(ticker_info_map_df)),
-                    "generated": True,
-                    "size_mb": _bytes_to_mb(_safe_file_size_bytes(ticker_info_map_output)),
-                },
                 "notes": "No OHLCV data fetched; metadata-only release.",
                 "args": {
                     "max_workers": args.max_workers,
                     "test_limit": args.test_limit,
                     "output": args.output,
                     "meta_output": meta_output,
-                    "ticker_info_map_output": ticker_info_map_output,
+                    "krx_stock_master_json": args.krx_stock_master_json,
+                },
+                "timing_seconds": {
+                    "universe_load": round(t_universe1 - t_universe0, 4),
+                    "benchmark_fetch": round(t_bench1 - t_bench0, 4),
+                    "data_fetch_and_indicators": round(t_fetch1 - t_fetch0, 4),
+                    "meta_write": round(perf_counter() - t_meta0, 4),
+                    "total": round(perf_counter() - t0, 4),
                 },
                 "env": {
                     "python": sys.version.split()[0],

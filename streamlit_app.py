@@ -332,18 +332,6 @@ def find_asset_by_name(assets, asset_name: str):
             return a
     return None
 
-def is_ticker_info_map_asset(asset_name: str) -> bool:
-    n = (asset_name or "").lower()
-    return (
-        n.endswith("_ticker_info_map.parquet")
-        or ("ticker_info_map" in n)
-        or ("ticker-info-map" in n)
-        # backward compat
-        or n.endswith("_ticker_name_map.parquet")
-        or ("ticker_name_map" in n)
-        or ("ticker-name-map" in n)
-    )
-
 def pick_meta_asset(assets):
     meta_assets = [a for a in assets if a.get("name", "").endswith(".meta.json")]
     if not meta_assets:
@@ -361,7 +349,7 @@ def pick_meta_asset(assets):
 
 def pick_feature_asset(assets):
     parquet_assets = [a for a in assets if a.get("name", "").endswith(".parquet")]
-    feature_assets = [a for a in parquet_assets if not is_ticker_info_map_asset(a.get("name", ""))]
+    feature_assets = [a for a in parquet_assets if a.get("name") != "krx_stock_master.parquet"]
     if not feature_assets:
         return None
     # Prefer the known default name if present
@@ -374,16 +362,6 @@ def pick_feature_asset(assets):
         if "feature" in n and "frame" in n:
             return a
     return feature_assets[0]
-
-def pick_ticker_info_map_asset(assets):
-    parquet_assets = [a for a in assets if a.get("name", "").endswith(".parquet")]
-    map_assets = [a for a in parquet_assets if is_ticker_info_map_asset(a.get("name", ""))]
-    if not map_assets:
-        return None
-    for a in map_assets:
-        if a.get("name") == "korea_universe_ticker_info_map.parquet":
-            return a
-    return map_assets[0]
 
 def pick_krx_stock_master_asset(assets):
     candidates = [a for a in assets if a.get("name", "").endswith(".parquet")]
@@ -422,14 +400,11 @@ if repo_name:
             st.subheader("📦 Assets")
             meta_asset = pick_meta_asset(assets)
             feature_asset = pick_feature_asset(assets)
-            ticker_info_map_asset = pick_ticker_info_map_asset(assets)
             krx_master_asset = pick_krx_stock_master_asset(assets)
 
             # Keep loaded frames in session_state (so chart UI doesn't reset)
             if "feature_df" not in st.session_state:
                 st.session_state["feature_df"] = None
-            if "ticker_info_df" not in st.session_state:
-                st.session_state["ticker_info_df"] = None
             if "krx_master_df" not in st.session_state:
                 st.session_state["krx_master_df"] = None
 
@@ -465,23 +440,6 @@ if repo_name:
                 else:
                     st.info("No `krx_stock_master.parquet` found in this release.")
 
-            # 2) 티커 정보 맵: 버튼 클릭 시 로드
-            with st.expander("Ticker Info Map (separate parquet)", expanded=True):
-                if ticker_info_map_asset:
-                    st.write(f"**Info map asset:** `{ticker_info_map_asset['name']}`")
-                    if st.button("Load Ticker Info Map", key="load_ticker_info_map"):
-                        with st.spinner("Downloading ticker info map..."):
-                            tndf = load_parquet_from_url(ticker_info_map_asset["browser_download_url"], github_token)
-                            if tndf is not None:
-                                st.success("Ticker info map loaded successfully!")
-                                st.session_state["ticker_info_df"] = tndf
-                    tndf_loaded = st.session_state.get("ticker_info_df")
-                    if tndf_loaded is not None:
-                        st.write(f"**Loaded shape:** {tndf_loaded.shape}")
-                        st.dataframe(tndf_loaded.head(500), use_container_width=True)
-                else:
-                    st.info("No ticker info map parquet found in this release.")
-
             # 3) Feature data: 버튼 클릭 시 로드
             with st.expander("Feature Data (parquet)", expanded=True):
                 if feature_asset:
@@ -511,15 +469,6 @@ if repo_name:
                     plot_df["Date"] = _ensure_datetime(plot_df["Date"])
                     plot_df = plot_df.dropna(subset=["Date"])
 
-                    # Ensure ticker info map is available for name-based search/display
-                    info_df = st.session_state.get("ticker_info_df")
-                    if (info_df is None or info_df.empty) and ticker_info_map_asset is not None:
-                        with st.spinner("Loading ticker info map for search..."):
-                            tndf = load_parquet_from_url(ticker_info_map_asset["browser_download_url"], github_token)
-                            if tndf is not None and not tndf.empty:
-                                st.session_state["ticker_info_df"] = tndf
-                                info_df = tndf
-
                     # Ensure KRX stock master is available (richer market/industry info)
                     master_df = st.session_state.get("krx_master_df")
                     if (master_df is None or master_df.empty) and krx_master_asset is not None:
@@ -544,16 +493,6 @@ if repo_name:
                         # Map to the same schema as selectbox expects
                         mv = mv.rename(columns={"Code": "Ticker"})
                         options = mv.to_dict(orient="records")
-                    elif info_df is not None and not info_df.empty and "Ticker" in info_df.columns:
-                        info_view = info_df.copy()
-                        info_view["Ticker"] = info_view["Ticker"].astype(str)
-                        if "Name" not in info_view.columns:
-                            info_view["Name"] = ""
-                        if "Market" not in info_view.columns:
-                            info_view["Market"] = ""
-                        info_view = info_view[info_view["Ticker"].isin(tickers_in_data)]
-                        options = info_view.to_dict(orient="records")
-
                     if options is not None:
                         search = st.text_input("Search (Ticker or Name)", value="")
                         if search:
@@ -570,7 +509,7 @@ if repo_name:
                         )
                         selected_ticker = str(selected.get("Ticker", ""))
                     else:
-                        st.info("Ticker info map not available. (Ticker-only selection)")
+                        st.info("KRX stock master not available. (Ticker-only selection)")
                         search = st.text_input("Search (Ticker)", value="")
                         options = tickers_in_data
                         if search:
