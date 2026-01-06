@@ -153,6 +153,60 @@ def _build_dual_axis_chart(df: pd.DataFrame, date_col: str, left_cols: list[str]
 
     return left
 
+def _build_candlestick_chart(df: pd.DataFrame, date_col: str = "Date"):
+    """
+    Candlestick chart from OHLC columns.
+    - Rule: Low..High
+    - Bar: Open..Close (green up, red down)
+    """
+    needed = {"Open", "High", "Low", "Close", date_col}
+    if not needed.issubset(set(df.columns)):
+        return None
+
+    base = df[[date_col, "Open", "High", "Low", "Close"]].copy()
+    base = base.sort_values(date_col)
+    base["is_up"] = (pd.to_numeric(base["Close"], errors="coerce") >= pd.to_numeric(base["Open"], errors="coerce"))
+
+    x = alt.X(f"{date_col}:T", title="Date")
+
+    wick = (
+        alt.Chart(base)
+        .mark_rule()
+        .encode(
+            x=x,
+            y=alt.Y("Low:Q", title="Price"),
+            y2="High:Q",
+            color=alt.condition("datum.is_up", alt.value("#16a34a"), alt.value("#dc2626")),
+            tooltip=[
+                alt.Tooltip(f"{date_col}:T"),
+                alt.Tooltip("Open:Q"),
+                alt.Tooltip("High:Q"),
+                alt.Tooltip("Low:Q"),
+                alt.Tooltip("Close:Q"),
+            ],
+        )
+    )
+
+    body = (
+        alt.Chart(base)
+        .mark_bar()
+        .encode(
+            x=x,
+            y=alt.Y("Open:Q", title=None),
+            y2="Close:Q",
+            color=alt.condition("datum.is_up", alt.value("#16a34a"), alt.value("#dc2626")),
+            tooltip=[
+                alt.Tooltip(f"{date_col}:T"),
+                alt.Tooltip("Open:Q"),
+                alt.Tooltip("High:Q"),
+                alt.Tooltip("Low:Q"),
+                alt.Tooltip("Close:Q"),
+            ],
+        )
+    )
+
+    return alt.layer(wick, body)
+
 def find_meta_asset(assets, parquet_asset_name: str):
     """
     parquet 자산과 짝이 되는 meta json을 찾습니다.
@@ -381,28 +435,38 @@ if repo_name:
                             if one.empty:
                                 st.warning("No data in selected date range.")
                             else:
-                                numeric_cols = one.select_dtypes(include="number").columns.tolist()
-                                if "Close" not in one.columns:
-                                    st.error("Selected data does not contain `Close` column.")
-                                else:
-                                    extra_candidates = [c for c in numeric_cols if c not in {"Close"}]
-                                    extra = st.multiselect(
-                                        "Additional numeric metrics (Close is always shown)",
-                                        options=extra_candidates,
-                                        default=[],
-                                    )
-                                    metrics = ["Close"] + [c for c in extra if c != "Close"]
+                                tab_line, tab_candle = st.tabs(["Close & Metrics (Line)", "Candlestick (OHLC)"])
 
-                                    # Assign to left/right axes based on scale
-                                    left_cols, right_cols = _axis_assignment(one, "Close", [c for c in metrics if c != "Close"])
+                                with tab_line:
+                                    numeric_cols = one.select_dtypes(include="number").columns.tolist()
+                                    if "Close" not in one.columns:
+                                        st.error("Selected data does not contain `Close` column.")
+                                    else:
+                                        extra_candidates = [c for c in numeric_cols if c not in {"Close"}]
+                                        extra = st.multiselect(
+                                            "Additional numeric metrics (Close is always shown)",
+                                            options=extra_candidates,
+                                            default=[],
+                                        )
+                                        metrics = ["Close"] + [c for c in extra if c != "Close"]
 
-                                    st.caption(
-                                        f"Left axis: {', '.join(left_cols)}"
-                                        + (f" | Right axis: {', '.join(right_cols)}" if right_cols else "")
-                                    )
+                                        # Assign to left/right axes based on scale
+                                        left_cols, right_cols = _axis_assignment(one, "Close", [c for c in metrics if c != "Close"])
 
-                                    chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols)
-                                    st.altair_chart(chart, use_container_width=True)
+                                        st.caption(
+                                            f"Left axis: {', '.join(left_cols)}"
+                                            + (f" | Right axis: {', '.join(right_cols)}" if right_cols else "")
+                                        )
+
+                                        chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols)
+                                        st.altair_chart(chart, use_container_width=True)
+
+                                with tab_candle:
+                                    candle = _build_candlestick_chart(one, "Date")
+                                    if candle is None:
+                                        st.info("Candlestick requires `Open`, `High`, `Low`, `Close` columns.")
+                                    else:
+                                        st.altair_chart(candle, use_container_width=True)
     else:
         if repo_name != default_repo:
             st.info("No releases found. Please check the repository name or token.")
