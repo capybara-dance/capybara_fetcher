@@ -385,6 +385,18 @@ def pick_ticker_info_map_asset(assets):
             return a
     return map_assets[0]
 
+def pick_krx_stock_master_asset(assets):
+    candidates = [a for a in assets if a.get("name", "").endswith(".parquet")]
+    if not candidates:
+        return None
+    for a in candidates:
+        if a.get("name") == "krx_stock_master.parquet":
+            return a
+    for a in candidates:
+        if "krx_stock_master" in (a.get("name", "").lower()):
+            return a
+    return None
+
 # 메인 로직
 if repo_name:
     releases = get_releases(repo_name, github_token)
@@ -411,12 +423,15 @@ if repo_name:
             meta_asset = pick_meta_asset(assets)
             feature_asset = pick_feature_asset(assets)
             ticker_info_map_asset = pick_ticker_info_map_asset(assets)
+            krx_master_asset = pick_krx_stock_master_asset(assets)
 
             # Keep loaded frames in session_state (so chart UI doesn't reset)
             if "feature_df" not in st.session_state:
                 st.session_state["feature_df"] = None
             if "ticker_info_df" not in st.session_state:
                 st.session_state["ticker_info_df"] = None
+            if "krx_master_df" not in st.session_state:
+                st.session_state["krx_master_df"] = None
 
             # 1) 메타데이터: 릴리즈 선택 시 자동 로드/표시 (meta-only 릴리즈 지원)
             with st.expander("Metadata (meta.json)", expanded=True):
@@ -432,6 +447,23 @@ if repo_name:
                         st.json(meta)
                 else:
                     st.info("No meta json found in this release.")
+
+            # 1.5) KRX Stock Master: 버튼 클릭 시 로드
+            with st.expander("KRX Stock Master (parquet)", expanded=False):
+                if krx_master_asset:
+                    st.write(f"**Master asset:** `{krx_master_asset['name']}`")
+                    if st.button("Load KRX Stock Master", key="load_krx_master"):
+                        with st.spinner("Downloading KRX stock master..."):
+                            mdf = load_parquet_from_url(krx_master_asset["browser_download_url"], github_token)
+                            if mdf is not None:
+                                st.success("KRX stock master loaded successfully!")
+                                st.session_state["krx_master_df"] = mdf
+                    mdf_loaded = st.session_state.get("krx_master_df")
+                    if mdf_loaded is not None:
+                        st.write(f"**Loaded shape:** {mdf_loaded.shape}")
+                        st.dataframe(mdf_loaded.head(500), use_container_width=True)
+                else:
+                    st.info("No `krx_stock_master.parquet` found in this release.")
 
             # 2) 티커 정보 맵: 버튼 클릭 시 로드
             with st.expander("Ticker Info Map (separate parquet)", expanded=True):
@@ -488,10 +520,31 @@ if repo_name:
                                 st.session_state["ticker_info_df"] = tndf
                                 info_df = tndf
 
+                    # Ensure KRX stock master is available (richer market/industry info)
+                    master_df = st.session_state.get("krx_master_df")
+                    if (master_df is None or master_df.empty) and krx_master_asset is not None:
+                        with st.spinner("Loading KRX stock master for market/industry info..."):
+                            mdf = load_parquet_from_url(krx_master_asset["browser_download_url"], github_token)
+                            if mdf is not None and not mdf.empty:
+                                st.session_state["krx_master_df"] = mdf
+                                master_df = mdf
+
                     tickers_in_data = sorted(plot_df["Ticker"].dropna().astype(str).unique().tolist())
 
                     # Build selectable ticker options
-                    if info_df is not None and not info_df.empty and "Ticker" in info_df.columns:
+                    options = None
+                    if master_df is not None and not master_df.empty and "Code" in master_df.columns:
+                        mv = master_df.copy()
+                        mv["Code"] = mv["Code"].astype(str)
+                        mv = mv[mv["Code"].isin(tickers_in_data)]
+                        if "Name" not in mv.columns:
+                            mv["Name"] = ""
+                        if "Market" not in mv.columns:
+                            mv["Market"] = ""
+                        # Map to the same schema as selectbox expects
+                        mv = mv.rename(columns={"Code": "Ticker"})
+                        options = mv.to_dict(orient="records")
+                    elif info_df is not None and not info_df.empty and "Ticker" in info_df.columns:
                         info_view = info_df.copy()
                         info_view["Ticker"] = info_view["Ticker"].astype(str)
                         if "Name" not in info_view.columns:
@@ -500,6 +553,8 @@ if repo_name:
                             info_view["Market"] = ""
                         info_view = info_view[info_view["Ticker"].isin(tickers_in_data)]
                         options = info_view.to_dict(orient="records")
+
+                    if options is not None:
                         search = st.text_input("Search (Ticker or Name)", value="")
                         if search:
                             s = search.strip().lower()
@@ -526,6 +581,19 @@ if repo_name:
                     if not selected_ticker:
                         st.warning("No ticker selected.")
                     else:
+                        # Show selected ticker market/industry info (if available)
+                        if master_df is not None and not master_df.empty and "Code" in master_df.columns:
+                            mv = master_df.copy()
+                            mv["Code"] = mv["Code"].astype(str)
+                            row = mv[mv["Code"] == selected_ticker]
+                            if not row.empty:
+                                r0 = row.iloc[0].to_dict()
+                                st.markdown(
+                                    f"**Selected**: `{selected_ticker}` - {r0.get('Name','')} "
+                                    f"(**{r0.get('Market','')}**)\n\n"
+                                    f"- **Industry (L/M/S)**: {r0.get('IndustryLarge','')} / {r0.get('IndustryMid','')} / {r0.get('IndustrySmall','')}"
+                                )
+
                         one = plot_df[plot_df["Ticker"].astype(str) == selected_ticker].copy()
                         if one.empty:
                             st.warning("No data for selected ticker.")
