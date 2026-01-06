@@ -135,21 +135,30 @@ def _build_newhigh_marker_layer(
         return None
 
     m = m[[date_col, y_col]].copy().sort_values(date_col)
+    m["Event"] = title
     return (
         alt.Chart(m)
         .mark_point(shape="triangle-up", filled=True, size=size, color=color)
         .encode(
             x=alt.X(f"{date_col}:T", title="Date"),
-            y=alt.Y(f"{y_col}:Q", title=None, axis=alt.Axis(labels=False, ticks=False)),
+            # Disable axis on marker layer so it doesn't override main axis
+            y=alt.Y(f"{y_col}:Q", axis=None),
             tooltip=[
                 alt.Tooltip(f"{date_col}:T"),
                 alt.Tooltip(f"{y_col}:Q", title=y_col),
-                alt.Tooltip(value=title, title="Event"),
+                alt.Tooltip("Event:N"),
             ],
         )
     )
 
-def _build_dual_axis_chart(df: pd.DataFrame, date_col: str, left_cols: list[str], right_cols: list[str]):
+def _build_dual_axis_chart(
+    df: pd.DataFrame,
+    date_col: str,
+    left_cols: list[str],
+    right_cols: list[str],
+    *,
+    marker_layer=None,
+):
     base = df[[date_col] + sorted(set(left_cols + right_cols))].copy()
     base = base.sort_values(date_col)
 
@@ -172,6 +181,9 @@ def _build_dual_axis_chart(df: pd.DataFrame, date_col: str, left_cols: list[str]
             tooltip=[alt.Tooltip(f"{date_col}:T"), alt.Tooltip("metric:N"), alt.Tooltip("value:Q")],
         )
     )
+    if marker_layer is not None:
+        # Marker should share the left (price-scale) axis
+        left = alt.layer(left, marker_layer)
 
     if right_cols:
         right = (
@@ -262,8 +274,8 @@ def _build_metric_overlay_lines(df: pd.DataFrame, date_col: str, cols: list[str]
         )
     )
 
-def _build_candlestick_with_metrics(df: pd.DataFrame, date_col: str, metrics: list[str]):
-    candle = _build_candlestick_chart(df, date_col)
+def _build_candlestick_with_metrics(df: pd.DataFrame, date_col: str, metrics: list[str], *, marker_layer=None):
+    candle = _build_candlestick_chart(df, date_col, marker_layer=marker_layer)
     if candle is None:
         return None
 
@@ -559,10 +571,7 @@ if repo_name:
                                             + (f" | Right axis: {', '.join(right_cols)}" if right_cols else "")
                                         )
 
-                                        chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols)
-                                        if newhigh_layer is not None:
-                                            # Add marker to the "left" side of the layered chart
-                                            chart = alt.layer(chart, newhigh_layer).resolve_scale(y="independent")
+                                        chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols, marker_layer=newhigh_layer)
                                         st.altair_chart(chart, use_container_width=True)
 
                                 with tab_candle:
@@ -586,12 +595,10 @@ if repo_name:
                                         st.caption(
                                             "Overlay metrics are auto-assigned to left/right axis based on scale vs Close."
                                         )
-                                        candle = _build_candlestick_with_metrics(one, "Date", metrics)
+                                        candle = _build_candlestick_with_metrics(one, "Date", metrics, marker_layer=newhigh_layer)
                                         if candle is None:
                                             st.info("Could not build candlestick chart for this data.")
                                         else:
-                                            if newhigh_layer is not None:
-                                                candle = alt.layer(candle, newhigh_layer).resolve_scale(y="independent")
                                             st.altair_chart(candle, use_container_width=True)
     else:
         if repo_name != default_repo:
