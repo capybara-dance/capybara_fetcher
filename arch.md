@@ -13,9 +13,14 @@
 2.  **Ticker Info Map Build**: 티커별 메타(종목명, 시장구분)를 **별도 Parquet**(`Ticker Info Map`)으로 저장.
 3.  **Data Fetching**: `pykrx`를 통해 각 종목의 OHLCV 데이터 병렬 수집.
 4.  **Standardization**: 컬럼명 영문 변환 (`시가` -> `Open` 등) 및 날짜 인덱스 처리.
-5.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
-6.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
-7.  **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
+5.  **Indicator Calculation**:
+    - 단순 OHLCV 외에 아래 지표를 추가로 계산하여 컬럼으로 저장
+      - 이동평균: 5/10/20/60/120/200일 (`SMA_5`, `SMA_10`, ... `SMA_200`)
+      - Mansfield Relative Strength: 벤치마크 `069500` 대비 (`MansfieldRS`)
+      - 1년 신고가 여부(종가 기준): `IsNewHigh1Y` (최근 252 거래일 롤링)
+6.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
+7.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
+8.  **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
 
 ## 3. Directory Structure
 
@@ -59,6 +64,7 @@
 
 - **Feature Data**: `cache/korea_universe_feature_frame.parquet`
   - 주요 컬럼: `Date`, `Open`, `High`, `Low`, `Close`, `Volume`, `TradingValue`, `Change`, `Ticker`
+  - 지표 컬럼: `SMA_5`, `SMA_10`, `SMA_20`, `SMA_60`, `SMA_120`, `SMA_200`, `MansfieldRS`, `IsNewHigh1Y`
 - **Metadata**: `cache/korea_universe_feature_frame.meta.json`
   - 날짜 범위, 티커 목록/개수, 파일 크기(MB), 실행 환경 버전, 유니버스 기준일(`universe_date`) 등
 - **Ticker Info Map**: `cache/korea_universe_ticker_info_map.parquet`

@@ -11,6 +11,11 @@ from tqdm import tqdm
 import time
 from importlib.metadata import version as pkg_version, PackageNotFoundError
 
+MA_WINDOWS = [5, 10, 20, 60, 120, 200]
+NEW_HIGH_WINDOW_TRADING_DAYS = 252
+MANSFIELD_BENCHMARK_TICKER = "069500"
+MANSFIELD_RS_SMA_WINDOW = 200
+
 TEMP_KOSPI_TICKERS = [
     # 임시 유니버스 (KOSPI 5)
     "005930",  # 삼성전자
@@ -42,7 +47,7 @@ def build_korea_full_universe():
         market_by_ticker[t] = "KOSDAQ"
     return tickers, market_by_ticker, None, None
 
-def fetch_data(ticker, start_date, end_date):
+def fetch_data(ticker: str, start_date: str, end_date: str, benchmark_close_by_date: pd.Series | None):
     """
     개별 종목의 OHLCV 데이터를 수집합니다.
     Feature 계산 로직을 이곳에 추가할 수 있습니다.
@@ -69,12 +74,33 @@ def fetch_data(ticker, start_date, end_date):
         # 날짜 인덱스 처리
         df.index.name = 'Date'
         df = df.reset_index()
+        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+        df = df.dropna(subset=["Date"]).sort_values("Date")
         
         # 티커 컬럼 추가 (종목명은 별도 맵 파일로 저장)
         df["Ticker"] = ticker
-        
-        # TODO: Feature Calculation Logic here
-        # e.g., df['sma_20'] = df['Close'].rolling(20).mean()
+
+        # --- Indicators ---
+        close = pd.to_numeric(df["Close"], errors="coerce")
+
+        # Moving averages
+        for w in MA_WINDOWS:
+            df[f"SMA_{w}"] = close.rolling(window=w, min_periods=w).mean()
+
+        # Mansfield Relative Strength (vs benchmark)
+        if benchmark_close_by_date is not None and not benchmark_close_by_date.empty:
+            # Map benchmark close to this ticker's dates
+            b = df["Date"].dt.normalize().map(benchmark_close_by_date)
+            b = pd.to_numeric(b, errors="coerce")
+            rs_raw = close / b
+            rs_sma = rs_raw.rolling(window=MANSFIELD_RS_SMA_WINDOW, min_periods=MANSFIELD_RS_SMA_WINDOW).mean()
+            df["MansfieldRS"] = (rs_raw / rs_sma - 1.0) * 100.0
+        else:
+            df["MansfieldRS"] = pd.NA
+
+        # 1Y new high (Close is the highest close in last ~1 year trading days, inclusive)
+        roll_max = close.rolling(window=NEW_HIGH_WINDOW_TRADING_DAYS, min_periods=NEW_HIGH_WINDOW_TRADING_DAYS).max()
+        df["IsNewHigh1Y"] = close.eq(roll_max).astype("boolean")
         
         return df
     except Exception as e:
@@ -107,6 +133,9 @@ def _empty_feature_frame() -> pd.DataFrame:
             "TradingValue",
             "Change",
             "Ticker",
+            *[f"SMA_{w}" for w in MA_WINDOWS],
+            "MansfieldRS",
+            "IsNewHigh1Y",
         ]
     )
 
@@ -203,6 +232,17 @@ def main():
                 "rows": 0,
                 "columns": list(_empty_feature_frame().columns),
                 "features": [],
+                "indicators": {
+                    "moving_averages": MA_WINDOWS,
+                    "mansfield_rs": {
+                        "benchmark_ticker": MANSFIELD_BENCHMARK_TICKER,
+                        "sma_window": MANSFIELD_RS_SMA_WINDOW,
+                        "benchmark_fetch": {"success": False, "ticker": MANSFIELD_BENCHMARK_TICKER, "error": "Universe fetch failed; benchmark not attempted"},
+                    },
+                    "new_high_1y": {
+                        "window_trading_days": NEW_HIGH_WINDOW_TRADING_DAYS,
+                    },
+                },
                 "data_file": {
                     "path": args.output,
                     "generated": False,
@@ -227,6 +267,24 @@ def main():
         )
         return
 
+    # Benchmark (for Mansfield RS)
+    benchmark_fetch = {"success": True, "ticker": MANSFIELD_BENCHMARK_TICKER, "error": None}
+    benchmark_close_by_date: pd.Series | None
+    try:
+        bench = stock.get_market_ohlcv(args.start_date, args.end_date, MANSFIELD_BENCHMARK_TICKER, adjusted=True)
+        if bench is None or bench.empty:
+            raise ValueError("Empty benchmark OHLCV")
+        bench = bench.rename(columns={"종가": "Close"})
+        bench.index.name = "Date"
+        bench = bench.reset_index()
+        bench["Date"] = pd.to_datetime(bench["Date"], errors="coerce").dt.normalize()
+        bench = bench.dropna(subset=["Date"])
+        benchmark_close_by_date = pd.to_numeric(bench["Close"], errors="coerce")
+        benchmark_close_by_date.index = bench["Date"]
+    except Exception as e:
+        benchmark_fetch = {"success": False, "ticker": MANSFIELD_BENCHMARK_TICKER, "error": f"{type(e).__name__}: {e}"}
+        benchmark_close_by_date = None
+
     # GitHub Actions 환경에서는 실수로 전체 유니버스(약 2,600 종목)를 돌려
     # 너무 오래 걸리는 것을 방지하기 위해 기본 테스트 제한을 둡니다.
     if os.getenv("GITHUB_ACTIONS", "").lower() == "true" and args.test_limit == 0:
@@ -248,7 +306,10 @@ def main():
     start_time = time.time()
     
     with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
-        futures = {executor.submit(fetch_data, ticker, args.start_date, args.end_date): ticker for ticker in tickers}
+        futures = {
+            executor.submit(fetch_data, ticker, args.start_date, args.end_date, benchmark_close_by_date): ticker
+            for ticker in tickers
+        }
         
         for future in tqdm(futures, total=len(tickers)):
             res = future.result()
@@ -286,8 +347,18 @@ def main():
                 "fetched_ticker_count": len(results),
                 "rows": int(len(full_df)),
                 "columns": list(full_df.columns),
-                # 현재 스크립트는 별도 지표 계산을 하지 않으므로, "features"는 컬럼으로부터 추정하거나 빈 리스트로 둡니다.
-                "features": [],
+                "features": [f"SMA_{w}" for w in MA_WINDOWS] + ["MansfieldRS", "IsNewHigh1Y"],
+                "indicators": {
+                    "moving_averages": MA_WINDOWS,
+                    "mansfield_rs": {
+                        "benchmark_ticker": MANSFIELD_BENCHMARK_TICKER,
+                        "sma_window": MANSFIELD_RS_SMA_WINDOW,
+                        "benchmark_fetch": benchmark_fetch,
+                    },
+                    "new_high_1y": {
+                        "window_trading_days": NEW_HIGH_WINDOW_TRADING_DAYS,
+                    },
+                },
                 "data_file": {
                     "path": args.output,
                     "generated": True,
@@ -338,7 +409,18 @@ def main():
                 "fetched_ticker_count": 0,
                 "rows": 0,
                 "columns": list(_empty_feature_frame().columns),
-                "features": [],
+                "features": [f"SMA_{w}" for w in MA_WINDOWS] + ["MansfieldRS", "IsNewHigh1Y"],
+                "indicators": {
+                    "moving_averages": MA_WINDOWS,
+                    "mansfield_rs": {
+                        "benchmark_ticker": MANSFIELD_BENCHMARK_TICKER,
+                        "sma_window": MANSFIELD_RS_SMA_WINDOW,
+                        "benchmark_fetch": benchmark_fetch,
+                    },
+                    "new_high_1y": {
+                        "window_trading_days": NEW_HIGH_WINDOW_TRADING_DAYS,
+                    },
+                },
                 "data_file": {
                     "path": args.output,
                     "generated": False,
