@@ -207,6 +207,64 @@ def _build_candlestick_chart(df: pd.DataFrame, date_col: str = "Date"):
 
     return alt.layer(wick, body)
 
+def _build_metric_overlay_lines(df: pd.DataFrame, date_col: str, cols: list[str], axis_orient: str, show_legend: bool):
+    if not cols:
+        return None
+    base = df[[date_col] + cols].copy().sort_values(date_col)
+    long = base.melt(id_vars=[date_col], var_name="metric", value_name="value")
+    axis = alt.Axis(orient=axis_orient, title=("Right axis" if axis_orient == "right" else "Left axis"))
+    return (
+        alt.Chart(long)
+        .mark_line()
+        .encode(
+            x=alt.X(f"{date_col}:T", title="Date"),
+            y=alt.Y("value:Q", axis=axis),
+            color=alt.Color("metric:N", title="Metric", legend=None if not show_legend else alt.Legend()),
+            tooltip=[alt.Tooltip(f"{date_col}:T"), alt.Tooltip("metric:N"), alt.Tooltip("value:Q")],
+        )
+    )
+
+def _build_candlestick_with_metrics(df: pd.DataFrame, date_col: str, metrics: list[str]):
+    candle = _build_candlestick_chart(df, date_col)
+    if candle is None:
+        return None
+
+    metrics = [m for m in metrics if m in df.columns]
+    if not metrics:
+        return candle
+
+    # Decide left/right for overlays based on Close scale
+    other = [m for m in metrics if m != "Close"]
+    left_cols, right_cols = _axis_assignment(df, "Close", other)
+
+    # Build left overlay list (optionally includes Close)
+    left_overlay = [c for c in left_cols if c in metrics]
+    right_overlay = [c for c in right_cols if c in metrics]
+
+    left_lines = _build_metric_overlay_lines(
+        df,
+        date_col,
+        left_overlay,
+        axis_orient="left",
+        show_legend=True,
+    )
+    right_lines = _build_metric_overlay_lines(
+        df,
+        date_col,
+        right_overlay,
+        axis_orient="right",
+        show_legend=(left_lines is None),
+    )
+    if right_lines is not None:
+        # Make right axis dashed for distinction
+        right_lines = right_lines.mark_line(strokeDash=[6, 2])
+
+    left_chart = candle if left_lines is None else alt.layer(candle, left_lines)
+    if right_lines is None:
+        return left_chart
+
+    return alt.layer(left_chart, right_lines).resolve_scale(y="independent")
+
 def find_meta_asset(assets, parquet_asset_name: str):
     """
     parquet 자산과 짝이 되는 meta json을 찾습니다.
@@ -462,11 +520,32 @@ if repo_name:
                                         st.altair_chart(chart, use_container_width=True)
 
                                 with tab_candle:
-                                    candle = _build_candlestick_chart(one, "Date")
-                                    if candle is None:
+                                    numeric_cols = one.select_dtypes(include="number").columns.tolist()
+                                    missing = [c for c in ["Open", "High", "Low", "Close"] if c not in one.columns]
+                                    if missing:
                                         st.info("Candlestick requires `Open`, `High`, `Low`, `Close` columns.")
                                     else:
-                                        st.altair_chart(candle, use_container_width=True)
+                                        overlay_close = st.checkbox("Overlay Close line", value=True)
+                                        extra_candidates = [
+                                            c
+                                            for c in numeric_cols
+                                            if c not in {"Open", "High", "Low", "Close"}
+                                        ]
+                                        extra = st.multiselect(
+                                            "Additional numeric metrics to overlay",
+                                            options=extra_candidates,
+                                            default=[],
+                                            key="candle_extra_metrics",
+                                        )
+                                        metrics = (["Close"] if overlay_close else []) + [c for c in extra if c != "Close"]
+                                        st.caption(
+                                            "Overlay metrics are auto-assigned to left/right axis based on scale vs Close."
+                                        )
+                                        candle = _build_candlestick_with_metrics(one, "Date", metrics)
+                                        if candle is None:
+                                            st.info("Could not build candlestick chart for this data.")
+                                        else:
+                                            st.altair_chart(candle, use_container_width=True)
     else:
         if repo_name != default_repo:
             st.info("No releases found. Please check the repository name or token.")
