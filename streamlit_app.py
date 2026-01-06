@@ -234,8 +234,8 @@ def _build_candlestick_with_metrics(df: pd.DataFrame, date_col: str, metrics: li
         return candle
 
     # Decide left/right for overlays based on Close scale
-    other = [m for m in metrics if m != "Close"]
-    left_cols, right_cols = _axis_assignment(df, "Close", other)
+    # Even though we don't overlay Close as a line, use Close as baseline for scale heuristics.
+    left_cols, right_cols = _axis_assignment(df, "Close", metrics)
 
     # Build left overlay list (optionally includes Close)
     left_overlay = [c for c in left_cols if c in metrics]
@@ -525,7 +525,6 @@ if repo_name:
                                     if missing:
                                         st.info("Candlestick requires `Open`, `High`, `Low`, `Close` columns.")
                                     else:
-                                        overlay_close = st.checkbox("Overlay Close line", value=True)
                                         extra_candidates = [
                                             c
                                             for c in numeric_cols
@@ -537,7 +536,7 @@ if repo_name:
                                             default=[],
                                             key="candle_extra_metrics",
                                         )
-                                        metrics = (["Close"] if overlay_close else []) + [c for c in extra if c != "Close"]
+                                        metrics = [c for c in extra if c != "Close"]
                                         st.caption(
                                             "Overlay metrics are auto-assigned to left/right axis based on scale vs Close."
                                         )
