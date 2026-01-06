@@ -31,8 +31,8 @@ def _read_master_xlsx(path: Path, market: str) -> pd.DataFrame:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Build KRX stock master JSON from Seibro Excel files")
-    p.add_argument("--kospi-xlsx", type=str, default="/workspace/코스피.xlsx")
-    p.add_argument("--kosdaq-xlsx", type=str, default="/workspace/코스닥.xlsx")
+    p.add_argument("--kospi-xlsx", type=str, default="/workspace/data/코스피.xlsx")
+    p.add_argument("--kosdaq-xlsx", type=str, default="/workspace/data/코스닥.xlsx")
     p.add_argument("--output-json", type=str, default="/workspace/data/krx_stock_master.json")
     args = p.parse_args()
 

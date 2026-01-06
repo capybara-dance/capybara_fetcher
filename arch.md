@@ -30,12 +30,12 @@
 
 ```
 /workspace/
-├── 코스피.xlsx                         # (원본) Seibro 수집 KOSPI 종목 정보
-├── 코스닥.xlsx                         # (원본) Seibro 수집 KOSDAQ 종목 정보
 ├── .github/
 │   └── workflows/
 │       └── update_feature_cache.yml  # 캐시 생성 및 릴리스 자동화 워크플로우
 ├── data/
+│   ├── 코스피.xlsx                     # (원본) Seibro 수집 KOSPI 종목 정보
+│   ├── 코스닥.xlsx                     # (원본) Seibro 수집 KOSDAQ 종목 정보
 │   └── krx_stock_master.json          # (생성) 종목 마스터 JSON (Code/Name/Market/Industry*)
 ├── scripts/
 │   └── generate_cache.py             # 데이터 수집 및 Parquet 생성 스크립트
@@ -80,7 +80,7 @@
 - **Ticker Info Map**: `cache/korea_universe_ticker_info_map.parquet`
   - 컬럼: `Ticker`, `Name`, `Market`(KOSPI/KOSDAQ/UNKNOWN)
 - **KRX Stock Master (DataFrame)**: `cache/krx_stock_master.parquet`
-  - 원본: 레포 내 `코스피.xlsx`, `코스닥.xlsx` (Seibro 수집)
+  - 원본: `data/코스피.xlsx`, `data/코스닥.xlsx` (Seibro 수집)
   - 컬럼: `Code`, `Name`, `Market`, `IndustryLarge`, `IndustryMid`, `IndustrySmall`
 
 ### Long-term
