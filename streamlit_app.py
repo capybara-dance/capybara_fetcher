@@ -479,7 +479,15 @@ if repo_name:
                     plot_df["Date"] = _ensure_datetime(plot_df["Date"])
                     plot_df = plot_df.dropna(subset=["Date"])
 
+                    # Ensure ticker info map is available for name-based search/display
                     info_df = st.session_state.get("ticker_info_df")
+                    if (info_df is None or info_df.empty) and ticker_info_map_asset is not None:
+                        with st.spinner("Loading ticker info map for search..."):
+                            tndf = load_parquet_from_url(ticker_info_map_asset["browser_download_url"], github_token)
+                            if tndf is not None and not tndf.empty:
+                                st.session_state["ticker_info_df"] = tndf
+                                info_df = tndf
+
                     tickers_in_data = sorted(plot_df["Ticker"].dropna().astype(str).unique().tolist())
 
                     # Build selectable ticker options
@@ -507,7 +515,7 @@ if repo_name:
                         )
                         selected_ticker = str(selected.get("Ticker", ""))
                     else:
-                        st.info("Load `Ticker Info Map` to enable name-based search. (Ticker-only selection available.)")
+                        st.info("Ticker info map not available. (Ticker-only selection)")
                         search = st.text_input("Search (Ticker)", value="")
                         options = tickers_in_data
                         if search:
