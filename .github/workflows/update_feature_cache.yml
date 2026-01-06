@@ -33,6 +33,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
+    - name: Export KRX Stock Master (parquet)
+      run: |
+        python scripts/export_krx_stock_master_parquet.py --input-json data/krx_stock_master.json --output-parquet cache/krx_stock_master.parquet
         
     - name: Generate Feature Cache
       run: |
@@ -54,6 +58,11 @@ jobs:
     - name: Detect Generated Files
       id: files
       run: |
+        if [ -f "cache/krx_stock_master.parquet" ]; then
+          echo "has_master=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_master=false" >> "$GITHUB_OUTPUT"
+        fi
         if [ -f "cache/korea_universe_feature_frame.parquet" ]; then
           echo "has_feature=true" >> "$GITHUB_OUTPUT"
         else
@@ -75,7 +84,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: feature-cache-meta
-        path: cache/korea_universe_feature_frame.meta.json
+        path: |
+          cache/korea_universe_feature_frame.meta.json
+          cache/krx_stock_master.parquet
         retention-days: 7
 
     - name: Upload Artifact (full)
@@ -87,6 +98,7 @@ jobs:
           cache/korea_universe_feature_frame.parquet
           cache/korea_universe_feature_frame.meta.json
           cache/korea_universe_ticker_info_map.parquet
+          cache/krx_stock_master.parquet
         retention-days: 7
 
     - name: Generate Tag Name
@@ -99,7 +111,9 @@ jobs:
       with:
         tag_name: ${{ steps.tag.outputs.tag_name }}
         name: Feature Cache ${{ steps.tag.outputs.tag_name }}
-        files: cache/korea_universe_feature_frame.meta.json
+        files: |
+          cache/korea_universe_feature_frame.meta.json
+          cache/krx_stock_master.parquet
         draft: false
         prerelease: false
       env:
@@ -115,6 +129,7 @@ jobs:
           cache/korea_universe_feature_frame.parquet
           cache/korea_universe_feature_frame.meta.json
           cache/korea_universe_ticker_info_map.parquet
+          cache/krx_stock_master.parquet
         draft: false
         prerelease: false
       env:

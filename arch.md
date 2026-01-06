@@ -10,27 +10,37 @@
 1.  **Universe Construction (Temporary)**: 현재는 `stock.get_market_ticker_list` 이슈로 인해
     **임시 유니버스(KOSPI 5 + KOSDAQ 5)** 고정 티커로만 진행.
     - 전 종목 유니버스는 추후 `get_market_ticker_list` 안정화 후 재도입 예정
-2.  **Ticker Info Map Build**: 티커별 메타(종목명, 시장구분)를 **별도 Parquet**(`Ticker Info Map`)으로 저장.
-3.  **Data Fetching**: `pykrx`를 통해 각 종목의 OHLCV 데이터 병렬 수집.
-4.  **Standardization**: 컬럼명 영문 변환 (`시가` -> `Open` 등) 및 날짜 인덱스 처리.
-5.  **Indicator Calculation**:
+2.  **KRX Stock Master Build (Static)**: Seibro에서 수집한 원본 엑셀(코스피/코스닥)로부터
+    종목 마스터를 추출하여 레포에 `data/krx_stock_master.json`으로 저장.
+    - 원본 엑셀 출처: `https://seibro.or.kr/websquare/control.jsp?w2xPath=/IPORTAL/user/stock/BIP_CNTS02004V.xml&menuNo=41`
+    - 릴리즈 시에는 JSON을 DataFrame(Parquet)으로 변환하여 `cache/krx_stock_master.parquet`로 함께 배포
+3.  **Ticker Info Map Build**: 티커별 메타(종목명, 시장구분)를 **별도 Parquet**(`Ticker Info Map`)으로 저장.
+4.  **Data Fetching**: `pykrx`를 통해 각 종목의 OHLCV 데이터 병렬 수집.
+5.  **Standardization**: 컬럼명 영문 변환 (`시가` -> `Open` 등) 및 날짜 인덱스 처리.
+6.  **Indicator Calculation**:
     - 단순 OHLCV 외에 아래 지표를 추가로 계산하여 컬럼으로 저장
       - 이동평균: 5/10/20/60/120/200일 (`SMA_5`, `SMA_10`, ... `SMA_200`)
       - Mansfield Relative Strength: 벤치마크 `069500` 대비 (`MansfieldRS`)
       - 1년 신고가 여부(종가 기준): `IsNewHigh1Y` (최근 252 거래일 롤링)
-6.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
-7.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
-8.  **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
+7.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
+8.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
+9.  **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
 
 ## 3. Directory Structure
 
 ```
 /workspace/
+├── 코스피.xlsx                         # (원본) Seibro 수집 KOSPI 종목 정보
+├── 코스닥.xlsx                         # (원본) Seibro 수집 KOSDAQ 종목 정보
 ├── .github/
 │   └── workflows/
 │       └── update_feature_cache.yml  # 캐시 생성 및 릴리스 자동화 워크플로우
+├── data/
+│   └── krx_stock_master.json          # (생성) 종목 마스터 JSON (Code/Name/Market/Industry*)
 ├── scripts/
 │   └── generate_cache.py             # 데이터 수집 및 Parquet 생성 스크립트
+│   └── build_krx_stock_master.py      # 코스피/코스닥 엑셀 -> 종목 마스터 JSON 생성
+│   └── export_krx_stock_master_parquet.py # 종목 마스터 JSON -> Parquet 변환(릴리즈용)
 ├── requirements.txt                  # 의존성 패키지 목록 (pandas, pykrx, pyarrow, streamlit 등)
 ├── streamlit_app.py                  # 릴리스 데이터 검증용 Streamlit 웹앱
 └── arch.md                           # 아키텍처 및 구현 현황 문서
@@ -69,6 +79,9 @@
   - 날짜 범위, 티커 목록/개수, 파일 크기(MB), 실행 환경 버전, 유니버스 기준일(`universe_date`) 등
 - **Ticker Info Map**: `cache/korea_universe_ticker_info_map.parquet`
   - 컬럼: `Ticker`, `Name`, `Market`(KOSPI/KOSDAQ/UNKNOWN)
+- **KRX Stock Master (DataFrame)**: `cache/krx_stock_master.parquet`
+  - 원본: 레포 내 `코스피.xlsx`, `코스닥.xlsx` (Seibro 수집)
+  - 컬럼: `Code`, `Name`, `Market`, `IndustryLarge`, `IndustryMid`, `IndustrySmall`
 
 ### Long-term
 1.  **Incremental Update**: 전체 재수집 대신 최신 데이터만 추가하는 증분 업데이트 구현.

@@ -8,3 +8,4 @@ requests>=2.31.0
 # pkg_resources is deprecated and may be removed in a future setuptools release,
 # so cap setuptools to avoid sudden breakage until pykrx removes the dependency.
 setuptools>=70.0.0,<81
+openpyxl>=3.1.5
