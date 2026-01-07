@@ -23,7 +23,7 @@
 7.  **Industry Strength (A안)**:
     - `KRX Stock Master`의 업종 분류(대/중/소)에 따라 종목을 그룹핑
     - 업종 지수(기준값 100)를 **동일가중(일간 수익률 평균 → 누적)**으로 생성
-    - 업종 지수에 대해 종목과 동일한 방식으로 **Mansfield RS(벤치마크 `069500`)** 계산
+    - 업종 지수에 대해 종목과 동일한 방식으로 **Mansfield RS(벤치마크: 전 종목(유니버스) 동일가중 지수)** 계산
     - 산출물: `cache/korea_industry_feature_frame.parquet` (+ meta)
 8.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
 9.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.

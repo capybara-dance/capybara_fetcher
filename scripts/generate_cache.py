@@ -24,6 +24,9 @@ INDUSTRY_LEVEL_LM = "LM"
 INDUSTRY_LEVEL_LMS = "LMS"
 INDUSTRY_LEVELS = [INDUSTRY_LEVEL_L, INDUSTRY_LEVEL_LM, INDUSTRY_LEVEL_LMS]
 
+INDUSTRY_BENCHMARK_069500 = "069500"
+INDUSTRY_BENCHMARK_UNIVERSE = "universe"
+
 def load_krx_stock_master_df(path: str) -> tuple[pd.DataFrame, str | None]:
     """
     KRX 종목 마스터(JSON)을 DataFrame으로 로드합니다.
@@ -199,6 +202,34 @@ def _compute_industry_level_frame(
     ].sort_values(["Level", "IndustryLarge", "IndustryMid", "IndustrySmall", "Date"])
     return out
 
+def _compute_universe_equal_weight_benchmark_close_by_date(
+    feature_df: pd.DataFrame,
+    global_dates: pd.DatetimeIndex,
+) -> pd.Series:
+    """
+    유니버스(전 종목) 동일가중 벤치마크 지수(기준값 100) 시계열을 생성합니다.
+    - 일간 수익률: 종목별 pct_change
+    - 유니버스 수익률: 해당 일자 ret가 있는 종목들의 평균
+    - 지수: (1+ret).cumprod * 100
+    Returns:
+      - Series indexed by normalized Date with float values (benchmark close)
+    """
+    df = feature_df[["Date", "Ticker", "Close"]].copy()
+    df["Ticker"] = df["Ticker"].astype(str).str.strip().str.zfill(6)
+    df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.normalize()
+    df["Close"] = pd.to_numeric(df["Close"], errors="coerce")
+    df = df.dropna(subset=["Date", "Ticker", "Close"]).sort_values(["Ticker", "Date"])
+
+    df["Ret"] = df.groupby("Ticker", sort=False)["Close"].pct_change()
+    u = df.groupby("Date", sort=True).agg(UniverseReturn=("Ret", "mean")).reset_index()
+
+    u = u.set_index("Date").reindex(global_dates).sort_index()
+    u["UniverseReturn"] = pd.to_numeric(u["UniverseReturn"], errors="coerce").fillna(0.0)
+    bench = (1.0 + u["UniverseReturn"]).cumprod() * 100.0
+    bench.name = "UniverseClose"
+    bench.index = pd.to_datetime(bench.index, errors="coerce").dt.normalize()
+    return bench
+
 def load_universe_from_krx_stock_master_json(path: str) -> tuple[list[str], dict[str, str], str | None]:
     """
     KRX 종목 마스터(JSON)에서 유니버스를 구성합니다.
@@ -341,6 +372,13 @@ def main():
     parser.add_argument("--meta-output", type=str, default="", help="Output metadata json file path (default: <output>.meta.json)")
     parser.add_argument("--industry-output", type=str, default="", help="Output industry parquet file path (optional)")
     parser.add_argument("--industry-meta-output", type=str, default="", help="Output industry metadata json path (optional)")
+    parser.add_argument(
+        "--industry-benchmark",
+        type=str,
+        default=INDUSTRY_BENCHMARK_UNIVERSE,
+        choices=[INDUSTRY_BENCHMARK_UNIVERSE, INDUSTRY_BENCHMARK_069500],
+        help="Industry Mansfield RS benchmark: 'universe' (equal-weight all stocks) or '069500'",
+    )
     parser.add_argument("--krx-stock-master-json", type=str, default=KRX_STOCK_MASTER_JSON_DEFAULT, help="Path to krx_stock_master.json")
     parser.add_argument("--max-workers", type=int, default=8, help="Number of threads")
     parser.add_argument("--test-limit", type=int, default=0, help="Limit number of tickers for testing (0 for all)")
@@ -490,9 +528,30 @@ def main():
                 global_dates = pd.to_datetime(full_df["Date"], errors="coerce").dt.normalize().dropna().sort_values().unique()
                 global_dates = pd.DatetimeIndex(global_dates)
 
+                # Industry Mansfield RS benchmark
+                industry_benchmark_fetch: dict
+                if args.industry_benchmark == INDUSTRY_BENCHMARK_UNIVERSE:
+                    industry_benchmark_close_by_date = _compute_universe_equal_weight_benchmark_close_by_date(full_df, global_dates)
+                    industry_benchmark_fetch = {
+                        "type": INDUSTRY_BENCHMARK_UNIVERSE,
+                        "method": "equal_weighted_daily_return_mean_then_cumprod_base_100",
+                        "success": True,
+                        "error": None,
+                    }
+                else:
+                    industry_benchmark_close_by_date = benchmark_close_by_date
+                    industry_benchmark_fetch = {
+                        "type": INDUSTRY_BENCHMARK_069500,
+                        "ticker": MANSFIELD_BENCHMARK_TICKER,
+                        "success": bool(benchmark_fetch.get("success")),
+                        "error": benchmark_fetch.get("error"),
+                    }
+
                 ind_frames = []
                 for lvl in INDUSTRY_LEVELS:
-                    ind_frames.append(_compute_industry_level_frame(full_df, master_df, benchmark_close_by_date, lvl, global_dates))
+                    ind_frames.append(
+                        _compute_industry_level_frame(full_df, master_df, industry_benchmark_close_by_date, lvl, global_dates)
+                    )
                 industry_df = pd.concat([f for f in ind_frames if f is not None and not f.empty], ignore_index=True)
 
                 if industry_df is not None and not industry_df.empty:
@@ -504,6 +563,11 @@ def main():
                     industry_error = "NoIndustryData: industry frame is empty"
             except Exception as e:
                 industry_error = f"{type(e).__name__}: {e}"
+                industry_benchmark_fetch = {
+                    "type": args.industry_benchmark,
+                    "success": False,
+                    "error": industry_error,
+                }
 
             # Industry metadata (written even if industry failed; useful for debugging)
             _write_json(
@@ -516,7 +580,7 @@ def main():
                     "method": {
                         "industry_index": "equal_weighted_daily_return_mean_then_cumprod_base_100",
                         "mansfield_rs": {
-                            "benchmark_ticker": MANSFIELD_BENCHMARK_TICKER,
+                            "benchmark": args.industry_benchmark,
                             "sma_window": MANSFIELD_RS_SMA_WINDOW,
                         },
                     },
@@ -525,7 +589,7 @@ def main():
                         "load_success": master_error is None and master_df is not None and not master_df.empty,
                         "error": master_error,
                     },
-                    "benchmark_fetch": benchmark_fetch,
+                    "benchmark_fetch": industry_benchmark_fetch,
                     "data_file": {
                         "path": industry_output,
                         "generated": industry_generated,
@@ -587,6 +651,7 @@ def main():
                     "meta_output": meta_output,
                     "industry_output": industry_output,
                     "industry_meta_output": industry_meta_output,
+                    "industry_benchmark": args.industry_benchmark,
                     "krx_stock_master_json": args.krx_stock_master_json,
                 },
                 "timing_seconds": {

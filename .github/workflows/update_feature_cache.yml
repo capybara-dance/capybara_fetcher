@@ -65,6 +65,7 @@ jobs:
           --meta-output cache/korea_universe_feature_frame.meta.json \
           --industry-output cache/korea_industry_feature_frame.parquet \
           --industry-meta-output cache/korea_industry_feature_frame.meta.json \
+          --industry-benchmark universe \
           --krx-stock-master-json data/krx_stock_master.json
 
     - name: Detect Generated Files
