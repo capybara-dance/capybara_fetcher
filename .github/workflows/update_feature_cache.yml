@@ -6,7 +6,7 @@ on:
       start_date:
         description: 'Start Date (YYYYMMDD)'
         required: false
-        default: '20251201'
+        default: '20150101'
       end_date:
         description: 'End Date (YYYYMMDD) - Defaults to Today'
         required: false
@@ -48,7 +48,7 @@ jobs:
         # Handle inputs with defaults
         START_DATE="${{ inputs.start_date }}"
         if [ -z "$START_DATE" ]; then
-          START_DATE="20251201"
+          START_DATE="20150101"
         fi
         
         END_DATE="${{ inputs.end_date }}"
