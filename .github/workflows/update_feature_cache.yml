@@ -11,10 +11,18 @@ on:
         description: 'End Date (YYYYMMDD) - Defaults to Today'
         required: false
         default: ''
+  schedule:
+    # Weekdays 17:00 KST == 08:00 UTC
+    - cron: '0 8 * * 1-5'
+
+permissions:
+  contents: write
 
 jobs:
   generate-cache:
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
     
     steps:
     - name: Checkout code
@@ -30,6 +38,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
+    - name: Export KRX Stock Master (parquet)
+      run: |
+        python scripts/export_krx_stock_master_parquet.py --input-json data/krx_stock_master.json --output-parquet cache/krx_stock_master.parquet
         
     - name: Generate Feature Cache
       run: |
@@ -46,25 +58,76 @@ jobs:
         
         echo "Generating cache from $START_DATE to $END_DATE"
         
-        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet
+        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet --meta-output cache/korea_universe_feature_frame.meta.json --krx-stock-master-json data/krx_stock_master.json
+
+    - name: Detect Generated Files
+      id: files
+      run: |
+        if [ -f "cache/krx_stock_master.parquet" ]; then
+          echo "has_master=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_master=false" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f "cache/korea_universe_feature_frame.parquet" ]; then
+          echo "has_feature=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_feature=false" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f "cache/korea_universe_feature_frame.meta.json" ]; then
+          echo "has_meta=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_meta=false" >> "$GITHUB_OUTPUT"
+        fi
         
-    - name: Upload Artifact
+    - name: Upload Artifact (meta only)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: feature-cache-meta
+        path: |
+          cache/korea_universe_feature_frame.meta.json
+          cache/krx_stock_master.parquet
+        retention-days: 7
+
+    - name: Upload Artifact (full)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: feature-cache-parquet
-        path: cache/korea_universe_feature_frame.parquet
+        path: |
+          cache/korea_universe_feature_frame.parquet
+          cache/korea_universe_feature_frame.meta.json
+          cache/krx_stock_master.parquet
         retention-days: 7
 
     - name: Generate Tag Name
       id: tag
       run: echo "tag_name=data-$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
 
-    - name: Create Release
+    - name: Create Release (meta only)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.tag.outputs.tag_name }}
-        name: Feature Cache ${{ steps.tag.outputs.tag_name }}
-        files: cache/korea_universe_feature_frame.parquet
+        name: Feature Cache ${{ steps.tag.outputs.tag_name }} (KST)
+        files: |
+          cache/korea_universe_feature_frame.meta.json
+          cache/krx_stock_master.parquet
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release (full)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.tag.outputs.tag_name }}
+        name: Feature Cache ${{ steps.tag.outputs.tag_name }} (KST)
+        files: |
+          cache/korea_universe_feature_frame.parquet
+          cache/korea_universe_feature_frame.meta.json
+          cache/krx_stock_master.parquet
         draft: false
         prerelease: false
       env:
