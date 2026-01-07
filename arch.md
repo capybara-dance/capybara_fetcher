@@ -20,9 +20,14 @@
       - 이동평균: 5/10/20/60/120/200일 (`SMA_5`, `SMA_10`, ... `SMA_200`)
       - Mansfield Relative Strength: 벤치마크 `069500` 대비 (`MansfieldRS`)
       - 1년 신고가 여부(종가 기준): `IsNewHigh1Y` (최근 252 거래일 롤링)
-7.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
-8.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
-9.  **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
+7.  **Industry Strength (A안)**:
+    - `KRX Stock Master`의 업종 분류(대/중/소)에 따라 종목을 그룹핑
+    - 업종 지수(기준값 100)를 **동일가중(일간 수익률 평균 → 누적)**으로 생성
+    - 업종 지수에 대해 종목과 동일한 방식으로 **Mansfield RS(벤치마크 `069500`)** 계산
+    - 산출물: `cache/korea_industry_feature_frame.parquet` (+ meta)
+8.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
+9.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
+10. **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
 
 ### Data Consumption (How to read large releases)
 전 종목 Feature Data parquet는 용량이 커서(전량 다운로드/로딩 시 메모리 사용 급증) 클라이언트가 쉽게 OOM(메모리 부족)으로 종료될 수 있습니다.  
@@ -88,6 +93,10 @@
   - 지표 컬럼: `SMA_5`, `SMA_10`, `SMA_20`, `SMA_60`, `SMA_120`, `SMA_200`, `MansfieldRS`, `IsNewHigh1Y`
 - **Metadata**: `cache/korea_universe_feature_frame.meta.json`
   - 날짜 범위, 티커 목록/개수, 파일 크기(MB), 실행 환경 버전, 유니버스 기준일(`universe_date`) 등
+- **Industry Strength Data (A안, 동일가중)**: `cache/korea_industry_feature_frame.parquet`
+  - 기준: `KRX Stock Master`의 `IndustryLarge/IndustryMid/IndustrySmall`
+  - 주요 컬럼: `Date`, `Level(L/LM/LMS)`, `IndustryLarge`, `IndustryMid`, `IndustrySmall`, `IndustryClose`, `IndustryReturn`, `ConstituentCount`, `MansfieldRS`
+- **Industry Strength Metadata**: `cache/korea_industry_feature_frame.meta.json`
 - **KRX Stock Master (DataFrame)**: `cache/krx_stock_master.parquet`
   - 원본: `data/코스피.xlsx`, `data/코스닥.xlsx` (Seibro 수집)
   - 컬럼: `Code`, `Name`, `Market`, `IndustryLarge`, `IndustryMid`, `IndustrySmall`
