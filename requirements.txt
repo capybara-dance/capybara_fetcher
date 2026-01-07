@@ -9,3 +9,4 @@ requests>=2.31.0
 # so cap setuptools to avoid sudden breakage until pykrx removes the dependency.
 setuptools>=70.0.0,<81
 openpyxl>=3.1.5
+duckdb>=1.1.0

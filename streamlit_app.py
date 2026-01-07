@@ -6,6 +6,7 @@ import os
 import json
 import altair as alt
 import datetime as dt
+import duckdb
 
 st.set_page_config(page_title="Korea Stock Feature Cache Inspector", layout="wide")
 
@@ -63,6 +64,45 @@ def load_parquet_from_url(url, token=None):
     except Exception as e:
         st.error(f"Error loading parquet: {e}")
         return None
+
+@st.cache_resource
+def get_duckdb_conn():
+    con = duckdb.connect(database=":memory:")
+    # HTTP range reads for large parquet
+    con.execute("INSTALL httpfs;")
+    con.execute("LOAD httpfs;")
+    return con
+
+@st.cache_data(ttl=300)
+def query_feature_parquet(
+    parquet_url: str,
+    ticker: str,
+    start_date: dt.date,
+    end_date: dt.date,
+    columns: tuple[str, ...],
+) -> pd.DataFrame:
+    con = get_duckdb_conn()
+    cols_sql = ", ".join([f'"{c}"' for c in columns])
+    sql = f"""
+        SELECT {cols_sql}
+        FROM read_parquet(?)
+        WHERE "Ticker" = ?
+          AND "Date" >= ?
+          AND "Date" <= ?
+        ORDER BY "Date"
+    """
+    return con.execute(sql, [parquet_url, ticker, str(start_date), str(end_date)]).df()
+
+@st.cache_data(ttl=300)
+def query_feature_date_bounds(parquet_url: str, ticker: str):
+    con = get_duckdb_conn()
+    sql = """
+        SELECT min("Date") AS min_date, max("Date") AS max_date
+        FROM read_parquet(?)
+        WHERE "Ticker" = ?
+    """
+    row = con.execute(sql, [parquet_url, ticker]).fetchone()
+    return row[0], row[1]
 
 @st.cache_data(ttl=300)
 def load_json_from_url(url, token=None):
@@ -403,10 +443,10 @@ if repo_name:
             krx_master_asset = pick_krx_stock_master_asset(assets)
 
             # Keep loaded frames in session_state (so chart UI doesn't reset)
-            if "feature_df" not in st.session_state:
-                st.session_state["feature_df"] = None
             if "krx_master_df" not in st.session_state:
                 st.session_state["krx_master_df"] = None
+            if "meta_obj" not in st.session_state:
+                st.session_state["meta_obj"] = None
 
             # 1) 메타데이터: 릴리즈 선택 시 자동 로드/표시 (meta-only 릴리즈 지원)
             with st.expander("Metadata (meta.json)", expanded=True):
@@ -414,6 +454,7 @@ if repo_name:
                     st.write(f"**Meta asset:** `{meta_asset['name']}`")
                     meta = load_json_from_url(meta_asset["browser_download_url"], github_token)
                     if meta:
+                        st.session_state["meta_obj"] = meta
                         col_a, col_b, col_c, col_d = st.columns(4)
                         col_a.metric("Start", meta.get("start_date", "-"))
                         col_b.metric("End", meta.get("end_date", "-"))
@@ -444,177 +485,140 @@ if repo_name:
             with st.expander("Feature Data (parquet)", expanded=True):
                 if feature_asset:
                     st.write(f"**Feature asset:** `{feature_asset['name']}`")
-                    if st.button("Load Feature Data", key="load_feature_data"):
-                        with st.spinner("Downloading and loading feature parquet..."):
-                            df = load_parquet_from_url(feature_asset["browser_download_url"], github_token)
-                            if df is not None:
-                                st.success("Feature data loaded successfully!")
-                                st.session_state["feature_df"] = df
-                    df_loaded = st.session_state.get("feature_df")
-                    if df_loaded is not None:
-                        st.write(f"**Loaded shape:** {df_loaded.shape}")
-                        st.dataframe(df_loaded.head(200), use_container_width=True)
+                    st.info("Full download/load can crash for large universes. Charts below query by ticker/date without loading the whole file.")
                 else:
                     st.info("No feature parquet found in this release.")
 
             # 4) Chart: search ticker/name and plot selected series
-            df_loaded = st.session_state.get("feature_df")
-            if df_loaded is not None and not df_loaded.empty:
+            if feature_asset is not None:
                 st.subheader("📈 Chart")
+                feature_url = feature_asset["browser_download_url"]
 
-                if "Date" not in df_loaded.columns or "Ticker" not in df_loaded.columns:
-                    st.error("Feature data must contain `Date` and `Ticker` columns to plot.")
+                # Ensure KRX stock master is available
+                master_df = st.session_state.get("krx_master_df")
+                if (master_df is None or master_df.empty) and krx_master_asset is not None:
+                    with st.spinner("Loading KRX stock master for market/industry info..."):
+                        mdf = load_parquet_from_url(krx_master_asset["browser_download_url"], github_token)
+                        if mdf is not None and not mdf.empty:
+                            st.session_state["krx_master_df"] = mdf
+                            master_df = mdf
+
+                meta_obj = st.session_state.get("meta_obj") or {}
+                tickers_in_data = [str(t) for t in (meta_obj.get("tickers") or [])]
+                if not tickers_in_data and master_df is not None and "Code" in master_df.columns:
+                    tickers_in_data = sorted(master_df["Code"].astype(str).unique().tolist())
+
+                options = None
+                if master_df is not None and not master_df.empty and "Code" in master_df.columns:
+                    mv = master_df.copy()
+                    mv["Code"] = mv["Code"].astype(str)
+                    if tickers_in_data:
+                        mv = mv[mv["Code"].isin(tickers_in_data)]
+                    mv = mv.rename(columns={"Code": "Ticker"})
+                    options = mv.to_dict(orient="records")
+
+                if options is not None:
+                    search = st.text_input("Search (Ticker or Name)", value="")
+                    if search:
+                        s = search.strip().lower()
+                        options = [
+                            o
+                            for o in options
+                            if s in str(o.get("Ticker", "")).lower() or s in str(o.get("Name", "")).lower()
+                        ]
+                    selected = st.selectbox(
+                        "Select Ticker",
+                        options,
+                        format_func=lambda o: f"{o.get('Ticker','')} - {o.get('Name','')} ({o.get('Market','')})",
+                    )
+                    selected_ticker = str(selected.get("Ticker", ""))
                 else:
-                    plot_df = df_loaded.copy()
-                    plot_df["Date"] = _ensure_datetime(plot_df["Date"])
-                    plot_df = plot_df.dropna(subset=["Date"])
+                    st.info("KRX stock master not available. (Ticker-only selection)")
+                    search = st.text_input("Search (Ticker)", value="")
+                    options2 = tickers_in_data
+                    if search:
+                        s = search.strip().lower()
+                        options2 = [t for t in options2 if s in t.lower()]
+                    selected_ticker = st.selectbox("Select Ticker", options2) if options2 else ""
 
-                    # Ensure KRX stock master is available (richer market/industry info)
-                    master_df = st.session_state.get("krx_master_df")
-                    if (master_df is None or master_df.empty) and krx_master_asset is not None:
-                        with st.spinner("Loading KRX stock master for market/industry info..."):
-                            mdf = load_parquet_from_url(krx_master_asset["browser_download_url"], github_token)
-                            if mdf is not None and not mdf.empty:
-                                st.session_state["krx_master_df"] = mdf
-                                master_df = mdf
-
-                    tickers_in_data = sorted(plot_df["Ticker"].dropna().astype(str).unique().tolist())
-
-                    # Build selectable ticker options
-                    options = None
+                if not selected_ticker:
+                    st.warning("No ticker selected.")
+                else:
+                    # Show selected ticker market/industry info (if available)
                     if master_df is not None and not master_df.empty and "Code" in master_df.columns:
                         mv = master_df.copy()
                         mv["Code"] = mv["Code"].astype(str)
-                        mv = mv[mv["Code"].isin(tickers_in_data)]
-                        if "Name" not in mv.columns:
-                            mv["Name"] = ""
-                        if "Market" not in mv.columns:
-                            mv["Market"] = ""
-                        # Map to the same schema as selectbox expects
-                        mv = mv.rename(columns={"Code": "Ticker"})
-                        options = mv.to_dict(orient="records")
-                    if options is not None:
-                        search = st.text_input("Search (Ticker or Name)", value="")
-                        if search:
-                            s = search.strip().lower()
-                            options = [
-                                o
-                                for o in options
-                                if s in str(o.get("Ticker", "")).lower() or s in str(o.get("Name", "")).lower()
-                            ]
-                        selected = st.selectbox(
-                            "Select Ticker",
-                            options,
-                            format_func=lambda o: f"{o.get('Ticker','')} - {o.get('Name','')} ({o.get('Market','')})",
-                        )
-                        selected_ticker = str(selected.get("Ticker", ""))
-                    else:
-                        st.info("KRX stock master not available. (Ticker-only selection)")
-                        search = st.text_input("Search (Ticker)", value="")
-                        options = tickers_in_data
-                        if search:
-                            s = search.strip().lower()
-                            options = [t for t in options if s in t.lower()]
-                        selected_ticker = st.selectbox("Select Ticker", options) if options else ""
-
-                    if not selected_ticker:
-                        st.warning("No ticker selected.")
-                    else:
-                        # Show selected ticker market/industry info (if available)
-                        if master_df is not None and not master_df.empty and "Code" in master_df.columns:
-                            mv = master_df.copy()
-                            mv["Code"] = mv["Code"].astype(str)
-                            row = mv[mv["Code"] == selected_ticker]
-                            if not row.empty:
-                                r0 = row.iloc[0].to_dict()
-                                st.markdown(
-                                    f"**Selected**: `{selected_ticker}` - {r0.get('Name','')} "
-                                    f"(**{r0.get('Market','')}**)\n\n"
-                                    f"- **Industry (L/M/S)**: {r0.get('IndustryLarge','')} / {r0.get('IndustryMid','')} / {r0.get('IndustrySmall','')}"
-                                )
-
-                        one = plot_df[plot_df["Ticker"].astype(str) == selected_ticker].copy()
-                        if one.empty:
-                            st.warning("No data for selected ticker.")
-                        else:
-                            one = one.sort_values("Date")
-                            dmin = one["Date"].min()
-                            dmax = one["Date"].max()
-                            default_start, default_end = _pick_default_date_window(dmin, dmax, days=365)
-
-                            # Streamlit slider wants python datetime/date
-                            min_dt = dmin.to_pydatetime()
-                            max_dt = dmax.to_pydatetime()
-                            default_range = (default_start.to_pydatetime(), default_end.to_pydatetime())
-                            date_range = st.slider(
-                                "Date range",
-                                min_value=min_dt,
-                                max_value=max_dt,
-                                value=default_range,
+                        row = mv[mv["Code"] == selected_ticker]
+                        if not row.empty:
+                            r0 = row.iloc[0].to_dict()
+                            st.markdown(
+                                f"**Selected**: `{selected_ticker}` - {r0.get('Name','')} "
+                                f"(**{r0.get('Market','')}**)\n\n"
+                                f"- **Industry (L/M/S)**: {r0.get('IndustryLarge','')} / {r0.get('IndustryMid','')} / {r0.get('IndustrySmall','')}"
                             )
-                            start_dt, end_dt = date_range
-                            one = one[(one["Date"] >= pd.Timestamp(start_dt)) & (one["Date"] <= pd.Timestamp(end_dt))]
 
+                    try:
+                        min_date, max_date = query_feature_date_bounds(feature_url, selected_ticker)
+                    except Exception as e:
+                        st.error(f"Failed to query date bounds (likely URL/access issue): {e}")
+                        min_date, max_date = None, None
+
+                    if min_date is None or max_date is None:
+                        st.warning("No data available for selected ticker.")
+                    else:
+                        min_d = pd.to_datetime(min_date).date()
+                        max_d = pd.to_datetime(max_date).date()
+                        default_start = max(min_d, (pd.Timestamp(max_d) - pd.Timedelta(days=365)).date())
+                        start_d, end_d = st.slider("Date range", min_value=min_d, max_value=max_d, value=(default_start, max_d))
+
+                        show_newhigh = st.checkbox("Show 1Y New High markers", value=True)
+                        marker_pos = st.selectbox("New High marker position", ["High", "Close"], index=0)
+
+                        tab_line, tab_candle = st.tabs(["Close & Metrics (Line)", "Candlestick (OHLC)"])
+
+                        all_cols = meta_obj.get("columns") or []
+                        numeric_candidates = [c for c in all_cols if c not in {"Date", "Ticker"}]
+
+                        with tab_line:
+                            extra = st.multiselect(
+                                "Additional numeric metrics (Close is always shown)",
+                                options=[c for c in numeric_candidates if c != "Close"],
+                                default=[],
+                            )
+                            metrics = ["Close"] + [c for c in extra if c != "Close"]
+                            need_cols = tuple(["Date", "Ticker"] + sorted(set(metrics + ["IsNewHigh1Y", marker_pos])))
+                            one = query_feature_parquet(feature_url, selected_ticker, start_d, end_d, need_cols)
                             if one.empty:
                                 st.warning("No data in selected date range.")
                             else:
-                                show_newhigh = st.checkbox("Show 1Y New High markers", value=True)
-                                marker_pos = st.selectbox("New High marker position", ["High", "Close"], index=0)
+                                one["Date"] = _ensure_datetime(one["Date"])
                                 marker_y_col = marker_pos if marker_pos in one.columns else "Close"
                                 newhigh_layer = _build_newhigh_marker_layer(one, "Date", marker_y_col) if show_newhigh else None
+                                left_cols, right_cols = _axis_assignment(one, "Close", [c for c in metrics if c != "Close"])
+                                chart = _build_dual_axis_chart(one, "Date", ["Close"] + [c for c in left_cols if c != "Close"], right_cols, marker_layer=newhigh_layer)
+                                st.altair_chart(chart, use_container_width=True)
 
-                                tab_line, tab_candle = st.tabs(["Close & Metrics (Line)", "Candlestick (OHLC)"])
-
-                                with tab_line:
-                                    numeric_cols = one.select_dtypes(include="number").columns.tolist()
-                                    if "Close" not in one.columns:
-                                        st.error("Selected data does not contain `Close` column.")
-                                    else:
-                                        extra_candidates = [c for c in numeric_cols if c not in {"Close"}]
-                                        extra = st.multiselect(
-                                            "Additional numeric metrics (Close is always shown)",
-                                            options=extra_candidates,
-                                            default=[],
-                                        )
-                                        metrics = ["Close"] + [c for c in extra if c != "Close"]
-
-                                        # Assign to left/right axes based on scale
-                                        left_cols, right_cols = _axis_assignment(one, "Close", [c for c in metrics if c != "Close"])
-
-                                        st.caption(
-                                            f"Left axis: {', '.join(left_cols)}"
-                                            + (f" | Right axis: {', '.join(right_cols)}" if right_cols else "")
-                                        )
-
-                                        chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols, marker_layer=newhigh_layer)
-                                        st.altair_chart(chart, use_container_width=True)
-
-                                with tab_candle:
-                                    numeric_cols = one.select_dtypes(include="number").columns.tolist()
-                                    missing = [c for c in ["Open", "High", "Low", "Close"] if c not in one.columns]
-                                    if missing:
-                                        st.info("Candlestick requires `Open`, `High`, `Low`, `Close` columns.")
-                                    else:
-                                        extra_candidates = [
-                                            c
-                                            for c in numeric_cols
-                                            if c not in {"Open", "High", "Low", "Close"}
-                                        ]
-                                        extra = st.multiselect(
-                                            "Additional numeric metrics to overlay",
-                                            options=extra_candidates,
-                                            default=[],
-                                            key="candle_extra_metrics",
-                                        )
-                                        metrics = [c for c in extra if c != "Close"]
-                                        st.caption(
-                                            "Overlay metrics are auto-assigned to left/right axis based on scale vs Close."
-                                        )
-                                        candle = _build_candlestick_with_metrics(one, "Date", metrics, marker_layer=newhigh_layer)
-                                        if candle is None:
-                                            st.info("Could not build candlestick chart for this data.")
-                                        else:
-                                            st.altair_chart(candle, use_container_width=True)
+                        with tab_candle:
+                            extra = st.multiselect(
+                                "Additional numeric metrics to overlay",
+                                options=[c for c in numeric_candidates if c not in {"Open", "High", "Low", "Close"}],
+                                default=[],
+                                key="candle_extra_metrics",
+                            )
+                            metrics = [c for c in extra if c != "Close"]
+                            need_cols = tuple(["Date", "Ticker", "Open", "High", "Low", "Close"] + sorted(set(metrics + ["IsNewHigh1Y", marker_pos])))
+                            one = query_feature_parquet(feature_url, selected_ticker, start_d, end_d, need_cols)
+                            if one.empty:
+                                st.warning("No data in selected date range.")
+                            else:
+                                one["Date"] = _ensure_datetime(one["Date"])
+                                marker_y_col = marker_pos if marker_pos in one.columns else "Close"
+                                newhigh_layer = _build_newhigh_marker_layer(one, "Date", marker_y_col) if show_newhigh else None
+                                candle = _build_candlestick_with_metrics(one, "Date", metrics, marker_layer=newhigh_layer)
+                                if candle is None:
+                                    st.info("Could not build candlestick chart for this data.")
+                                else:
+                                    st.altair_chart(candle, use_container_width=True)
     else:
         if repo_name != default_repo:
             st.info("No releases found. Please check the repository name or token.")
