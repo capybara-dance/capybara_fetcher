@@ -24,6 +24,21 @@
 8.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
 9.  **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
 
+### Data Consumption (How to read large releases)
+전 종목 Feature Data parquet는 용량이 커서(전량 다운로드/로딩 시 메모리 사용 급증) 클라이언트가 쉽게 OOM(메모리 부족)으로 종료될 수 있습니다.  
+따라서 데이터 소비는 아래 방식 중 하나를 권장합니다.
+
+1) **On-demand query (권장)**: 원격 Parquet를 전체 다운로드하지 않고, 필요한 티커/기간/컬럼만 쿼리로 가져오기
+- **Streamlit 앱(`streamlit_app.py`) 구현 방식**
+  - DuckDB + `httpfs`를 사용해 GitHub Releases의 parquet asset URL을 대상으로 `read_parquet(url)` 실행
+  - 티커/기간 필터를 SQL WHERE로 적용하여 필요한 row만 가져옴:
+    - 예: `WHERE Ticker='005930' AND Date BETWEEN '2025-01-01' AND '2026-01-01'`
+  - 날짜 슬라이더 범위도 `SELECT min(Date), max(Date)`로 구함(전체 로드 없음)
+- 장점: **다운로드/메모리 사용량 최소화**, 대용량 릴리즈에서도 안정적
+
+2) **Full download (주의)**: parquet를 로컬에 다운로드 후 Pandas로 전체 로드
+- 파일이 크면 Streamlit/노트북 환경에서 OOM이 날 수 있으므로, 충분한 메모리가 있는 환경에서만 권장
+
 ## 3. Directory Structure
 
 ```
