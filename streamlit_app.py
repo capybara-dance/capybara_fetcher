@@ -574,6 +574,139 @@ if repo_name:
                 else:
                     st.info("No industry parquet found in this release.")
 
+            # 4) Industry strength chart (A안 결과)
+            # Place this section BEFORE the ticker chart, so it is visible
+            # even when the ticker UI is long.
+            if industry_asset is not None:
+                st.subheader("🏭 Industry Strength (Mansfield RS)")
+                industry_url = industry_asset["browser_download_url"]
+
+                # Ensure KRX stock master is available (for industry list UI)
+                master_df = st.session_state.get("krx_master_df")
+                if (master_df is None or master_df.empty) and krx_master_asset is not None:
+                    with st.spinner("Loading KRX stock master for industry lists..."):
+                        mdf = load_parquet_from_url(krx_master_asset["browser_download_url"], github_token)
+                        if mdf is not None and not mdf.empty:
+                            st.session_state["krx_master_df"] = mdf
+                            master_df = mdf
+
+                level_label_to_value = {
+                    "대분류 (L)": "L",
+                    "대/중분류 (LM)": "LM",
+                    "대/중/소분류 (LMS)": "LMS",
+                }
+                level_label = st.selectbox("Industry Level", list(level_label_to_value.keys()), key="industry_level")
+                level = level_label_to_value[level_label]
+
+                industry_large = ""
+                industry_mid = ""
+                industry_small = ""
+
+                if master_df is None or master_df.empty:
+                    st.warning("KRX stock master not loaded; cannot build industry lists.")
+                else:
+                    mv = master_df.copy()
+                    for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
+                        if c not in mv.columns:
+                            mv[c] = ""
+                        mv[c] = mv[c].astype(str).str.strip()
+                        mv[c] = mv[c].replace({"nan": "", "None": ""})
+
+                    if level == "L":
+                        larges = sorted({x for x in mv["IndustryLarge"].tolist() if x})
+                        if "Unknown" not in larges:
+                            larges.append("Unknown")
+                        industry_large = st.selectbox("IndustryLarge", larges, key="industry_large")
+                        industry_mid = ""
+                        industry_small = ""
+                    elif level == "LM":
+                        pairs = sorted(
+                            {
+                                (a, b)
+                                for a, b in zip(mv["IndustryLarge"].tolist(), mv["IndustryMid"].tolist())
+                                if a and b
+                            }
+                        )
+                        if not pairs:
+                            st.warning("No (Large, Mid) pairs in master.")
+                        else:
+                            labels = [f"{a} / {b}" for a, b in pairs]
+                            pick = st.selectbox("IndustryLarge / IndustryMid", labels, key="industry_lm")
+                            i = labels.index(pick)
+                            industry_large, industry_mid = pairs[i]
+                            industry_small = ""
+                    else:  # LMS
+                        triples = sorted(
+                            {
+                                (a, b, c)
+                                for a, b, c in zip(
+                                    mv["IndustryLarge"].tolist(),
+                                    mv["IndustryMid"].tolist(),
+                                    mv["IndustrySmall"].tolist(),
+                                )
+                                if a and b and c
+                            }
+                        )
+                        if not triples:
+                            st.warning("No (Large, Mid, Small) triples in master.")
+                        else:
+                            labels = [f"{a} / {b} / {c}" for a, b, c in triples]
+                            pick = st.selectbox("IndustryLarge / IndustryMid / IndustrySmall", labels, key="industry_lms")
+                            i = labels.index(pick)
+                            industry_large, industry_mid, industry_small = triples[i]
+
+                if industry_large:
+                    try:
+                        min_date, max_date = query_industry_date_bounds(
+                            industry_url, level, industry_large, industry_mid, industry_small
+                        )
+                    except Exception as e:
+                        st.error(f"Failed to query industry date bounds (likely URL/access issue): {e}")
+                        min_date, max_date = None, None
+
+                    if min_date is None or max_date is None:
+                        st.warning("No data available for selected industry.")
+                    else:
+                        min_d = pd.to_datetime(min_date).date()
+                        max_d = pd.to_datetime(max_date).date()
+                        default_start = max(min_d, (pd.Timestamp(max_d) - pd.Timedelta(days=365)).date())
+                        start_d, end_d = st.slider(
+                            "Date range (Industry)",
+                            min_value=min_d,
+                            max_value=max_d,
+                            value=(default_start, max_d),
+                            key="industry_date_range",
+                        )
+
+                        need_cols = ("Date", "IndustryClose", "MansfieldRS", "ConstituentCount")
+                        one = query_industry_parquet(
+                            industry_url,
+                            level,
+                            industry_large,
+                            industry_mid,
+                            industry_small,
+                            start_d,
+                            end_d,
+                            need_cols,
+                        )
+                        if one.empty:
+                            st.warning("No data in selected date range.")
+                        else:
+                            one["Date"] = _ensure_datetime(one["Date"])
+                            one["IndustryClose"] = pd.to_numeric(one["IndustryClose"], errors="coerce")
+                            one["MansfieldRS"] = pd.to_numeric(one["MansfieldRS"], errors="coerce")
+                            one["ConstituentCount"] = pd.to_numeric(one["ConstituentCount"], errors="coerce")
+                            one = one.dropna(subset=["Date"]).sort_values("Date")
+
+                            st.caption(
+                                f"Selected: **{industry_large}**"
+                                + (f" / **{industry_mid}**" if industry_mid else "")
+                                + (f" / **{industry_small}**" if industry_small else "")
+                            )
+                            left_cols, right_cols = _axis_assignment(one, "IndustryClose", ["MansfieldRS"])
+                            chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols)
+                            st.altair_chart(chart, use_container_width=True)
+
             # 4) Chart: search ticker/name and plot selected series
             if feature_asset is not None:
                 st.subheader("📈 Chart")
@@ -704,137 +837,6 @@ if repo_name:
                                     st.info("Could not build candlestick chart for this data.")
                                 else:
                                     st.altair_chart(candle, use_container_width=True)
-
-            # 5) Industry strength chart (A안 결과)
-            if industry_asset is not None:
-                st.subheader("🏭 Industry Strength (Mansfield RS)")
-                industry_url = industry_asset["browser_download_url"]
-
-                # Ensure KRX stock master is available (for industry list UI)
-                master_df = st.session_state.get("krx_master_df")
-                if (master_df is None or master_df.empty) and krx_master_asset is not None:
-                    with st.spinner("Loading KRX stock master for industry lists..."):
-                        mdf = load_parquet_from_url(krx_master_asset["browser_download_url"], github_token)
-                        if mdf is not None and not mdf.empty:
-                            st.session_state["krx_master_df"] = mdf
-                            master_df = mdf
-
-                level_label_to_value = {
-                    "대분류 (L)": "L",
-                    "대/중분류 (LM)": "LM",
-                    "대/중/소분류 (LMS)": "LMS",
-                }
-                level_label = st.selectbox("Industry Level", list(level_label_to_value.keys()), key="industry_level")
-                level = level_label_to_value[level_label]
-
-                industry_large = ""
-                industry_mid = ""
-                industry_small = ""
-
-                if master_df is None or master_df.empty:
-                    st.warning("KRX stock master not loaded; cannot build industry lists.")
-                else:
-                    mv = master_df.copy()
-                    for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
-                        if c not in mv.columns:
-                            mv[c] = ""
-                        mv[c] = mv[c].astype(str).str.strip()
-                        mv[c] = mv[c].replace({"nan": "", "None": ""})
-
-                    if level == "L":
-                        larges = sorted({x for x in mv["IndustryLarge"].tolist() if x})
-                        if "Unknown" not in larges:
-                            larges.append("Unknown")
-                        industry_large = st.selectbox("IndustryLarge", larges, key="industry_large")
-                        industry_mid = ""
-                        industry_small = ""
-                    elif level == "LM":
-                        pairs = sorted(
-                            {
-                                (a, b)
-                                for a, b in zip(mv["IndustryLarge"].tolist(), mv["IndustryMid"].tolist())
-                                if a and b
-                            }
-                        )
-                        if not pairs:
-                            st.warning("No (Large, Mid) pairs in master.")
-                        else:
-                            labels = [f"{a} / {b}" for a, b in pairs]
-                            pick = st.selectbox("IndustryLarge / IndustryMid", labels, key="industry_lm")
-                            i = labels.index(pick)
-                            industry_large, industry_mid = pairs[i]
-                            industry_small = ""
-                    else:  # LMS
-                        triples = sorted(
-                            {
-                                (a, b, c)
-                                for a, b, c in zip(
-                                    mv["IndustryLarge"].tolist(),
-                                    mv["IndustryMid"].tolist(),
-                                    mv["IndustrySmall"].tolist(),
-                                )
-                                if a and b and c
-                            }
-                        )
-                        if not triples:
-                            st.warning("No (Large, Mid, Small) triples in master.")
-                        else:
-                            labels = [f"{a} / {b} / {c}" for a, b, c in triples]
-                            pick = st.selectbox("IndustryLarge / IndustryMid / IndustrySmall", labels, key="industry_lms")
-                            i = labels.index(pick)
-                            industry_large, industry_mid, industry_small = triples[i]
-
-                if industry_large:
-                    try:
-                        min_date, max_date = query_industry_date_bounds(
-                            industry_url, level, industry_large, industry_mid, industry_small
-                        )
-                    except Exception as e:
-                        st.error(f"Failed to query industry date bounds (likely URL/access issue): {e}")
-                        min_date, max_date = None, None
-
-                    if min_date is None or max_date is None:
-                        st.warning("No data available for selected industry.")
-                    else:
-                        min_d = pd.to_datetime(min_date).date()
-                        max_d = pd.to_datetime(max_date).date()
-                        default_start = max(min_d, (pd.Timestamp(max_d) - pd.Timedelta(days=365)).date())
-                        start_d, end_d = st.slider(
-                            "Date range (Industry)",
-                            min_value=min_d,
-                            max_value=max_d,
-                            value=(default_start, max_d),
-                            key="industry_date_range",
-                        )
-
-                        need_cols = ("Date", "IndustryClose", "MansfieldRS", "ConstituentCount")
-                        one = query_industry_parquet(
-                            industry_url,
-                            level,
-                            industry_large,
-                            industry_mid,
-                            industry_small,
-                            start_d,
-                            end_d,
-                            need_cols,
-                        )
-                        if one.empty:
-                            st.warning("No data in selected date range.")
-                        else:
-                            one["Date"] = _ensure_datetime(one["Date"])
-                            one["IndustryClose"] = pd.to_numeric(one["IndustryClose"], errors="coerce")
-                            one["MansfieldRS"] = pd.to_numeric(one["MansfieldRS"], errors="coerce")
-                            one["ConstituentCount"] = pd.to_numeric(one["ConstituentCount"], errors="coerce")
-                            one = one.dropna(subset=["Date"]).sort_values("Date")
-
-                            st.caption(
-                                f"Selected: **{industry_large}**"
-                                + (f" / **{industry_mid}**" if industry_mid else "")
-                                + (f" / **{industry_small}**" if industry_small else "")
-                            )
-                            left_cols, right_cols = _axis_assignment(one, "IndustryClose", ["MansfieldRS"])
-                            chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols)
-                            st.altair_chart(chart, use_container_width=True)
     else:
         if repo_name != default_repo:
             st.info("No releases found. Please check the repository name or token.")
