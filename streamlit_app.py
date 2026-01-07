@@ -200,6 +200,32 @@ def query_industry_top_by_rs(parquet_url: str, level: str, asof_date: dt.date, l
     """
     return con.execute(sql, [parquet_url, level, parquet_url, level, str(asof_date), int(limit)]).df()
 
+@st.cache_data(ttl=300)
+def query_industry_rank_by_rs(parquet_url: str, level: str, asof_date: dt.date) -> pd.DataFrame:
+    """
+    지정 날짜(asof) 기준(해당 날짜 이전 최신 거래일) 업종별 MansfieldRS 랭킹(내림차순)을 반환합니다.
+    """
+    con = get_duckdb_conn()
+    sql = """
+        SELECT
+          "IndustryLarge",
+          "IndustryMid",
+          "IndustrySmall",
+          "MansfieldRS",
+          "ConstituentCount",
+          "Date"
+        FROM read_parquet(?)
+        WHERE "Level" = ?
+          AND "Date" = (
+            SELECT max("Date")
+            FROM read_parquet(?)
+            WHERE "Level" = ?
+              AND "Date" <= ?
+          )
+        ORDER BY "MansfieldRS" DESC NULLS LAST
+    """
+    return con.execute(sql, [parquet_url, level, parquet_url, level, str(asof_date)]).df()
+
 def _industry_label(level: str, large: str, mid: str, small: str) -> str:
     if level == "L":
         return f"{large}"
@@ -685,44 +711,35 @@ if repo_name:
 
                     include_top5 = st.checkbox("Include Top 5 in chart", value=True, key="industry_include_top5")
 
-                    # Build additional selection options from master (normalized to match parquet conventions)
-                    label_to_tuple: dict[str, tuple[str, str, str]] = {}
-                    if master_df is not None and not master_df.empty:
-                        mv = master_df.copy()
-                        for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
-                            if c not in mv.columns:
-                                mv[c] = ""
-                            mv[c] = mv[c].astype(str).str.strip().replace({"nan": "", "None": ""})
+                    # Ranked list (sorted by MansfieldRS as-of end_d)
+                    ranked_df = query_industry_rank_by_rs(industry_url, level, end_d)
+                    if ranked_df is None or ranked_df.empty:
+                        st.info("Industry ranking not available for this date.")
+                        ranked_df = pd.DataFrame(
+                            columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"]
+                        )
 
-                        if level == "L":
-                            larges = {(a if a else "Unknown") for a in mv["IndustryLarge"].tolist()}
-                            for a in sorted(larges):
-                                label_to_tuple[_industry_label(level, a, "", "")] = (a, "", "")
-                        elif level == "LM":
-                            pairs = {
-                                ((a if a else "Unknown"), (b if b else "Unknown"))
-                                for a, b in zip(mv["IndustryLarge"].tolist(), mv["IndustryMid"].tolist())
-                            }
-                            for a, b in sorted(pairs):
-                                label_to_tuple[_industry_label(level, a, b, "")] = (a, b, "")
-                        else:  # LMS
-                            triples = {
-                                ((a if a else "Unknown"), (b if b else "Unknown"), (c if c else "Unknown"))
-                                for a, b, c in zip(
-                                    mv["IndustryLarge"].tolist(),
-                                    mv["IndustryMid"].tolist(),
-                                    mv["IndustrySmall"].tolist(),
-                                )
-                            }
-                            for a, b, c in sorted(triples):
-                                label_to_tuple[_industry_label(level, a, b, c)] = (a, b, c)
+                    ranked_df = ranked_df.copy()
+                    ranked_df["Label"] = ranked_df.apply(
+                        lambda r: _industry_label(level, str(r["IndustryLarge"]), str(r["IndustryMid"]), str(r["IndustrySmall"])),
+                        axis=1,
+                    )
+
+                    # Build selection options ordered by RS (ranked_df order)
+                    label_to_tuple: dict[str, tuple[str, str, str]] = {}
+                    ranked_labels: list[str] = []
+                    for _, r in ranked_df.iterrows():
+                        lab = str(r["Label"])
+                        tup = (str(r["IndustryLarge"]), str(r["IndustryMid"]), str(r["IndustrySmall"]))
+                        if lab not in label_to_tuple:
+                            label_to_tuple[lab] = tup
+                            ranked_labels.append(lab)
 
                     top_labels = top_df["Label"].tolist() if include_top5 else []
                     top_label_set = set(top_labels)
 
                     search_q = st.text_input("Search industries to add", value="", key="industry_search")
-                    all_labels = sorted(label_to_tuple.keys())
-                    extra_options = [l for l in all_labels if l not in top_label_set]
+                    extra_options = [l for l in ranked_labels if l not in top_label_set]
                     if search_q.strip():
                         s = search_q.strip().lower()
                         extra_options = [l for l in extra_options if s in l.lower()]
