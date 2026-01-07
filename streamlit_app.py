@@ -162,6 +162,52 @@ def query_industry_date_bounds(
     return row[0], row[1]
 
 @st.cache_data(ttl=300)
+def query_industry_level_date_bounds(parquet_url: str, level: str):
+    con = get_duckdb_conn()
+    sql = """
+        SELECT min("Date") AS min_date, max("Date") AS max_date
+        FROM read_parquet(?)
+        WHERE "Level" = ?
+    """
+    row = con.execute(sql, [parquet_url, level]).fetchone()
+    return row[0], row[1]
+
+@st.cache_data(ttl=300)
+def query_industry_top_by_rs(parquet_url: str, level: str, asof_date: dt.date, limit: int = 5) -> pd.DataFrame:
+    """
+    지정 날짜(asof) 기준(해당 날짜 이전 최신 거래일) MansfieldRS 상위 업종을 조회합니다.
+    """
+    con = get_duckdb_conn()
+    sql = """
+        SELECT
+          "IndustryLarge",
+          "IndustryMid",
+          "IndustrySmall",
+          "MansfieldRS",
+          "ConstituentCount",
+          "Date"
+        FROM read_parquet(?)
+        WHERE "Level" = ?
+          AND "Date" = (
+            SELECT max("Date")
+            FROM read_parquet(?)
+            WHERE "Level" = ?
+              AND "Date" <= ?
+          )
+          AND "MansfieldRS" IS NOT NULL
+        ORDER BY "MansfieldRS" DESC NULLS LAST
+        LIMIT ?
+    """
+    return con.execute(sql, [parquet_url, level, parquet_url, level, str(asof_date), int(limit)]).df()
+
+def _industry_label(level: str, large: str, mid: str, small: str) -> str:
+    if level == "L":
+        return f"{large}"
+    if level == "LM":
+        return f"{large} / {mid}"
+    return f"{large} / {mid} / {small}"
+
+@st.cache_data(ttl=300)
 def load_json_from_url(url, token=None):
     headers = {}
     if token:
@@ -598,113 +644,153 @@ if repo_name:
                 level_label = st.selectbox("Industry Level", list(level_label_to_value.keys()), key="industry_level")
                 level = level_label_to_value[level_label]
 
-                industry_large = ""
-                industry_mid = ""
-                industry_small = ""
+                # Date range (industry-level bounds)
+                try:
+                    min_date, max_date = query_industry_level_date_bounds(industry_url, level)
+                except Exception as e:
+                    st.error(f"Failed to query industry date bounds (likely URL/access issue): {e}")
+                    min_date, max_date = None, None
 
-                if master_df is None or master_df.empty:
-                    st.warning("KRX stock master not loaded; cannot build industry lists.")
+                if min_date is None or max_date is None:
+                    st.warning("No industry data available.")
                 else:
-                    mv = master_df.copy()
-                    for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
-                        if c not in mv.columns:
-                            mv[c] = ""
-                        mv[c] = mv[c].astype(str).str.strip()
-                        mv[c] = mv[c].replace({"nan": "", "None": ""})
+                    min_d = pd.to_datetime(min_date).date()
+                    max_d = pd.to_datetime(max_date).date()
+                    default_start = max(min_d, (pd.Timestamp(max_d) - pd.Timedelta(days=365)).date())
+                    start_d, end_d = st.slider(
+                        "Date range (Industry)",
+                        min_value=min_d,
+                        max_value=max_d,
+                        value=(default_start, max_d),
+                        key="industry_date_range",
+                    )
 
-                    if level == "L":
-                        larges = sorted({x for x in mv["IndustryLarge"].tolist() if x})
-                        if "Unknown" not in larges:
-                            larges.append("Unknown")
-                        industry_large = st.selectbox("IndustryLarge", larges, key="industry_large")
-                        industry_mid = ""
-                        industry_small = ""
-                    elif level == "LM":
-                        pairs = sorted(
-                            {
-                                (a, b)
+                    # Top 5 (sorted by MansfieldRS) as-of end_d
+                    top_df = query_industry_top_by_rs(industry_url, level, end_d, limit=5)
+                    if top_df is None or top_df.empty:
+                        st.info("Top 5 industries not available (MansfieldRS may be NA in this range).")
+                        top_df = pd.DataFrame(columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"])
+
+                    top_df = top_df.copy()
+                    top_df["Label"] = top_df.apply(
+                        lambda r: _industry_label(level, str(r["IndustryLarge"]), str(r["IndustryMid"]), str(r["IndustrySmall"])),
+                        axis=1,
+                    )
+
+                    st.markdown("**Top 5 (as-of end date, sorted by MansfieldRS)**")
+                    st.dataframe(
+                        top_df[["Date", "Label", "MansfieldRS", "ConstituentCount"]],
+                        use_container_width=True,
+                    )
+
+                    include_top5 = st.checkbox("Include Top 5 in chart", value=True, key="industry_include_top5")
+
+                    # Build additional selection options from master (normalized to match parquet conventions)
+                    label_to_tuple: dict[str, tuple[str, str, str]] = {}
+                    if master_df is not None and not master_df.empty:
+                        mv = master_df.copy()
+                        for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
+                            if c not in mv.columns:
+                                mv[c] = ""
+                            mv[c] = mv[c].astype(str).str.strip().replace({"nan": "", "None": ""})
+
+                        if level == "L":
+                            larges = {(a if a else "Unknown") for a in mv["IndustryLarge"].tolist()}
+                            for a in sorted(larges):
+                                label_to_tuple[_industry_label(level, a, "", "")] = (a, "", "")
+                        elif level == "LM":
+                            pairs = {
+                                ((a if a else "Unknown"), (b if b else "Unknown"))
                                 for a, b in zip(mv["IndustryLarge"].tolist(), mv["IndustryMid"].tolist())
-                                if a and b
                             }
-                        )
-                        if not pairs:
-                            st.warning("No (Large, Mid) pairs in master.")
-                        else:
-                            labels = [f"{a} / {b}" for a, b in pairs]
-                            pick = st.selectbox("IndustryLarge / IndustryMid", labels, key="industry_lm")
-                            i = labels.index(pick)
-                            industry_large, industry_mid = pairs[i]
-                            industry_small = ""
-                    else:  # LMS
-                        triples = sorted(
-                            {
-                                (a, b, c)
+                            for a, b in sorted(pairs):
+                                label_to_tuple[_industry_label(level, a, b, "")] = (a, b, "")
+                        else:  # LMS
+                            triples = {
+                                ((a if a else "Unknown"), (b if b else "Unknown"), (c if c else "Unknown"))
                                 for a, b, c in zip(
                                     mv["IndustryLarge"].tolist(),
                                     mv["IndustryMid"].tolist(),
                                     mv["IndustrySmall"].tolist(),
                                 )
-                                if a and b and c
                             }
-                        )
-                        if not triples:
-                            st.warning("No (Large, Mid, Small) triples in master.")
-                        else:
-                            labels = [f"{a} / {b} / {c}" for a, b, c in triples]
-                            pick = st.selectbox("IndustryLarge / IndustryMid / IndustrySmall", labels, key="industry_lms")
-                            i = labels.index(pick)
-                            industry_large, industry_mid, industry_small = triples[i]
+                            for a, b, c in sorted(triples):
+                                label_to_tuple[_industry_label(level, a, b, c)] = (a, b, c)
 
-                if industry_large:
-                    try:
-                        min_date, max_date = query_industry_date_bounds(
-                            industry_url, level, industry_large, industry_mid, industry_small
-                        )
-                    except Exception as e:
-                        st.error(f"Failed to query industry date bounds (likely URL/access issue): {e}")
-                        min_date, max_date = None, None
+                    top_labels = top_df["Label"].tolist() if include_top5 else []
+                    top_label_set = set(top_labels)
 
-                    if min_date is None or max_date is None:
-                        st.warning("No data available for selected industry.")
+                    search_q = st.text_input("Search industries to add", value="", key="industry_search")
+                    all_labels = sorted(label_to_tuple.keys())
+                    extra_options = [l for l in all_labels if l not in top_label_set]
+                    if search_q.strip():
+                        s = search_q.strip().lower()
+                        extra_options = [l for l in extra_options if s in l.lower()]
+
+                    extra_labels = st.multiselect(
+                        "추가 분류 선택 (선택한 업종도 차트에 표시)",
+                        options=extra_options,
+                        default=[],
+                        key="industry_extra_labels",
+                    )
+
+                    labels_to_plot = top_labels + extra_labels
+                    if not labels_to_plot:
+                        st.info("No industries selected for chart.")
                     else:
-                        min_d = pd.to_datetime(min_date).date()
-                        max_d = pd.to_datetime(max_date).date()
-                        default_start = max(min_d, (pd.Timestamp(max_d) - pd.Timedelta(days=365)).date())
-                        start_d, end_d = st.slider(
-                            "Date range (Industry)",
-                            min_value=min_d,
-                            max_value=max_d,
-                            value=(default_start, max_d),
-                            key="industry_date_range",
-                        )
-
-                        need_cols = ("Date", "IndustryClose", "MansfieldRS", "ConstituentCount")
-                        one = query_industry_parquet(
-                            industry_url,
-                            level,
-                            industry_large,
-                            industry_mid,
-                            industry_small,
-                            start_d,
-                            end_d,
-                            need_cols,
-                        )
-                        if one.empty:
-                            st.warning("No data in selected date range.")
-                        else:
+                        # Query time series per selected industry and plot MansfieldRS only
+                        series_frames: list[pd.DataFrame] = []
+                        for lab in labels_to_plot:
+                            tup = None
+                            if lab in label_to_tuple:
+                                tup = label_to_tuple[lab]
+                            else:
+                                # Fallback (top_df labels should still be resolvable here)
+                                row = top_df[top_df["Label"] == lab]
+                                if not row.empty:
+                                    r0 = row.iloc[0]
+                                    tup = (str(r0["IndustryLarge"]), str(r0["IndustryMid"]), str(r0["IndustrySmall"]))
+                            if tup is None:
+                                continue
+                            a, b, c = tup
+                            one = query_industry_parquet(
+                                industry_url,
+                                level,
+                                a,
+                                b,
+                                c,
+                                start_d,
+                                end_d,
+                                ("Date", "MansfieldRS", "ConstituentCount"),
+                            )
+                            if one is None or one.empty:
+                                continue
                             one["Date"] = _ensure_datetime(one["Date"])
-                            one["IndustryClose"] = pd.to_numeric(one["IndustryClose"], errors="coerce")
                             one["MansfieldRS"] = pd.to_numeric(one["MansfieldRS"], errors="coerce")
                             one["ConstituentCount"] = pd.to_numeric(one["ConstituentCount"], errors="coerce")
                             one = one.dropna(subset=["Date"]).sort_values("Date")
+                            one["Industry"] = lab
+                            series_frames.append(one[["Date", "Industry", "MansfieldRS", "ConstituentCount"]])
 
-                            st.caption(
-                                f"Selected: **{industry_large}**"
-                                + (f" / **{industry_mid}**" if industry_mid else "")
-                                + (f" / **{industry_small}**" if industry_small else "")
+                        if not series_frames:
+                            st.warning("No data to plot for selected industries.")
+                        else:
+                            plot_df = pd.concat(series_frames, ignore_index=True)
+                            chart = (
+                                alt.Chart(plot_df)
+                                .mark_line()
+                                .encode(
+                                    x=alt.X("Date:T", title="Date"),
+                                    y=alt.Y("MansfieldRS:Q", title="MansfieldRS"),
+                                    color=alt.Color("Industry:N", title="Industry"),
+                                    tooltip=[
+                                        alt.Tooltip("Date:T"),
+                                        alt.Tooltip("Industry:N"),
+                                        alt.Tooltip("MansfieldRS:Q", format=".2f"),
+                                        alt.Tooltip("ConstituentCount:Q", title="N"),
+                                    ],
+                                )
                             )
-                            left_cols, right_cols = _axis_assignment(one, "IndustryClose", ["MansfieldRS"])
-                            chart = _build_dual_axis_chart(one, "Date", left_cols, right_cols)
                             st.altair_chart(chart, use_container_width=True)
 
             # 4) Chart: search ticker/name and plot selected series
