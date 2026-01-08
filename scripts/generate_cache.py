@@ -227,7 +227,7 @@ def _compute_universe_equal_weight_benchmark_close_by_date(
     u["UniverseReturn"] = pd.to_numeric(u["UniverseReturn"], errors="coerce").fillna(0.0)
     bench = (1.0 + u["UniverseReturn"]).cumprod() * 100.0
     bench.name = "UniverseClose"
-    bench.index = pd.to_datetime(bench.index, errors="coerce").dt.normalize()
+    bench.index = pd.DatetimeIndex(pd.to_datetime(bench.index, errors="coerce")).normalize()
     return bench
 
 def load_universe_from_krx_stock_master_json(path: str) -> tuple[list[str], dict[str, str], str | None]:
