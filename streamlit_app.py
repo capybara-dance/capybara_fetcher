@@ -105,6 +105,15 @@ def query_feature_date_bounds(parquet_url: str, ticker: str):
     return row[0], row[1]
 
 @st.cache_data(ttl=300)
+def get_parquet_columns(parquet_url: str) -> list[str]:
+    """
+    원격 parquet의 컬럼 목록을 가볍게 조회합니다. (row 스캔 없이 LIMIT 0)
+    """
+    con = get_duckdb_conn()
+    df0 = con.execute("SELECT * FROM read_parquet(?) LIMIT 0", [parquet_url]).df()
+    return list(df0.columns)
+
+@st.cache_data(ttl=300)
 def query_industry_parquet(
     parquet_url: str,
     level: str,
@@ -232,6 +241,43 @@ def _industry_label(level: str, large: str, mid: str, small: str) -> str:
     if level == "LM":
         return f"{large} / {mid}"
     return f"{large} / {mid} / {small}"
+
+@st.cache_data(ttl=300)
+def query_tickers_rs_by_ticker_list(
+    feature_url: str,
+    tickers: list[str],
+    asof_date: dt.date,
+    limit: int = 10,
+) -> pd.DataFrame:
+    """
+    지정 종목 리스트의 RS 값을 조회합니다.
+    asof_date 기준(해당 날짜 이전 최신 거래일) MansfieldRS 상위 종목을 반환합니다.
+    """
+    if not tickers:
+        return pd.DataFrame(columns=["Ticker", "MansfieldRS", "Date"])
+    
+    con = get_duckdb_conn()
+    # IN 절을 위한 ticker 리스트 준비
+    ticker_placeholders = ",".join(["?" for _ in tickers])
+    sql = f"""
+        SELECT
+          "Ticker",
+          "MansfieldRS",
+          "Date"
+        FROM read_parquet(?)
+        WHERE "Ticker" IN ({ticker_placeholders})
+          AND "Date" = (
+            SELECT max("Date")
+            FROM read_parquet(?)
+            WHERE "Ticker" IN ({ticker_placeholders})
+              AND "Date" <= ?
+          )
+          AND "MansfieldRS" IS NOT NULL
+        ORDER BY "MansfieldRS" DESC NULLS LAST
+        LIMIT ?
+    """
+    params = [feature_url] + tickers + [feature_url] + tickers + [str(asof_date), int(limit)]
+    return con.execute(sql, params).df()
 
 @st.cache_data(ttl=300)
 def load_json_from_url(url, token=None):
@@ -595,7 +641,7 @@ if repo_name:
                 st.session_state["meta_obj"] = None
 
             # 1) 메타데이터: 릴리즈 선택 시 자동 로드/표시 (meta-only 릴리즈 지원)
-            with st.expander("Metadata (meta.json)", expanded=True):
+            with st.expander("Metadata (meta.json)", expanded=False):
                 if meta_asset:
                     st.write(f"**Meta asset:** `{meta_asset['name']}`")
                     meta = load_json_from_url(meta_asset["browser_download_url"], github_token)
@@ -704,9 +750,18 @@ if repo_name:
                     )
 
                     st.markdown("**Top 5 (as-of end date, sorted by MansfieldRS)**")
-                    st.dataframe(
-                        top_df[["Date", "Label", "MansfieldRS", "ConstituentCount"]],
+
+                    top5_display_df = top_df[["Date", "Label", "MansfieldRS", "ConstituentCount"]].copy()
+                    top5_event = st.dataframe(
+                        top5_display_df,
+                        hide_index=True,
                         use_container_width=True,
+                        on_select="rerun",
+                        selection_mode="single-row",
+                        key="top5_industry_df",
+                    )
+                    selected_industry_idx = (
+                        int(top5_event.selection.rows[0]) if getattr(top5_event, "selection", None) and top5_event.selection.rows else None
                     )
 
                     include_top5 = st.checkbox("Include Top 5 in chart", value=True, key="industry_include_top5")
@@ -809,6 +864,135 @@ if repo_name:
                                 )
                             )
                             st.altair_chart(chart, use_container_width=True)
+
+                    # 선택된 업종의 상위 RS 종목 표시
+                    if feature_asset is not None and not top_df.empty:
+                        if selected_industry_idx is not None and selected_industry_idx < len(top_df):
+                            selected_industry = top_df.iloc[selected_industry_idx]
+                            industry_large = str(selected_industry["IndustryLarge"])
+                            industry_mid = str(selected_industry["IndustryMid"])
+                            industry_small = str(selected_industry["IndustrySmall"])
+                            industry_label = selected_industry["Label"]
+                            
+                            st.markdown(f"**📊 {industry_label} - 상위 RS 10개 종목**")
+                            
+                            try:
+                                # KRX stock master에서 업종으로 필터링
+                                if master_df is not None and not master_df.empty and "Code" in master_df.columns:
+                                    master_copy = master_df.copy()
+                                    master_copy["Code"] = master_copy["Code"].astype(str)
+                                    
+                                    # 업종 필터링 (level에 따라 다르게)
+                                    if level == "L":
+                                        filtered = master_copy[master_copy["IndustryLarge"] == industry_large]
+                                    elif level == "LM":
+                                        filtered = master_copy[
+                                            (master_copy["IndustryLarge"] == industry_large) &
+                                            (master_copy["IndustryMid"] == industry_mid)
+                                        ]
+                                    else:  # LMS
+                                        filtered = master_copy[
+                                            (master_copy["IndustryLarge"] == industry_large) &
+                                            (master_copy["IndustryMid"] == industry_mid) &
+                                            (master_copy["IndustrySmall"] == industry_small)
+                                        ]
+                                    
+                                    tickers_list = filtered["Code"].tolist()
+                                    
+                                    if tickers_list:
+                                        feature_url = feature_asset["browser_download_url"]
+                                        tickers_rs_df = query_tickers_rs_by_ticker_list(
+                                            feature_url,
+                                            tickers_list,
+                                            end_d,
+                                            limit=10,
+                                        )
+                                        
+                                        if tickers_rs_df is not None and not tickers_rs_df.empty:
+                                            # KRX stock master와 조인하여 종목명 추가
+                                            tickers_rs_df = tickers_rs_df.copy()
+                                            tickers_rs_df["Ticker"] = tickers_rs_df["Ticker"].astype(str)
+                                            tickers_rs_df = tickers_rs_df.merge(
+                                                master_copy[["Code", "Name", "Market"]],
+                                                left_on="Ticker",
+                                                right_on="Code",
+                                                how="left",
+                                            )
+                                            tickers_rs_df = tickers_rs_df.drop(columns=["Code"])
+                                            display_cols = ["Ticker", "Name", "Market", "MansfieldRS", "Date"]
+
+                                            # 종목 선택 + 선택 종목 차트(종가+RS)
+                                            table_df = tickers_rs_df[display_cols].copy()
+                                            top10_event = st.dataframe(
+                                                table_df,
+                                                hide_index=True,
+                                                use_container_width=True,
+                                                on_select="rerun",
+                                                selection_mode="single-row",
+                                                key="industry_top10_ticker_df",
+                                            )
+                                            selected_ticker = None
+                                            if getattr(top10_event, "selection", None) and top10_event.selection.rows:
+                                                ridx = int(top10_event.selection.rows[0])
+                                                if 0 <= ridx < len(table_df):
+                                                    selected_ticker = str(table_df.iloc[ridx]["Ticker"])
+
+                                            if selected_ticker:
+                                                feature_url = feature_asset["browser_download_url"]
+                                                cols = []
+                                                try:
+                                                    cols = get_parquet_columns(feature_url)
+                                                except Exception:
+                                                    cols = []
+
+                                                rs_candidates = ["MansfieldRS", "RS", "RelativeStrength"]
+                                                rs_col = next((c for c in rs_candidates if c in cols), None)
+
+                                                chart_cols = ["Date", "Ticker", "Close"]
+                                                if rs_col:
+                                                    chart_cols.append(rs_col)
+
+                                                try:
+                                                    ts = query_feature_parquet(
+                                                        feature_url,
+                                                        selected_ticker,
+                                                        start_d,
+                                                        end_d,
+                                                        tuple(chart_cols),
+                                                    )
+                                                except Exception as e:
+                                                    st.error(f"선택 종목 시계열 조회 실패: {e}")
+                                                    ts = pd.DataFrame()
+
+                                                if ts is None or ts.empty:
+                                                    st.info("선택한 종목의 데이터가 선택 기간에 없습니다.")
+                                                else:
+                                                    ts = ts.copy()
+                                                    ts["Date"] = _ensure_datetime(ts["Date"])
+                                                    ts["Close"] = pd.to_numeric(ts["Close"], errors="coerce")
+                                                    if rs_col and rs_col in ts.columns:
+                                                        ts[rs_col] = pd.to_numeric(ts[rs_col], errors="coerce")
+
+                                                    st.markdown(f"**📈 `{selected_ticker}` 종가 + RS**")
+                                                    if rs_col and rs_col in ts.columns:
+                                                        left_cols, right_cols = _axis_assignment(ts, "Close", [rs_col])
+                                                        chart2 = _build_dual_axis_chart(
+                                                            ts,
+                                                            "Date",
+                                                            ["Close"] + [c for c in left_cols if c != "Close"],
+                                                            right_cols,
+                                                        )
+                                                    else:
+                                                        chart2 = _build_dual_axis_chart(ts, "Date", ["Close"], [])
+                                                    st.altair_chart(chart2, use_container_width=True)
+                                        else:
+                                            st.info("선택한 업종에 대한 종목 RS 데이터를 찾을 수 없습니다.")
+                                    else:
+                                        st.info("선택한 업종에 속하는 종목을 찾을 수 없습니다.")
+                                else:
+                                    st.warning("KRX stock master가 로드되지 않았습니다. 종목 정보를 조회할 수 없습니다.")
+                            except Exception as e:
+                                st.error(f"종목 데이터 조회 중 오류 발생: {e}")
 
             # 4) Chart: search ticker/name and plot selected series
             if feature_asset is not None:
