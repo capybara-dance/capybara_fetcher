@@ -6,7 +6,7 @@ on:
       start_date:
         description: 'Start Date (YYYYMMDD)'
         required: false
-        default: '20251201'
+        default: '20150101'
       end_date:
         description: 'End Date (YYYYMMDD) - Defaults to Today'
         required: false
@@ -48,7 +48,7 @@ jobs:
         # Handle inputs with defaults
         START_DATE="${{ inputs.start_date }}"
         if [ -z "$START_DATE" ]; then
-          START_DATE="20251201"
+          START_DATE="20150101"
         fi
         
         END_DATE="${{ inputs.end_date }}"
@@ -58,7 +58,15 @@ jobs:
         
         echo "Generating cache from $START_DATE to $END_DATE"
         
-        python scripts/generate_cache.py --start-date "$START_DATE" --end-date "$END_DATE" --output cache/korea_universe_feature_frame.parquet --meta-output cache/korea_universe_feature_frame.meta.json --krx-stock-master-json data/krx_stock_master.json
+        python scripts/generate_cache.py \
+          --start-date "$START_DATE" \
+          --end-date "$END_DATE" \
+          --output cache/korea_universe_feature_frame.parquet \
+          --meta-output cache/korea_universe_feature_frame.meta.json \
+          --industry-output cache/korea_industry_feature_frame.parquet \
+          --industry-meta-output cache/korea_industry_feature_frame.meta.json \
+          --industry-benchmark universe \
+          --krx-stock-master-json data/krx_stock_master.json
 
     - name: Detect Generated Files
       id: files
@@ -78,6 +86,16 @@ jobs:
         else
           echo "has_meta=false" >> "$GITHUB_OUTPUT"
         fi
+        if [ -f "cache/korea_industry_feature_frame.parquet" ]; then
+          echo "has_industry=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_industry=false" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f "cache/korea_industry_feature_frame.meta.json" ]; then
+          echo "has_industry_meta=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_industry_meta=false" >> "$GITHUB_OUTPUT"
+        fi
         
     - name: Upload Artifact (meta only)
       if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
@@ -89,8 +107,8 @@ jobs:
           cache/krx_stock_master.parquet
         retention-days: 7
 
-    - name: Upload Artifact (full)
-      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true'
+    - name: Upload Artifact (full, without industry)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry != 'true'
       uses: actions/upload-artifact@v4
       with:
         name: feature-cache-parquet
@@ -98,6 +116,19 @@ jobs:
           cache/korea_universe_feature_frame.parquet
           cache/korea_universe_feature_frame.meta.json
           cache/krx_stock_master.parquet
+        retention-days: 7
+
+    - name: Upload Artifact (full, with industry)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: feature-cache-parquet
+        path: |
+          cache/korea_universe_feature_frame.parquet
+          cache/korea_universe_feature_frame.meta.json
+          cache/krx_stock_master.parquet
+          cache/korea_industry_feature_frame.parquet
+          cache/korea_industry_feature_frame.meta.json
         retention-days: 7
 
     - name: Generate Tag Name
@@ -118,8 +149,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Create Release (full)
-      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true'
+    - name: Create Release (full, without industry)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry != 'true'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.tag.outputs.tag_name }}
@@ -128,6 +159,23 @@ jobs:
           cache/korea_universe_feature_frame.parquet
           cache/korea_universe_feature_frame.meta.json
           cache/krx_stock_master.parquet
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release (full, with industry)
+      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry == 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.tag.outputs.tag_name }}
+        name: Feature Cache ${{ steps.tag.outputs.tag_name }} (KST)
+        files: |
+          cache/korea_universe_feature_frame.parquet
+          cache/korea_universe_feature_frame.meta.json
+          cache/krx_stock_master.parquet
+          cache/korea_industry_feature_frame.parquet
+          cache/korea_industry_feature_frame.meta.json
         draft: false
         prerelease: false
       env:

@@ -18,11 +18,29 @@
 6.  **Indicator Calculation**:
     - 단순 OHLCV 외에 아래 지표를 추가로 계산하여 컬럼으로 저장
       - 이동평균: 5/10/20/60/120/200일 (`SMA_5`, `SMA_10`, ... `SMA_200`)
-      - Mansfield Relative Strength: 벤치마크 `069500` 대비 (`MansfieldRS`)
-      - 1년 신고가 여부(종가 기준): `IsNewHigh1Y` (최근 252 거래일 롤링)
-7.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
-8.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
-9.  **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
+      - Mansfield Relative Strength (`MansfieldRS`)
+        - 벤치마크: `069500` (수정주가, `adjusted=True`)
+        - 윈도우: 200 거래일 SMA (`min_periods=200` → 초반 구간은 `NA`)
+        - 계산:
+          - \(RS_{raw}(t) = Close_{ticker}(t) / Close_{benchmark}(t)\)
+          - \(RS_{sma}(t) = SMA_{200}(RS_{raw}(t))\)
+          - \(MansfieldRS(t) = (RS_{raw}(t) / RS_{sma}(t) - 1) * 100\)
+      - 1년 신고가 여부(종가 기준): `IsNewHigh1Y` (최근 252 거래일 롤링, `min_periods=252`)
+7.  **Industry Strength (A안)**:
+    - `KRX Stock Master`의 업종 분류(대/중/소)에 따라 종목을 그룹핑
+    - 업종 지수(기준값 100)를 **동일가중(일간 수익률 평균 → 누적)**으로 생성
+      - 종목별 일간 수익률: `Close.pct_change()`
+      - 업종 일간 수익률: 해당 일자 업종 구성종목 수익률의 평균
+      - 업종 지수: \((1+업종수익률)\) 누적곱 × 100
+      - 업종 데이터는 업종별 full date grid로 확장(reindex)하여 날짜축/롤링 계산을 안정화(수익률 결측은 0으로 보정)
+    - 업종 지수에 대해 종목과 동일한 방식으로 **Mansfield RS** 계산
+      - 업종 벤치마크는 실행 인자로 선택: `--industry-benchmark {universe|069500}` (기본값: `universe`)
+        - `universe`: 전 종목(유니버스) 동일가중 지수(기준 100)
+        - `069500`: 종목 RS와 동일한 `069500` 벤치마크 사용
+    - 산출물: `cache/korea_industry_feature_frame.parquet` (+ meta)
+8.  **Serialization**: 수집된 전체 데이터를 단일 `Parquet` 파일로 저장 (zstd 압축).
+9.  **Metadata Export**: 날짜 범위/티커 목록/파일 크기 등 실행 정보를 `meta.json`으로 저장.
+10. **Distribution**: GitHub Actions를 통해 산출물들을 **GitHub Releases**에 자동 업로드.
 
 ### Data Consumption (How to read large releases)
 전 종목 Feature Data parquet는 용량이 커서(전량 다운로드/로딩 시 메모리 사용 급증) 클라이언트가 쉽게 OOM(메모리 부족)으로 종료될 수 있습니다.  
@@ -75,7 +93,7 @@
 ## 5. Remaining Tasks
 
 ### Short-term
-1.  **Full Universe in CI**: 전 종목 수집은 시간이 오래 걸릴 수 있으므로, CI에서는 `CI_TEST_LIMIT` 정책/스케줄링을 정리하고 전체 빌드는 별도 스케줄로 분리 검토.
+1.  **Full Universe in CI**: 전 종목 수집은 시간이 오래 걸릴 수 있으므로, CI에서는 `--test-limit` 등으로 수집 종목 수를 제한하고 전체 빌드는 별도 스케줄로 분리 검토.
 2.  **Feature Logic Integration**: 단순 OHLCV 외에 기술적 지표(MA, RSI, Bollinger Bands 등) 계산 로직 추가.
 3.  **Scheduler**: 주간/일간 자동 실행을 위한 `schedule` (cron) 트리거 활성화.
 
@@ -87,7 +105,12 @@
   - 주요 컬럼: `Date`, `Open`, `High`, `Low`, `Close`, `Volume`, `TradingValue`, `Change`, `Ticker`
   - 지표 컬럼: `SMA_5`, `SMA_10`, `SMA_20`, `SMA_60`, `SMA_120`, `SMA_200`, `MansfieldRS`, `IsNewHigh1Y`
 - **Metadata**: `cache/korea_universe_feature_frame.meta.json`
-  - 날짜 범위, 티커 목록/개수, 파일 크기(MB), 실행 환경 버전, 유니버스 기준일(`universe_date`) 등
+  - 날짜 범위, 티커 목록/개수, 실제 수집 성공 종목 수, row/column, 지표 설정(예: `MansfieldRS` 벤치마크/윈도우 및 fetch 성공 여부), 실행 인자/소요시간/환경 버전 등
+- **Industry Strength Data (A안, 동일가중)**: `cache/korea_industry_feature_frame.parquet`
+  - 기준: `KRX Stock Master`의 `IndustryLarge/IndustryMid/IndustrySmall`
+  - 주요 컬럼: `Date`, `Level(L/LM/LMS)`, `IndustryLarge`, `IndustryMid`, `IndustrySmall`, `IndustryClose`, `IndustryReturn`, `ConstituentCount`, `MansfieldRS`
+- **Industry Strength Metadata**: `cache/korea_industry_feature_frame.meta.json`
+  - 업종 지수 생성 방식, RS 벤치마크(`--industry-benchmark`) 및 윈도우, 마스터 로드 상태, 벤치마크 fetch 결과, 산출물 row/column/크기 및 에러(실패 시에도 디버깅용으로 기록) 등
 - **KRX Stock Master (DataFrame)**: `cache/krx_stock_master.parquet`
   - 원본: `data/코스피.xlsx`, `data/코스닥.xlsx` (Seibro 수집)
   - 컬럼: `Code`, `Name`, `Market`, `IndustryLarge`, `IndustryMid`, `IndustrySmall`

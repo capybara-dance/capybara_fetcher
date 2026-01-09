@@ -7,18 +7,20 @@ import json
 import altair as alt
 import datetime as dt
 import duckdb
+from collections.abc import Iterable
 
-st.set_page_config(page_title="Korea Stock Feature Cache Inspector", layout="wide")
+st.set_page_config(
+    page_title="Korea Stock Feature Cache Inspector",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 st.title("📊 Korea Stock Feature Cache Inspector")
 
-# 사이드바 설정
-st.sidebar.header("Settings")
-# 기본값은 현재 사용자 이름/레포 이름 패턴을 가정하거나 비워둡니다.
-# 사용자가 직접 입력하도록 안내하는 것이 가장 확실합니다.
-default_repo = "yunu-lee/capybara_fetcher" # 예시 값
-repo_name = st.sidebar.text_input("Repository (owner/repo)", value=default_repo) 
-github_token = st.sidebar.text_input("GitHub Token (Optional, for private repos)", type="password")
+# Settings UI removed (use defaults)
+default_repo = "yunu-lee/capybara_fetcher"
+repo_name = default_repo
+github_token = ""
 
 @st.cache_data(ttl=60)
 def get_releases(repo, token=None):
@@ -103,6 +105,181 @@ def query_feature_date_bounds(parquet_url: str, ticker: str):
     """
     row = con.execute(sql, [parquet_url, ticker]).fetchone()
     return row[0], row[1]
+
+@st.cache_data(ttl=300)
+def get_parquet_columns(parquet_url: str) -> list[str]:
+    """
+    원격 parquet의 컬럼 목록을 가볍게 조회합니다. (row 스캔 없이 LIMIT 0)
+    """
+    con = get_duckdb_conn()
+    df0 = con.execute("SELECT * FROM read_parquet(?) LIMIT 0", [parquet_url]).df()
+    return list(df0.columns)
+
+@st.cache_data(ttl=300)
+def query_industry_parquet(
+    parquet_url: str,
+    level: str,
+    industry_large: str,
+    industry_mid: str,
+    industry_small: str,
+    start_date: dt.date,
+    end_date: dt.date,
+    columns: tuple[str, ...],
+) -> pd.DataFrame:
+    con = get_duckdb_conn()
+    cols_sql = ", ".join([f'"{c}"' for c in columns])
+    sql = f"""
+        SELECT {cols_sql}
+        FROM read_parquet(?)
+        WHERE "Level" = ?
+          AND "IndustryLarge" = ?
+          AND "IndustryMid" = ?
+          AND "IndustrySmall" = ?
+          AND "Date" >= ?
+          AND "Date" <= ?
+        ORDER BY "Date"
+    """
+    return con.execute(
+        sql,
+        [
+            parquet_url,
+            level,
+            industry_large,
+            industry_mid,
+            industry_small,
+            str(start_date),
+            str(end_date),
+        ],
+    ).df()
+
+@st.cache_data(ttl=300)
+def query_industry_date_bounds(
+    parquet_url: str,
+    level: str,
+    industry_large: str,
+    industry_mid: str,
+    industry_small: str,
+):
+    con = get_duckdb_conn()
+    sql = """
+        SELECT min("Date") AS min_date, max("Date") AS max_date
+        FROM read_parquet(?)
+        WHERE "Level" = ?
+          AND "IndustryLarge" = ?
+          AND "IndustryMid" = ?
+          AND "IndustrySmall" = ?
+    """
+    row = con.execute(sql, [parquet_url, level, industry_large, industry_mid, industry_small]).fetchone()
+    return row[0], row[1]
+
+@st.cache_data(ttl=300)
+def query_industry_level_date_bounds(parquet_url: str, level: str):
+    con = get_duckdb_conn()
+    sql = """
+        SELECT min("Date") AS min_date, max("Date") AS max_date
+        FROM read_parquet(?)
+        WHERE "Level" = ?
+    """
+    row = con.execute(sql, [parquet_url, level]).fetchone()
+    return row[0], row[1]
+
+@st.cache_data(ttl=300)
+def query_industry_top_by_rs(parquet_url: str, level: str, asof_date: dt.date, limit: int = 5) -> pd.DataFrame:
+    """
+    지정 날짜(asof) 기준(해당 날짜 이전 최신 거래일) MansfieldRS 상위 업종을 조회합니다.
+    """
+    con = get_duckdb_conn()
+    sql = """
+        SELECT
+          "IndustryLarge",
+          "IndustryMid",
+          "IndustrySmall",
+          "MansfieldRS",
+          "ConstituentCount",
+          "Date"
+        FROM read_parquet(?)
+        WHERE "Level" = ?
+          AND "Date" = (
+            SELECT max("Date")
+            FROM read_parquet(?)
+            WHERE "Level" = ?
+              AND "Date" <= ?
+          )
+          AND "MansfieldRS" IS NOT NULL
+        ORDER BY "MansfieldRS" DESC NULLS LAST
+        LIMIT ?
+    """
+    return con.execute(sql, [parquet_url, level, parquet_url, level, str(asof_date), int(limit)]).df()
+
+@st.cache_data(ttl=300)
+def query_industry_rank_by_rs(parquet_url: str, level: str, asof_date: dt.date) -> pd.DataFrame:
+    """
+    지정 날짜(asof) 기준(해당 날짜 이전 최신 거래일) 업종별 MansfieldRS 랭킹(내림차순)을 반환합니다.
+    """
+    con = get_duckdb_conn()
+    sql = """
+        SELECT
+          "IndustryLarge",
+          "IndustryMid",
+          "IndustrySmall",
+          "MansfieldRS",
+          "ConstituentCount",
+          "Date"
+        FROM read_parquet(?)
+        WHERE "Level" = ?
+          AND "Date" = (
+            SELECT max("Date")
+            FROM read_parquet(?)
+            WHERE "Level" = ?
+              AND "Date" <= ?
+          )
+        ORDER BY "MansfieldRS" DESC NULLS LAST
+    """
+    return con.execute(sql, [parquet_url, level, parquet_url, level, str(asof_date)]).df()
+
+def _industry_label(level: str, large: str, mid: str, small: str) -> str:
+    if level == "L":
+        return f"{large}"
+    if level == "LM":
+        return f"{large} / {mid}"
+    return f"{large} / {mid} / {small}"
+
+@st.cache_data(ttl=300)
+def query_tickers_rs_by_ticker_list(
+    feature_url: str,
+    tickers: list[str],
+    asof_date: dt.date,
+    limit: int = 10,
+) -> pd.DataFrame:
+    """
+    지정 종목 리스트의 RS 값을 조회합니다.
+    asof_date 기준(해당 날짜 이전 최신 거래일) MansfieldRS 상위 종목을 반환합니다.
+    """
+    if not tickers:
+        return pd.DataFrame(columns=["Ticker", "MansfieldRS", "Date"])
+    
+    con = get_duckdb_conn()
+    # IN 절을 위한 ticker 리스트 준비
+    ticker_placeholders = ",".join(["?" for _ in tickers])
+    sql = f"""
+        SELECT
+          "Ticker",
+          "MansfieldRS",
+          "Date"
+        FROM read_parquet(?)
+        WHERE "Ticker" IN ({ticker_placeholders})
+          AND "Date" = (
+            SELECT max("Date")
+            FROM read_parquet(?)
+            WHERE "Ticker" IN ({ticker_placeholders})
+              AND "Date" <= ?
+          )
+          AND "MansfieldRS" IS NOT NULL
+        ORDER BY "MansfieldRS" DESC NULLS LAST
+        LIMIT ?
+    """
+    params = [feature_url] + tickers + [feature_url] + tickers + [str(asof_date), int(limit)]
+    return con.execute(sql, params).df()
 
 @st.cache_data(ttl=300)
 def load_json_from_url(url, token=None):
@@ -223,7 +400,10 @@ def _build_dual_axis_chart(
     )
     if marker_layer is not None:
         # Marker should share the left (price-scale) axis
-        left = alt.layer(left, marker_layer)
+        # NOTE: keep the main line chart as the last layer.
+        # Some Vega-Lite/Altair versions can suppress the shared axis
+        # if the last layer sets axis=None (our marker layer does).
+        left = alt.layer(marker_layer, left)
 
     if right_cols:
         right = (
@@ -292,9 +472,8 @@ def _build_candlestick_chart(df: pd.DataFrame, date_col: str = "Date", marker_la
         )
     )
 
-    layers = [wick, body]
-    if marker_layer is not None:
-        layers.append(marker_layer)
+    # Put marker first so axis/title from candle layers remain visible.
+    layers = [marker_layer, wick, body] if marker_layer is not None else [wick, body]
     return alt.layer(*layers)
 
 def _build_metric_overlay_lines(df: pd.DataFrame, date_col: str, cols: list[str], axis_orient: str, show_legend: bool):
@@ -389,7 +568,11 @@ def pick_meta_asset(assets):
 
 def pick_feature_asset(assets):
     parquet_assets = [a for a in assets if a.get("name", "").endswith(".parquet")]
-    feature_assets = [a for a in parquet_assets if a.get("name") != "krx_stock_master.parquet"]
+    feature_assets = [
+        a
+        for a in parquet_assets
+        if a.get("name") not in {"krx_stock_master.parquet", "korea_industry_feature_frame.parquet"}
+    ]
     if not feature_assets:
         return None
     # Prefer the known default name if present
@@ -403,6 +586,18 @@ def pick_feature_asset(assets):
             return a
     return feature_assets[0]
 
+def pick_industry_asset(assets):
+    candidates = [a for a in assets if a.get("name", "").endswith(".parquet")]
+    if not candidates:
+        return None
+    for a in candidates:
+        if a.get("name") == "korea_industry_feature_frame.parquet":
+            return a
+    for a in candidates:
+        if "industry" in (a.get("name", "").lower()):
+            return a
+    return None
+
 def pick_krx_stock_master_asset(assets):
     candidates = [a for a in assets if a.get("name", "").endswith(".parquet")]
     if not candidates:
@@ -414,6 +609,72 @@ def pick_krx_stock_master_asset(assets):
         if "krx_stock_master" in (a.get("name", "").lower()):
             return a
     return None
+
+def _collect_meta_messages(obj: object, *, max_items: int = 30) -> list[tuple[str, str]]:
+    """
+    meta.json 내부의 error/last_error/notes 같은 메시지를 path와 함께 수집합니다.
+    너무 과도하게 표기되지 않도록 max_items로 제한합니다.
+    Returns: list[(path, message)]
+    """
+    keys = {"error", "last_error", "notes"}
+    out: list[tuple[str, str]] = []
+
+    def is_meaningful(v: object) -> bool:
+        if v is None:
+            return False
+        s = str(v).strip()
+        return s not in {"", "-", "None", "null", "nan"}
+
+    def walk(v: object, path: str) -> None:
+        if len(out) >= max_items:
+            return
+        if isinstance(v, dict):
+            for k, vv in v.items():
+                p = f"{path}.{k}" if path else str(k)
+                if str(k) in keys and is_meaningful(vv):
+                    out.append((p, str(vv)))
+                    if len(out) >= max_items:
+                        return
+                walk(vv, p)
+        elif isinstance(v, list):
+            for i, vv in enumerate(v):
+                walk(vv, f"{path}[{i}]")
+
+    walk(obj, "")
+    return out
+
+def _meta_health(meta: dict) -> tuple[list[str], list[str]]:
+    """
+    Returns: (errors, warnings) as human-readable strings.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    # 1) Universe fetch status
+    uf = (meta or {}).get("universe_fetch") or {}
+    if uf.get("success") is False:
+        msg = uf.get("last_error") or uf.get("error") or "Universe fetch failed."
+        errors.append(f"universe_fetch 실패: {msg}")
+
+    # 2) Benchmark fetch for MansfieldRS
+    mf = (((meta or {}).get("indicators") or {}).get("mansfield_rs") or {}).get("benchmark_fetch") or {}
+    if mf and mf.get("success") is False:
+        t = mf.get("ticker") or (mf.get("type") if isinstance(mf.get("type"), str) else None) or "benchmark"
+        msg = mf.get("error") or "benchmark fetch failed."
+        warnings.append(f"MansfieldRS 벤치마크({t}) fetch 실패: {msg}")
+
+    # 3) Generic messages
+    for p, m in _collect_meta_messages(meta):
+        # skip duplicates from above (best-effort)
+        if any(m in s for s in errors) or any(m in s for s in warnings):
+            continue
+        if p.endswith(".notes"):
+            warnings.append(f"notes: {m}")
+        elif ".error" in p or p.endswith(".last_error"):
+            # treat as warning by default (could be non-fatal)
+            warnings.append(f"{p}: {m}")
+
+    return errors, warnings
 
 # 메인 로직
 if repo_name:
@@ -441,6 +702,7 @@ if repo_name:
             meta_asset = pick_meta_asset(assets)
             feature_asset = pick_feature_asset(assets)
             krx_master_asset = pick_krx_stock_master_asset(assets)
+            industry_asset = pick_industry_asset(assets)
 
             # Keep loaded frames in session_state (so chart UI doesn't reset)
             if "krx_master_df" not in st.session_state:
@@ -449,20 +711,37 @@ if repo_name:
                 st.session_state["meta_obj"] = None
 
             # 1) 메타데이터: 릴리즈 선택 시 자동 로드/표시 (meta-only 릴리즈 지원)
-            with st.expander("Metadata (meta.json)", expanded=True):
+            with st.expander("Metadata (meta.json)", expanded=False):
                 if meta_asset:
                     st.write(f"**Meta asset:** `{meta_asset['name']}`")
                     meta = load_json_from_url(meta_asset["browser_download_url"], github_token)
                     if meta:
                         st.session_state["meta_obj"] = meta
+                        # show meta health banner (also outside this expander via session_state)
+                        errors, warnings = _meta_health(meta)
+                        st.session_state["meta_health"] = {"errors": errors, "warnings": warnings}
                         col_a, col_b, col_c, col_d = st.columns(4)
                         col_a.metric("Start", meta.get("start_date", "-"))
                         col_b.metric("End", meta.get("end_date", "-"))
                         col_c.metric("Tickers", meta.get("ticker_count", 0))
                         col_d.metric("Rows", meta.get("rows", 0))
+                        if errors:
+                            st.error(" / ".join(errors))
+                        if warnings:
+                            # avoid massive warning block
+                            st.warning("\n".join(warnings[:8]) + (f"\n… (+{len(warnings)-8} more)" if len(warnings) > 8 else ""))
                         st.json(meta)
                 else:
                     st.info("No meta json found in this release.")
+
+            # Meta health banner outside expander (so user notices)
+            mh = st.session_state.get("meta_health") or {}
+            mh_errors = mh.get("errors") or []
+            mh_warnings = mh.get("warnings") or []
+            if mh_errors:
+                st.error(" / ".join(mh_errors))
+            elif mh_warnings:
+                st.warning("\n".join(mh_warnings[:6]) + (f"\n… (+{len(mh_warnings)-6} more)" if len(mh_warnings) > 6 else ""))
 
             # 1.5) KRX Stock Master: 버튼 클릭 시 로드
             with st.expander("KRX Stock Master (parquet)", expanded=False):
@@ -489,9 +768,351 @@ if repo_name:
                 else:
                     st.info("No feature parquet found in this release.")
 
+            # 3.5) Industry strength data
+            with st.expander("Industry Strength Data (parquet)", expanded=False):
+                if industry_asset:
+                    st.write(f"**Industry asset:** `{industry_asset['name']}`")
+                    industry_meta_asset = find_meta_asset(assets, industry_asset["name"])
+                    if industry_meta_asset:
+                        st.write(f"**Industry meta:** `{industry_meta_asset['name']}`")
+                    st.info("Industry charts below query by industry/date without loading the whole file.")
+                else:
+                    st.info("No industry parquet found in this release.")
+
+            # 4) Industry strength chart (A안 결과)
+            # Place this section BEFORE the ticker chart, so it is visible
+            # even when the ticker UI is long.
+            if industry_asset is not None:
+                st.subheader("🏭 Industry Strength (Mansfield RS)")
+                industry_url = industry_asset["browser_download_url"]
+
+                # Ensure KRX stock master is available (for industry list UI)
+                master_df = st.session_state.get("krx_master_df")
+                if (master_df is None or master_df.empty) and krx_master_asset is not None:
+                    with st.spinner("Loading KRX stock master for industry lists..."):
+                        mdf = load_parquet_from_url(krx_master_asset["browser_download_url"], github_token)
+                        if mdf is not None and not mdf.empty:
+                            st.session_state["krx_master_df"] = mdf
+                            master_df = mdf
+
+                level_label_to_value = {
+                    "대분류 (L)": "L",
+                    "대/중분류 (LM)": "LM",
+                    "대/중/소분류 (LMS)": "LMS",
+                }
+                level_label = st.selectbox(
+                    "Industry Level",
+                    list(level_label_to_value.keys()),
+                    index=1,  # default: "대/중분류 (LM)"
+                    key="industry_level",
+                )
+                level = level_label_to_value[level_label]
+
+                # Date range (industry-level bounds)
+                try:
+                    min_date, max_date = query_industry_level_date_bounds(industry_url, level)
+                except Exception as e:
+                    st.error(f"Failed to query industry date bounds (likely URL/access issue): {e}")
+                    min_date, max_date = None, None
+
+                if min_date is None or max_date is None:
+                    st.warning("No industry data available.")
+                else:
+                    min_d = pd.to_datetime(min_date).date()
+                    max_d = pd.to_datetime(max_date).date()
+                    default_start = max(min_d, (pd.Timestamp(max_d) - pd.Timedelta(days=365)).date())
+                    start_d, end_d = st.slider(
+                        "Date range (Industry)",
+                        min_value=min_d,
+                        max_value=max_d,
+                        value=(default_start, max_d),
+                        key="industry_date_range",
+                    )
+
+                    # Top 5 (sorted by MansfieldRS) as-of end_d
+                    top_df = query_industry_top_by_rs(industry_url, level, end_d, limit=5)
+                    if top_df is None or top_df.empty:
+                        st.info("Top 5 industries not available (MansfieldRS may be NA in this range).")
+                        top_df = pd.DataFrame(columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"])
+
+                    top_df = top_df.copy()
+                    top_df["Label"] = top_df.apply(
+                        lambda r: _industry_label(level, str(r["IndustryLarge"]), str(r["IndustryMid"]), str(r["IndustrySmall"])),
+                        axis=1,
+                    )
+
+                    st.markdown("**Top 5 (as-of end date, sorted by MansfieldRS)**")
+
+                    top5_display_df = top_df[["Date", "Label", "MansfieldRS", "ConstituentCount"]].copy()
+                    top5_event = st.dataframe(
+                        top5_display_df,
+                        hide_index=True,
+                        use_container_width=True,
+                        on_select="rerun",
+                        selection_mode="single-row",
+                        key="top5_industry_df",
+                    )
+                    selected_industry_idx = (
+                        int(top5_event.selection.rows[0]) if getattr(top5_event, "selection", None) and top5_event.selection.rows else None
+                    )
+
+                    include_top5 = st.checkbox("Include Top 5 in chart", value=True, key="industry_include_top5")
+
+                    # Ranked list (sorted by MansfieldRS as-of end_d)
+                    ranked_df = query_industry_rank_by_rs(industry_url, level, end_d)
+                    if ranked_df is None or ranked_df.empty:
+                        st.info("Industry ranking not available for this date.")
+                        ranked_df = pd.DataFrame(
+                            columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"]
+                        )
+
+                    ranked_df = ranked_df.copy()
+                    ranked_df["Label"] = ranked_df.apply(
+                        lambda r: _industry_label(level, str(r["IndustryLarge"]), str(r["IndustryMid"]), str(r["IndustrySmall"])),
+                        axis=1,
+                    )
+
+                    # Build selection options ordered by RS (ranked_df order)
+                    label_to_tuple: dict[str, tuple[str, str, str]] = {}
+                    ranked_labels: list[str] = []
+                    for _, r in ranked_df.iterrows():
+                        lab = str(r["Label"])
+                        tup = (str(r["IndustryLarge"]), str(r["IndustryMid"]), str(r["IndustrySmall"]))
+                        if lab not in label_to_tuple:
+                            label_to_tuple[lab] = tup
+                            ranked_labels.append(lab)
+
+                    top_labels = top_df["Label"].tolist() if include_top5 else []
+                    top_label_set = set(top_labels)
+
+                    search_q = st.text_input("Search industries to add", value="", key="industry_search")
+                    extra_options = [l for l in ranked_labels if l not in top_label_set]
+                    if search_q.strip():
+                        s = search_q.strip().lower()
+                        extra_options = [l for l in extra_options if s in l.lower()]
+
+                    extra_labels = st.multiselect(
+                        "추가 분류 선택 (선택한 업종도 차트에 표시)",
+                        options=extra_options,
+                        default=[],
+                        key="industry_extra_labels",
+                    )
+
+                    labels_to_plot = top_labels + extra_labels
+                    if not labels_to_plot:
+                        st.info("No industries selected for chart.")
+                    else:
+                        # Query time series per selected industry and plot MansfieldRS only
+                        series_frames: list[pd.DataFrame] = []
+                        for lab in labels_to_plot:
+                            tup = None
+                            if lab in label_to_tuple:
+                                tup = label_to_tuple[lab]
+                            else:
+                                # Fallback (top_df labels should still be resolvable here)
+                                row = top_df[top_df["Label"] == lab]
+                                if not row.empty:
+                                    r0 = row.iloc[0]
+                                    tup = (str(r0["IndustryLarge"]), str(r0["IndustryMid"]), str(r0["IndustrySmall"]))
+                            if tup is None:
+                                continue
+                            a, b, c = tup
+                            one = query_industry_parquet(
+                                industry_url,
+                                level,
+                                a,
+                                b,
+                                c,
+                                start_d,
+                                end_d,
+                                ("Date", "MansfieldRS", "ConstituentCount"),
+                            )
+                            if one is None or one.empty:
+                                continue
+                            one["Date"] = _ensure_datetime(one["Date"])
+                            one["MansfieldRS"] = pd.to_numeric(one["MansfieldRS"], errors="coerce")
+                            one["ConstituentCount"] = pd.to_numeric(one["ConstituentCount"], errors="coerce")
+                            one = one.dropna(subset=["Date"]).sort_values("Date")
+                            one["Industry"] = lab
+                            series_frames.append(one[["Date", "Industry", "MansfieldRS", "ConstituentCount"]])
+
+                        if not series_frames:
+                            st.warning("No data to plot for selected industries.")
+                        else:
+                            plot_df = pd.concat(series_frames, ignore_index=True)
+                            chart = (
+                                alt.Chart(plot_df)
+                                .mark_line()
+                                .encode(
+                                    x=alt.X("Date:T", title="Date"),
+                                    y=alt.Y("MansfieldRS:Q", title="MansfieldRS"),
+                                    color=alt.Color("Industry:N", title="Industry"),
+                                    tooltip=[
+                                        alt.Tooltip("Date:T"),
+                                        alt.Tooltip("Industry:N"),
+                                        alt.Tooltip("MansfieldRS:Q", format=".2f"),
+                                        alt.Tooltip("ConstituentCount:Q", title="N"),
+                                    ],
+                                )
+                            )
+                            st.altair_chart(chart, use_container_width=True)
+
+                    # 선택된 업종의 상위 RS 종목 표시
+                    if feature_asset is not None and not top_df.empty:
+                        if selected_industry_idx is not None and selected_industry_idx < len(top_df):
+                            selected_industry = top_df.iloc[selected_industry_idx]
+                            industry_large = str(selected_industry["IndustryLarge"])
+                            industry_mid = str(selected_industry["IndustryMid"])
+                            industry_small = str(selected_industry["IndustrySmall"])
+                            industry_label = selected_industry["Label"]
+                            
+                            st.markdown(f"**📊 {industry_label} - 상위 RS 10개 종목**")
+                            
+                            try:
+                                # KRX stock master에서 업종으로 필터링
+                                if master_df is not None and not master_df.empty and "Code" in master_df.columns:
+                                    master_copy = master_df.copy()
+                                    master_copy["Code"] = master_copy["Code"].astype(str)
+                                    
+                                    # 업종 필터링 (level에 따라 다르게)
+                                    if level == "L":
+                                        filtered = master_copy[master_copy["IndustryLarge"] == industry_large]
+                                    elif level == "LM":
+                                        filtered = master_copy[
+                                            (master_copy["IndustryLarge"] == industry_large) &
+                                            (master_copy["IndustryMid"] == industry_mid)
+                                        ]
+                                    else:  # LMS
+                                        filtered = master_copy[
+                                            (master_copy["IndustryLarge"] == industry_large) &
+                                            (master_copy["IndustryMid"] == industry_mid) &
+                                            (master_copy["IndustrySmall"] == industry_small)
+                                        ]
+                                    
+                                    tickers_list = filtered["Code"].tolist()
+                                    
+                                    if tickers_list:
+                                        feature_url = feature_asset["browser_download_url"]
+                                        tickers_rs_df = query_tickers_rs_by_ticker_list(
+                                            feature_url,
+                                            tickers_list,
+                                            end_d,
+                                            limit=10,
+                                        )
+                                        
+                                        if tickers_rs_df is not None and not tickers_rs_df.empty:
+                                            # KRX stock master와 조인하여 종목명 추가
+                                            tickers_rs_df = tickers_rs_df.copy()
+                                            tickers_rs_df["Ticker"] = tickers_rs_df["Ticker"].astype(str)
+                                            tickers_rs_df = tickers_rs_df.merge(
+                                                master_copy[["Code", "Name", "Market"]],
+                                                left_on="Ticker",
+                                                right_on="Code",
+                                                how="left",
+                                            )
+                                            tickers_rs_df = tickers_rs_df.drop(columns=["Code"])
+                                            display_cols = ["Ticker", "Name", "Market", "MansfieldRS", "Date"]
+
+                                            # 종목 선택 + 선택 종목 차트(종가+RS)
+                                            table_df = tickers_rs_df[display_cols].copy()
+                                            top10_event = st.dataframe(
+                                                table_df,
+                                                hide_index=True,
+                                                use_container_width=True,
+                                                on_select="rerun",
+                                                selection_mode="single-row",
+                                                key="industry_top10_ticker_df",
+                                            )
+                                            selected_ticker = None
+                                            if getattr(top10_event, "selection", None) and top10_event.selection.rows:
+                                                ridx = int(top10_event.selection.rows[0])
+                                                if 0 <= ridx < len(table_df):
+                                                    selected_ticker = str(table_df.iloc[ridx]["Ticker"])
+
+                                            if selected_ticker:
+                                                feature_url = feature_asset["browser_download_url"]
+                                                cols = []
+                                                try:
+                                                    cols = get_parquet_columns(feature_url)
+                                                except Exception:
+                                                    cols = []
+
+                                                rs_candidates = ["MansfieldRS", "RS", "RelativeStrength"]
+                                                rs_col = next((c for c in rs_candidates if c in cols), None)
+
+                                                chart_cols = ["Date", "Ticker", "Close"]
+                                                if rs_col:
+                                                    chart_cols.append(rs_col)
+
+                                                try:
+                                                    ts = query_feature_parquet(
+                                                        feature_url,
+                                                        selected_ticker,
+                                                        start_d,
+                                                        end_d,
+                                                        tuple(chart_cols),
+                                                    )
+                                                except Exception as e:
+                                                    st.error(f"선택 종목 시계열 조회 실패: {e}")
+                                                    ts = pd.DataFrame()
+
+                                                if ts is None or ts.empty:
+                                                    st.info("선택한 종목의 데이터가 선택 기간에 없습니다.")
+                                                else:
+                                                    ts = ts.copy()
+                                                    ts["Date"] = _ensure_datetime(ts["Date"])
+                                                    ts["Close"] = pd.to_numeric(ts["Close"], errors="coerce")
+                                                    if rs_col and rs_col in ts.columns:
+                                                        ts[rs_col] = pd.to_numeric(ts[rs_col], errors="coerce")
+
+                                                    st.markdown(f"**📈 `{selected_ticker}` 종가**")
+                                                    price_chart = (
+                                                        alt.Chart(ts)
+                                                        .mark_line()
+                                                        .encode(
+                                                            x=alt.X("Date:T", title="Date"),
+                                                            y=alt.Y("Close:Q", title="Close"),
+                                                            tooltip=[
+                                                                alt.Tooltip("Date:T"),
+                                                                alt.Tooltip("Close:Q"),
+                                                            ],
+                                                        )
+                                                    )
+                                                    st.altair_chart(price_chart, use_container_width=True)
+
+                                                    if rs_col and rs_col in ts.columns:
+                                                        st.markdown(f"**📉 RS (`{rs_col}`)**")
+                                                        rs_base = ts[["Date", rs_col]].copy()
+                                                        rs_line = (
+                                                            alt.Chart(rs_base)
+                                                            .mark_line()
+                                                            .encode(
+                                                                x=alt.X("Date:T", title="Date"),
+                                                                y=alt.Y(f"{rs_col}:Q", title=rs_col),
+                                                                tooltip=[
+                                                                    alt.Tooltip("Date:T"),
+                                                                    alt.Tooltip(f"{rs_col}:Q", title=rs_col),
+                                                                ],
+                                                            )
+                                                        )
+                                                        zero = (
+                                                            alt.Chart(pd.DataFrame({"y": [0]}))
+                                                            .mark_rule(color="#9ca3af", strokeDash=[4, 4])
+                                                            .encode(y="y:Q")
+                                                        )
+                                                        st.altair_chart(alt.layer(rs_line, zero), use_container_width=True)
+                                        else:
+                                            st.info("선택한 업종에 대한 종목 RS 데이터를 찾을 수 없습니다.")
+                                    else:
+                                        st.info("선택한 업종에 속하는 종목을 찾을 수 없습니다.")
+                                else:
+                                    st.warning("KRX stock master가 로드되지 않았습니다. 종목 정보를 조회할 수 없습니다.")
+                            except Exception as e:
+                                st.error(f"종목 데이터 조회 중 오류 발생: {e}")
+
             # 4) Chart: search ticker/name and plot selected series
             if feature_asset is not None:
-                st.subheader("📈 Chart")
+                st.subheader("📈 개별종목 Chart")
                 feature_url = feature_asset["browser_download_url"]
 
                 # Ensure KRX stock master is available
@@ -571,8 +1192,9 @@ if repo_name:
                         default_start = max(min_d, (pd.Timestamp(max_d) - pd.Timedelta(days=365)).date())
                         start_d, end_d = st.slider("Date range", min_value=min_d, max_value=max_d, value=(default_start, max_d))
 
-                        show_newhigh = st.checkbox("Show 1Y New High markers", value=True)
-                        marker_pos = st.selectbox("New High marker position", ["High", "Close"], index=0)
+                        show_newhigh = st.checkbox("Show 1Y New High markers", value=False)
+                        # Marker position is fixed to Close (UI removed)
+                        marker_pos = "Close"
 
                         tab_line, tab_candle = st.tabs(["Close & Metrics (Line)", "Candlestick (OHLC)"])
 
@@ -592,7 +1214,7 @@ if repo_name:
                                 st.warning("No data in selected date range.")
                             else:
                                 one["Date"] = _ensure_datetime(one["Date"])
-                                marker_y_col = marker_pos if marker_pos in one.columns else "Close"
+                                marker_y_col = "Close"
                                 newhigh_layer = _build_newhigh_marker_layer(one, "Date", marker_y_col) if show_newhigh else None
                                 left_cols, right_cols = _axis_assignment(one, "Close", [c for c in metrics if c != "Close"])
                                 chart = _build_dual_axis_chart(one, "Date", ["Close"] + [c for c in left_cols if c != "Close"], right_cols, marker_layer=newhigh_layer)
@@ -612,7 +1234,7 @@ if repo_name:
                                 st.warning("No data in selected date range.")
                             else:
                                 one["Date"] = _ensure_datetime(one["Date"])
-                                marker_y_col = marker_pos if marker_pos in one.columns else "Close"
+                                marker_y_col = "Close"
                                 newhigh_layer = _build_newhigh_marker_layer(one, "Date", marker_y_col) if show_newhigh else None
                                 candle = _build_candlestick_with_metrics(one, "Date", metrics, marker_layer=newhigh_layer)
                                 if candle is None:
