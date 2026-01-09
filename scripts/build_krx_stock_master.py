@@ -10,10 +10,23 @@ def _read_master_xlsx(path: Path, market: str) -> pd.DataFrame:
     # Normalize column names (strip whitespace)
     df.columns = [str(c).strip() for c in df.columns]
 
-    required = ["종목코드", "종목명", "업종(대분류)", "업종(중분류)", "업종(소분류)"]
+    required = ["종목코드", "종목명", "업종(대분류)", "업종(중분류)", "업종(소분류)", "발행주식수"]
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required columns in {path.name}: {missing}")
+
+    shares = (
+        pd.to_numeric(
+            df["발행주식수"]
+            .astype(str)
+            .str.replace(",", "", regex=False)
+            .str.strip(),
+            errors="coerce",
+        )
+        .round()
+    )
+    # Ensure JSON-serializable python ints (or None)
+    shares_py = [int(x) if pd.notna(x) else None for x in shares.tolist()]
 
     out = pd.DataFrame(
         {
@@ -23,6 +36,7 @@ def _read_master_xlsx(path: Path, market: str) -> pd.DataFrame:
             "IndustryLarge": df["업종(대분류)"].astype(str).str.strip(),
             "IndustryMid": df["업종(중분류)"].astype(str).str.strip(),
             "IndustrySmall": df["업종(소분류)"].astype(str).str.strip(),
+            "SharesOutstanding": shares_py,
         }
     )
     out = out.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"])
@@ -31,8 +45,8 @@ def _read_master_xlsx(path: Path, market: str) -> pd.DataFrame:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Build KRX stock master JSON from Seibro Excel files")
-    p.add_argument("--kospi-xlsx", type=str, default="/workspace/data/코스피.xlsx")
-    p.add_argument("--kosdaq-xlsx", type=str, default="/workspace/data/코스닥.xlsx")
+    p.add_argument("--kospi-xlsx", type=str, default="/workspace/data/kospi.xlsx")
+    p.add_argument("--kosdaq-xlsx", type=str, default="/workspace/data/kosdaq.xlsx")
     p.add_argument("--output-json", type=str, default="/workspace/data/krx_stock_master.json")
     args = p.parse_args()
 

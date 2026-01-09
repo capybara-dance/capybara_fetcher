@@ -19,12 +19,13 @@ def main() -> None:
     df = pd.DataFrame(data)
 
     # basic sanity / column order
-    cols = ["Code", "Name", "Market", "IndustryLarge", "IndustryMid", "IndustrySmall"]
+    cols = ["Code", "Name", "Market", "IndustryLarge", "IndustryMid", "IndustrySmall", "SharesOutstanding"]
     for c in cols:
         if c not in df.columns:
             df[c] = pd.NA
     df = df[cols].copy()
     df["Code"] = df["Code"].astype(str).str.strip().str.zfill(6)
+    df["SharesOutstanding"] = pd.to_numeric(df["SharesOutstanding"], errors="coerce").astype("Int64")
     df = df.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"]).sort_values(["Market", "Code"])
 
     out_path = Path(args.output_parquet)
