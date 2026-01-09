@@ -7,18 +7,20 @@ import json
 import altair as alt
 import datetime as dt
 import duckdb
+from collections.abc import Iterable
 
-st.set_page_config(page_title="Korea Stock Feature Cache Inspector", layout="wide")
+st.set_page_config(
+    page_title="Korea Stock Feature Cache Inspector",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 st.title("📊 Korea Stock Feature Cache Inspector")
 
-# 사이드바 설정
-st.sidebar.header("Settings")
-# 기본값은 현재 사용자 이름/레포 이름 패턴을 가정하거나 비워둡니다.
-# 사용자가 직접 입력하도록 안내하는 것이 가장 확실합니다.
-default_repo = "yunu-lee/capybara_fetcher" # 예시 값
-repo_name = st.sidebar.text_input("Repository (owner/repo)", value=default_repo) 
-github_token = st.sidebar.text_input("GitHub Token (Optional, for private repos)", type="password")
+# Settings UI removed (use defaults)
+default_repo = "yunu-lee/capybara_fetcher"
+repo_name = default_repo
+github_token = ""
 
 @st.cache_data(ttl=60)
 def get_releases(repo, token=None):
@@ -398,7 +400,10 @@ def _build_dual_axis_chart(
     )
     if marker_layer is not None:
         # Marker should share the left (price-scale) axis
-        left = alt.layer(left, marker_layer)
+        # NOTE: keep the main line chart as the last layer.
+        # Some Vega-Lite/Altair versions can suppress the shared axis
+        # if the last layer sets axis=None (our marker layer does).
+        left = alt.layer(marker_layer, left)
 
     if right_cols:
         right = (
@@ -467,9 +472,8 @@ def _build_candlestick_chart(df: pd.DataFrame, date_col: str = "Date", marker_la
         )
     )
 
-    layers = [wick, body]
-    if marker_layer is not None:
-        layers.append(marker_layer)
+    # Put marker first so axis/title from candle layers remain visible.
+    layers = [marker_layer, wick, body] if marker_layer is not None else [wick, body]
     return alt.layer(*layers)
 
 def _build_metric_overlay_lines(df: pd.DataFrame, date_col: str, cols: list[str], axis_orient: str, show_legend: bool):
@@ -606,6 +610,72 @@ def pick_krx_stock_master_asset(assets):
             return a
     return None
 
+def _collect_meta_messages(obj: object, *, max_items: int = 30) -> list[tuple[str, str]]:
+    """
+    meta.json 내부의 error/last_error/notes 같은 메시지를 path와 함께 수집합니다.
+    너무 과도하게 표기되지 않도록 max_items로 제한합니다.
+    Returns: list[(path, message)]
+    """
+    keys = {"error", "last_error", "notes"}
+    out: list[tuple[str, str]] = []
+
+    def is_meaningful(v: object) -> bool:
+        if v is None:
+            return False
+        s = str(v).strip()
+        return s not in {"", "-", "None", "null", "nan"}
+
+    def walk(v: object, path: str) -> None:
+        if len(out) >= max_items:
+            return
+        if isinstance(v, dict):
+            for k, vv in v.items():
+                p = f"{path}.{k}" if path else str(k)
+                if str(k) in keys and is_meaningful(vv):
+                    out.append((p, str(vv)))
+                    if len(out) >= max_items:
+                        return
+                walk(vv, p)
+        elif isinstance(v, list):
+            for i, vv in enumerate(v):
+                walk(vv, f"{path}[{i}]")
+
+    walk(obj, "")
+    return out
+
+def _meta_health(meta: dict) -> tuple[list[str], list[str]]:
+    """
+    Returns: (errors, warnings) as human-readable strings.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    # 1) Universe fetch status
+    uf = (meta or {}).get("universe_fetch") or {}
+    if uf.get("success") is False:
+        msg = uf.get("last_error") or uf.get("error") or "Universe fetch failed."
+        errors.append(f"universe_fetch 실패: {msg}")
+
+    # 2) Benchmark fetch for MansfieldRS
+    mf = (((meta or {}).get("indicators") or {}).get("mansfield_rs") or {}).get("benchmark_fetch") or {}
+    if mf and mf.get("success") is False:
+        t = mf.get("ticker") or (mf.get("type") if isinstance(mf.get("type"), str) else None) or "benchmark"
+        msg = mf.get("error") or "benchmark fetch failed."
+        warnings.append(f"MansfieldRS 벤치마크({t}) fetch 실패: {msg}")
+
+    # 3) Generic messages
+    for p, m in _collect_meta_messages(meta):
+        # skip duplicates from above (best-effort)
+        if any(m in s for s in errors) or any(m in s for s in warnings):
+            continue
+        if p.endswith(".notes"):
+            warnings.append(f"notes: {m}")
+        elif ".error" in p or p.endswith(".last_error"):
+            # treat as warning by default (could be non-fatal)
+            warnings.append(f"{p}: {m}")
+
+    return errors, warnings
+
 # 메인 로직
 if repo_name:
     releases = get_releases(repo_name, github_token)
@@ -647,14 +717,31 @@ if repo_name:
                     meta = load_json_from_url(meta_asset["browser_download_url"], github_token)
                     if meta:
                         st.session_state["meta_obj"] = meta
+                        # show meta health banner (also outside this expander via session_state)
+                        errors, warnings = _meta_health(meta)
+                        st.session_state["meta_health"] = {"errors": errors, "warnings": warnings}
                         col_a, col_b, col_c, col_d = st.columns(4)
                         col_a.metric("Start", meta.get("start_date", "-"))
                         col_b.metric("End", meta.get("end_date", "-"))
                         col_c.metric("Tickers", meta.get("ticker_count", 0))
                         col_d.metric("Rows", meta.get("rows", 0))
+                        if errors:
+                            st.error(" / ".join(errors))
+                        if warnings:
+                            # avoid massive warning block
+                            st.warning("\n".join(warnings[:8]) + (f"\n… (+{len(warnings)-8} more)" if len(warnings) > 8 else ""))
                         st.json(meta)
                 else:
                     st.info("No meta json found in this release.")
+
+            # Meta health banner outside expander (so user notices)
+            mh = st.session_state.get("meta_health") or {}
+            mh_errors = mh.get("errors") or []
+            mh_warnings = mh.get("warnings") or []
+            if mh_errors:
+                st.error(" / ".join(mh_errors))
+            elif mh_warnings:
+                st.warning("\n".join(mh_warnings[:6]) + (f"\n… (+{len(mh_warnings)-6} more)" if len(mh_warnings) > 6 else ""))
 
             # 1.5) KRX Stock Master: 버튼 클릭 시 로드
             with st.expander("KRX Stock Master (parquet)", expanded=False):
@@ -713,7 +800,12 @@ if repo_name:
                     "대/중분류 (LM)": "LM",
                     "대/중/소분류 (LMS)": "LMS",
                 }
-                level_label = st.selectbox("Industry Level", list(level_label_to_value.keys()), key="industry_level")
+                level_label = st.selectbox(
+                    "Industry Level",
+                    list(level_label_to_value.keys()),
+                    index=1,  # default: "대/중분류 (LM)"
+                    key="industry_level",
+                )
                 level = level_label_to_value[level_label]
 
                 # Date range (industry-level bounds)
@@ -1020,7 +1112,7 @@ if repo_name:
 
             # 4) Chart: search ticker/name and plot selected series
             if feature_asset is not None:
-                st.subheader("📈 Chart")
+                st.subheader("📈 개별종목 Chart")
                 feature_url = feature_asset["browser_download_url"]
 
                 # Ensure KRX stock master is available
@@ -1100,8 +1192,9 @@ if repo_name:
                         default_start = max(min_d, (pd.Timestamp(max_d) - pd.Timedelta(days=365)).date())
                         start_d, end_d = st.slider("Date range", min_value=min_d, max_value=max_d, value=(default_start, max_d))
 
-                        show_newhigh = st.checkbox("Show 1Y New High markers", value=True)
-                        marker_pos = st.selectbox("New High marker position", ["High", "Close"], index=0)
+                        show_newhigh = st.checkbox("Show 1Y New High markers", value=False)
+                        # Marker position is fixed to Close (UI removed)
+                        marker_pos = "Close"
 
                         tab_line, tab_candle = st.tabs(["Close & Metrics (Line)", "Candlestick (OHLC)"])
 
@@ -1121,7 +1214,7 @@ if repo_name:
                                 st.warning("No data in selected date range.")
                             else:
                                 one["Date"] = _ensure_datetime(one["Date"])
-                                marker_y_col = marker_pos if marker_pos in one.columns else "Close"
+                                marker_y_col = "Close"
                                 newhigh_layer = _build_newhigh_marker_layer(one, "Date", marker_y_col) if show_newhigh else None
                                 left_cols, right_cols = _axis_assignment(one, "Close", [c for c in metrics if c != "Close"])
                                 chart = _build_dual_axis_chart(one, "Date", ["Close"] + [c for c in left_cols if c != "Close"], right_cols, marker_layer=newhigh_layer)
@@ -1141,7 +1234,7 @@ if repo_name:
                                 st.warning("No data in selected date range.")
                             else:
                                 one["Date"] = _ensure_datetime(one["Date"])
-                                marker_y_col = marker_pos if marker_pos in one.columns else "Close"
+                                marker_y_col = "Close"
                                 newhigh_layer = _build_newhigh_marker_layer(one, "Date", marker_y_col) if show_newhigh else None
                                 candle = _build_candlestick_with_metrics(one, "Date", metrics, marker_layer=newhigh_layer)
                                 if candle is None:
