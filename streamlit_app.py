@@ -973,18 +973,42 @@ if repo_name:
                                                     if rs_col and rs_col in ts.columns:
                                                         ts[rs_col] = pd.to_numeric(ts[rs_col], errors="coerce")
 
-                                                    st.markdown(f"**📈 `{selected_ticker}` 종가 + RS**")
-                                                    if rs_col and rs_col in ts.columns:
-                                                        left_cols, right_cols = _axis_assignment(ts, "Close", [rs_col])
-                                                        chart2 = _build_dual_axis_chart(
-                                                            ts,
-                                                            "Date",
-                                                            ["Close"] + [c for c in left_cols if c != "Close"],
-                                                            right_cols,
+                                                    st.markdown(f"**📈 `{selected_ticker}` 종가**")
+                                                    price_chart = (
+                                                        alt.Chart(ts)
+                                                        .mark_line()
+                                                        .encode(
+                                                            x=alt.X("Date:T", title="Date"),
+                                                            y=alt.Y("Close:Q", title="Close"),
+                                                            tooltip=[
+                                                                alt.Tooltip("Date:T"),
+                                                                alt.Tooltip("Close:Q"),
+                                                            ],
                                                         )
-                                                    else:
-                                                        chart2 = _build_dual_axis_chart(ts, "Date", ["Close"], [])
-                                                    st.altair_chart(chart2, use_container_width=True)
+                                                    )
+                                                    st.altair_chart(price_chart, use_container_width=True)
+
+                                                    if rs_col and rs_col in ts.columns:
+                                                        st.markdown(f"**📉 RS (`{rs_col}`)**")
+                                                        rs_base = ts[["Date", rs_col]].copy()
+                                                        rs_line = (
+                                                            alt.Chart(rs_base)
+                                                            .mark_line()
+                                                            .encode(
+                                                                x=alt.X("Date:T", title="Date"),
+                                                                y=alt.Y(f"{rs_col}:Q", title=rs_col),
+                                                                tooltip=[
+                                                                    alt.Tooltip("Date:T"),
+                                                                    alt.Tooltip(f"{rs_col}:Q", title=rs_col),
+                                                                ],
+                                                            )
+                                                        )
+                                                        zero = (
+                                                            alt.Chart(pd.DataFrame({"y": [0]}))
+                                                            .mark_rule(color="#9ca3af", strokeDash=[4, 4])
+                                                            .encode(y="y:Q")
+                                                        )
+                                                        st.altair_chart(alt.layer(rs_line, zero), use_container_width=True)
                                         else:
                                             st.info("선택한 업종에 대한 종목 RS 데이터를 찾을 수 없습니다.")
                                     else:
