@@ -1,7 +1,14 @@
 import argparse
 import datetime as dt
+import os
 import sys
 from time import perf_counter
+
+# Ensure repository root is on sys.path when executed as a script.
+# (GitHub Actions runs: `python scripts/generate_cache.py ...`)
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
 
 from capybara_fetcher.orchestrator import (
     CacheBuildConfig,
