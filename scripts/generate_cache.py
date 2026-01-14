@@ -97,7 +97,4 @@ def main():
     print(f"Done. Total time: {perf_counter() - t0:.2f}s")
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception:
-        sys.exit(1)
+    main()
