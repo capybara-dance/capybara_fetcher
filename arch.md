@@ -117,25 +117,21 @@
 ### 제안 아키텍처(계층/모듈)
 아래는 “데이터 소스 교체”를 위한 최소 단위 인터페이스 분리안입니다.
 
-#### 1) Provider Contracts (인터페이스)
-- **`UniverseProvider`**: 유니버스(티커 리스트) 제공
-  - 입력: `asof_date`(선택), 시장 필터(선택)
-  - 출력: `tickers: list[str]` (6자리 문자열), `market_by_ticker: dict[str,str]` (가능하면)
-- **`StockMasterProvider`**: 종목 마스터(시장/업종/상장주식수 등) 제공
-  - 출력: DataFrame with 최소 컬럼  
-    `Code, Name, Market, IndustryLarge, IndustryMid, IndustrySmall, SharesOutstanding`
-- **`OHLCVProvider`**: 종목별 OHLCV(수정주가 포함 여부 옵션) 제공
-  - 입력: `ticker, start_date, end_date, adjusted`
-  - 출력(표준화 전): source-specific DataFrame  
-  - 출력(표준화 후): 표준 스키마 DataFrame
-- (선택) **`CalendarProvider`**: 거래일 캘린더/휴장일 (필요 시)
-- (선택) **`RateLimitPolicy` / `RetryPolicy`**: 소스별 제한/재시도 정책
+#### 1) Provider Contract (단일 인터페이스)
+Provider를 세분화하지 않고, “데이터 소스(예: pykrx, 증권사 API)” 단위로 **하나의 Provider가 필요한 데이터를 모두 제공**합니다.
+
+- **`DataProvider`**: 유니버스/종목마스터/OHLCV를 제공하는 단일 계약
+  - `list_tickers(asof_date=None, market=None) -> (tickers, market_by_ticker)`
+  - `load_stock_master(asof_date=None) -> master_df`
+  - `fetch_ohlcv(ticker, start_date, end_date, adjusted=True) -> raw_df`
+  - (권장) `name`/`capabilities`/`diagnostics` 같은 식별/상태 정보 제공
+
+중요: 예를 들어 **`PykrxProvider`는 내부적으로 로컬 `krx_stock_master.json`(Seibro) 데이터를 사용**하여 `list_tickers/load_stock_master`를 구현하고, 가격만 pykrx에서 가져오는 식으로 “내부 구현”을 캡슐화합니다.  
+즉, Orchestrator는 “pykrx가 로컬 마스터를 쓰는지/증권사 API를 쓰는지”를 몰라도 됩니다.
 
 #### 2) Adapter Implementations (구현체)
-- **`PykrxOHLCVProvider`**: 현재 `pykrx.stock.get_market_ohlcv` 래핑
-- **`LocalSeibroStockMasterProvider`**: 현재 `data/krx_stock_master.json` 로드 래핑
-- **`MasterDerivedUniverseProvider`**: StockMaster를 기반으로 tickers를 구성(현재 방식 유지)
-- (향후) **`BrokerApiStockMasterProvider` / `BrokerApiOHLCVProvider`**: 증권사 API 어댑터
+- **`PykrxProvider`**: 가격은 `pykrx`로 수집하고, 유니버스/마스터는 내부에서 로컬 데이터(`data/krx_stock_master.json`)로 제공
+- (향후) **`BrokerApiProvider`**: 유니버스/마스터/가격을 증권사 API로 제공(필요 시 로컬 보조 데이터는 provider 내부에서 사용)
 
 #### 3) Error Handling (Fail-fast)
 본 리포지토리의 캐시 생성은 “부분 성공”보다 “정확한 실패 감지”가 중요하므로, **폴백을 사용하지 않습니다.**
@@ -144,8 +140,8 @@
   - 예: `meta["run_status"]="failed"`, `meta["error"]["stage"]="ohlcv_fetch"`, `meta["error"]["ticker"]="005930"`, `meta["error"]["message"]=...`
 
 #### 4) Orchestrator (파이프라인)
-- `generate_cache`는 Provider 계약만 의존:
-  - 유니버스 로드 → 벤치마크 로드 → 종목별 OHLCV 로드 → 표준화 → 지표 계산 → 저장/메타
+- `generate_cache`는 **단일 `DataProvider` 계약만 의존**:
+  - 유니버스 로드 → 마스터 로드 → 벤치마크 로드 → 종목별 OHLCV 로드 → 표준화 → 지표 계산 → 저장/메타
 - “업종 강도(Industry Strength)”는 **StockMasterProvider** 의 업종 컬럼에만 의존  
   (즉, 업종 분류 소스가 바뀌어도 계산 로직은 그대로 유지)
 
@@ -210,11 +206,11 @@ function standardize_ohlcv(raw_df, source) -> std_df
   - return std_df
 
 function build_feature_cache(orchestrator_config, providers):
-  master_df = providers.master.load_master(...)
-  (tickers, market_map) = providers.universe.list_tickers(...)
-  bench = providers.ohlcv.fetch_ohlcv(benchmark_ticker, ...)
+  master_df = provider.load_stock_master(...)
+  (tickers, market_map) = provider.list_tickers(...)
+  bench = provider.fetch_ohlcv(benchmark_ticker, ...)
   for ticker in tickers in parallel:
-    raw = providers.ohlcv.fetch_ohlcv(ticker, ...)
+    raw = provider.fetch_ohlcv(ticker, ...)
     if raw failed:
       raise error and abort run
     std = standardize_ohlcv(raw)
