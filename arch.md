@@ -105,13 +105,14 @@
 ### 목표
 - **수집부를 Provider(플러그인)로 추상화**하여 소스 교체를 “구현 클래스 교체”로 제한
 - 기존 파이프라인(Feature 계산/Parquet 저장/메타 기록/UI)은 **동작을 유지**하면서 내부 구조만 개선
-- Provider 장애/제한을 대비해 **Fallback(우선순위) 전략**과 **관측 가능성(메타/로그)** 을 강화
+- 오류 발생 시 **즉시 실패(fail-fast)** 하도록 하고, 원인 파악을 위한 **관측 가능성(메타/로그)** 을 강화
 
 ### 핵심 설계 원칙
 - **Contracts First**: Provider가 반드시 지켜야 할 입출력 계약(컬럼/타입/의미)을 문서/테스트로 고정
 - **Orchestrator는 순수 파이프라인**: “무엇을 만들지”만 알고 “어디서 가져오는지”는 모름
 - **표준화는 단일 지점**: 원천 데이터의 컬럼/타입/날짜 정규화는 공통 모듈에서 일관되게 수행
 - **에러는 숨기지 않고 기록**: 실패/부분 성공/폴백 발생을 `meta.json`에 구조적으로 남김
+- **Fail-fast by default**: 실행 중 오류 발생 시 폴백 없이 예외를 발생시키고 종료(비정상 종료 코드를 반환)
 
 ### 제안 아키텍처(계층/모듈)
 아래는 “데이터 소스 교체”를 위한 최소 단위 인터페이스 분리안입니다.
@@ -136,12 +137,11 @@
 - **`MasterDerivedUniverseProvider`**: StockMaster를 기반으로 tickers를 구성(현재 방식 유지)
 - (향후) **`BrokerApiStockMasterProvider` / `BrokerApiOHLCVProvider`**: 증권사 API 어댑터
 
-#### 3) Composition / Fallback
-소스 장애/누락에 대비해 Provider를 합성합니다.
-- **`FallbackProvider`(권장)**: 우선순위 리스트를 두고, 실패 시 다음 provider로 폴백
-  - 예: Universe는 `BrokerApi` → `LocalSeibro` 순, OHLCV는 `BrokerApi` → `pykrx` 순
-- 폴백 발생/실패 이유는 메타에 기록:
-  - `meta["providers"]["ohlcv"]["selected"]="broker_api"`, `meta["providers"]["ohlcv"]["fallbacks"]=[...]`
+#### 3) Error Handling (Fail-fast)
+본 리포지토리의 캐시 생성은 “부분 성공”보다 “정확한 실패 감지”가 중요하므로, **폴백을 사용하지 않습니다.**
+- Provider 호출(유니버스/마스터/벤치마크/개별 티커 OHLCV)에서 **오류가 발생하면 즉시 예외를 발생**시키고 실행을 종료합니다.
+- 종료 시에는 가능한 범위에서 `meta.json`에 **실패 원인/스택 요약/어떤 단계에서 실패했는지**를 기록합니다.
+  - 예: `meta["run_status"]="failed"`, `meta["error"]["stage"]="ohlcv_fetch"`, `meta["error"]["ticker"]="005930"`, `meta["error"]["message"]=...`
 
 #### 4) Orchestrator (파이프라인)
 - `generate_cache`는 Provider 계약만 의존:
@@ -215,10 +215,12 @@ function build_feature_cache(orchestrator_config, providers):
   bench = providers.ohlcv.fetch_ohlcv(benchmark_ticker, ...)
   for ticker in tickers in parallel:
     raw = providers.ohlcv.fetch_ohlcv(ticker, ...)
+    if raw failed:
+      raise error and abort run
     std = standardize_ohlcv(raw)
     feat = compute_indicators(std, bench_close_by_date)
     collect feat
-  save parquet + meta(provider diagnostics, fallbacks, partial failures)
+  save parquet + meta(provider diagnostics)
   if industry enabled:
     industry = compute_industry_strength(all_features, master_df, industry_benchmark)
     save industry parquet + meta
