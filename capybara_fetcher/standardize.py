@@ -69,6 +69,8 @@ def standardize_ohlcv(raw_df: pd.DataFrame, *, ticker: str) -> pd.DataFrame:
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
     df = df.dropna(subset=["Date", "Close"]).sort_values("Date")
+    # Enforce one row per date (keep last) to avoid downstream index collisions.
+    df = df.drop_duplicates(subset=["Date"], keep="last")
 
     # Canonical column order
     cols = ["Date", "Open", "High", "Low", "Close", "Volume", "TradingValue", "Change", "Ticker"]

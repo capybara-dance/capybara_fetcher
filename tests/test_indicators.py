@@ -28,3 +28,26 @@ def test_compute_features_adds_columns_and_new_high_flag():
     # At the very end, close is increasing so last point should be new high (after 252 days)
     assert bool(out["IsNewHigh1Y"].iloc[-1]) is True
 
+
+def test_compute_features_handles_duplicate_benchmark_index():
+    dates = pd.date_range("2025-01-01", periods=260, freq="D")
+    df = pd.DataFrame(
+        {
+            "Date": dates,
+            "Open": range(1, 261),
+            "High": range(1, 261),
+            "Low": range(1, 261),
+            "Close": range(1, 261),
+            "Volume": [100] * 260,
+            "TradingValue": [None] * 260,
+            "Change": [None] * 260,
+            "Ticker": ["000001"] * 260,
+        }
+    )
+    # Duplicate benchmark index on purpose
+    bench = pd.Series([100.0] * 260, index=dates.normalize())
+    bench2 = pd.concat([bench, bench])  # duplicate dates
+
+    out = compute_features(df, benchmark_close_by_date=bench2)
+    assert "MansfieldRS" in out.columns
+

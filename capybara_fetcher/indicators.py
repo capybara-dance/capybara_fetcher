@@ -35,6 +35,11 @@ def compute_features(
 
     # Mansfield Relative Strength (vs benchmark)
     if benchmark_close_by_date is not None and not benchmark_close_by_date.empty:
+        # Pandas requires unique index for fast mapping; enforce here (fail-fast elsewhere).
+        # If duplicates exist, keep the last observed value for each date.
+        if not benchmark_close_by_date.index.is_unique:
+            benchmark_close_by_date = benchmark_close_by_date[~benchmark_close_by_date.index.duplicated(keep="last")]
+
         bench = df["Date"].dt.normalize().map(benchmark_close_by_date)
         bench = pd.to_numeric(bench, errors="coerce")
         rs_raw = close / bench
