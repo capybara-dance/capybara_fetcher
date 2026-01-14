@@ -37,7 +37,8 @@ def standardize_ohlcv(raw_df: pd.DataFrame, *, ticker: str) -> pd.DataFrame:
 
     # If Date is index (pykrx), convert to column
     if "Date" not in df.columns:
-        if getattr(df.index, "name", None) in (None, "Date"):
+        # pykrx typically returns a DatetimeIndex (name may vary by version)
+        if isinstance(df.index, pd.DatetimeIndex):
             df = df.copy()
             df.index.name = "Date"
             df = df.reset_index()
