@@ -86,9 +86,17 @@
 *   **Verification Tool**: `streamlit_app.py`를 통해 생성된 캐시 파일의 내용을 웹에서 즉시 확인 가능.
 *   **Meta + Master Artifacts**: `meta.json` 및 `KRX Stock Master` Parquet를 함께 배포.
 *   **Release Permission Fix**: 워크플로에 `permissions: contents: write` 설정으로 릴리스 생성 403 방지.
+*   **Refactor (DataProvider + Fail-fast)**:
+    - `capybara_fetcher/` 패키지로 Provider/표준화/지표/업종/오케스트레이터 모듈 분리
+    - 단일 `DataProvider` 계약 + `PykrxProvider` 구현(티커/마스터=로컬 JSON, 가격=pykrx)
+    - Fail-fast: 티커 처리 중 오류 발생 시 즉시 중단(폴백 없음) + 실패 메타 기록
+*   **Unit Tests**:
+    - `pytest` 기반 core 유닛테스트 추가(표준화/지표/오케스트레이터 FakeProvider)
+    - 외부 소스 스모크 테스트는 `external` 마커 + `RUN_EXTERNAL_SMOKE=1` 조건으로 분리
 
 ### ⚠️ Temporary Limitations
 *   **Runtime/Scale**: 전 종목 수집은 시간이 오래 걸 수 있으며, 네트워크/소스 상태에 영향을 받음. (소요시간은 meta에 기록)
+*   **Upstream Data Quirks**: pykrx/원천 데이터에서 날짜 중복 등이 발생할 수 있어 표준화 단계에서 date dedupe(keep last)를 적용
 
 ## 5. Remaining Tasks
 
@@ -272,6 +280,7 @@ function build_feature_cache(orchestrator_config, providers):
 2.  **Full Universe in CI**: 전 종목 수집은 시간이 오래 걸릴 수 있으므로, CI에서는 `--test-limit` 등으로 수집 종목 수를 제한하고 전체 빌드는 별도 스케줄로 분리 검토.
 3.  **Feature Logic Integration**: 단순 OHLCV 외에 기술적 지표(MA, RSI, Bollinger Bands 등) 계산 로직 추가.
 4.  **Scheduler**: 주간/일간 자동 실행을 위한 `schedule` (cron) 트리거 활성화.
+5.  **CI: Unit Tests**: push/PR 시 `pytest`를 실행하는 워크플로 추가 및 유지(기본은 `external` 제외)
 
 ## 6. Release Artifacts
 
