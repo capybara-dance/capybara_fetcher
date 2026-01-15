@@ -84,8 +84,9 @@ class KISAuth:
             RuntimeError: If all retries are exhausted or non-retryable error occurs
         """
         url = f"{self.base_url}{api_path}"
+        total_attempts = max_retries + 1
         
-        for attempt in range(max_retries + 1):
+        for attempt in range(total_attempts):
             headers = self.get_headers(tr_id)
             headers["tr_cont"] = ""
             
@@ -106,7 +107,7 @@ class KISAuth:
                             continue
                         else:
                             # All retries exhausted on rate limit error
-                            raise RuntimeError(f"API request failed after {max_retries + 1} attempts (rate limit exceeded): {data.get('msg1')}")
+                            raise RuntimeError(f"API request failed after {total_attempts} attempts (rate limit exceeded): {data.get('msg1')}")
                     else:
                         # Non-rate-limit API error
                         raise RuntimeError(f"API error: {data.get('msg_cd')} - {data.get('msg1')}")
@@ -123,13 +124,11 @@ class KISAuth:
                             continue
                         else:
                             # All retries exhausted on rate limit error
-                            raise RuntimeError(f"API request failed after {max_retries + 1} attempts (rate limit exceeded): {data.get('msg1')}")
+                            raise RuntimeError(f"API request failed after {total_attempts} attempts (rate limit exceeded): {data.get('msg1')}")
                 except (json.JSONDecodeError, ValueError):
+                    # Ignore JSON parsing errors - the 500 error response may not be JSON
                     pass
                 # For other 500 errors, raise immediately
                 raise RuntimeError(f"HTTP error: {res.status_code} {res.text}")
             else:
                 raise RuntimeError(f"HTTP error: {res.status_code} {res.text}")
-        
-        # This should never be reached but included for completeness
-        raise RuntimeError(f"API request failed after {max_retries + 1} attempts")
