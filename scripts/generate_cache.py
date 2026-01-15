@@ -19,7 +19,7 @@ from capybara_fetcher.orchestrator import (
     INDUSTRY_BENCHMARK_UNIVERSE,
 )
 from capybara_fetcher.io_utils import write_json
-from capybara_fetcher.providers import PykrxProvider
+from capybara_fetcher.providers import PykrxProvider, KoreaInvestmentProvider
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Korea Universe Feature Cache (fail-fast)")
@@ -45,10 +45,29 @@ def main():
         "--krx-stock-master-json",
         type=str,
         default="/workspace/data/krx_stock_master.json",
-        help="Path to krx_stock_master.json (used by PykrxProvider for universe/master)",
+        help="Path to krx_stock_master.json (used by data provider for universe/master)",
     )
     parser.add_argument("--max-workers", type=int, default=8, help="Number of threads")
     parser.add_argument("--test-limit", type=int, default=0, help="Limit number of tickers for testing (0 for all)")
+    parser.add_argument(
+        "--provider",
+        type=str,
+        default="pykrx",
+        choices=["pykrx", "korea_investment"],
+        help="Data provider to use: 'pykrx' or 'korea_investment'",
+    )
+    parser.add_argument(
+        "--ki-appkey",
+        type=str,
+        default=None,
+        help="Korea Investment API appkey (required if --provider=korea_investment, can use env HT_KE)",
+    )
+    parser.add_argument(
+        "--ki-appsecret",
+        type=str,
+        default=None,
+        help="Korea Investment API appsecret (required if --provider=korea_investment, can use env HT_SE)",
+    )
 
     args = parser.parse_args()
 
@@ -73,7 +92,27 @@ def main():
         adjusted=True,
     )
 
-    provider = PykrxProvider(master_json_path=args.krx_stock_master_json)
+    # Create provider based on --provider argument
+    if args.provider == "korea_investment":
+        # Get credentials from arguments or environment variables
+        appkey = args.ki_appkey or os.environ.get("HT_KE")
+        appsecret = args.ki_appsecret or os.environ.get("HT_SE")
+        
+        if not appkey or not appsecret:
+            raise ValueError(
+                "Korea Investment provider requires --ki-appkey and --ki-appsecret arguments "
+                "or HT_KE and HT_SE environment variables"
+            )
+        
+        provider = KoreaInvestmentProvider(
+            master_json_path=args.krx_stock_master_json,
+            appkey=appkey,
+            appsecret=appsecret,
+        )
+        print(f"Using Korea Investment provider")
+    else:
+        provider = PykrxProvider(master_json_path=args.krx_stock_master_json)
+        print(f"Using Pykrx provider")
 
     t0 = perf_counter()
     started_at = dt.datetime.now(dt.timezone.utc)

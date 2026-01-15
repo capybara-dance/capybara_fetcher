@@ -44,6 +44,9 @@ jobs:
         python scripts/export_krx_stock_master_parquet.py --input-json data/krx_stock_master.json --output-parquet cache/krx_stock_master.parquet
         
     - name: Generate Feature Cache
+      env:
+        HT_KE: ${{ secrets.HT_KE }}
+        HT_SE: ${{ secrets.HT_SE }}
       run: |
         # Handle inputs with defaults
         START_DATE="${{ inputs.start_date }}"
@@ -66,7 +69,8 @@ jobs:
           --industry-output cache/korea_industry_feature_frame.parquet \
           --industry-meta-output cache/korea_industry_feature_frame.meta.json \
           --industry-benchmark universe \
-          --krx-stock-master-json data/krx_stock_master.json
+          --krx-stock-master-json data/krx_stock_master.json \
+          --provider korea_investment
 
     - name: Detect Generated Files
       id: files
