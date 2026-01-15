@@ -27,19 +27,23 @@ class KoreaInvestmentProvider(DataProvider):
     appsecret: str
     base_url: str = "https://openapi.koreainvestment.com:9443"
     name: str = "korea_investment"
-    _auth: KISAuth = field(default=None, init=False, repr=False, compare=False)
+    _auth: KISAuth | None = field(default=None, init=False, repr=False, compare=False)
     _auth_lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False, compare=False)
 
     def _get_auth(self) -> KISAuth:
         """Get KIS authentication instance (cached to reuse token across session)."""
         # Use object.__setattr__ to bypass frozen dataclass restriction
         # Thread-safe lazy initialization with double-checked locking
-        if object.__getattribute__(self, '_auth') is None:
-            with object.__getattribute__(self, '_auth_lock'):
+        auth = object.__getattribute__(self, '_auth')
+        if auth is None:
+            lock = object.__getattribute__(self, '_auth_lock')
+            with lock:
                 # Double-check after acquiring lock
-                if object.__getattribute__(self, '_auth') is None:
-                    object.__setattr__(self, '_auth', KISAuth(self.appkey, self.appsecret, self.base_url))
-        return object.__getattribute__(self, '_auth')
+                auth = object.__getattribute__(self, '_auth')
+                if auth is None:
+                    auth = KISAuth(self.appkey, self.appsecret, self.base_url)
+                    object.__setattr__(self, '_auth', auth)
+        return auth
 
     def load_stock_master(self, *, asof_date: dt.date | None = None) -> pd.DataFrame:
         """Load stock master from local JSON file."""
