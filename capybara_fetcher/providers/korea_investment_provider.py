@@ -15,6 +15,11 @@ from .korea_investment_auth import KISAuth
 from .provider_utils import load_master_json
 
 
+# Korea Investment API rate limit: 20 calls/second = 50ms between calls minimum
+# Use 60ms for safety margin
+_KOREA_INVESTMENT_RATE_LIMIT_DELAY_SECONDS = 0.060
+
+
 @dataclass(frozen=True)
 class KoreaInvestmentProvider(DataProvider):
     """
@@ -61,14 +66,15 @@ class KoreaInvestmentProvider(DataProvider):
             current_time = time.time()
             time_since_last_call = current_time - last_call
             
-            # Enforce minimum 60ms (0.060 seconds) between calls
-            min_delay = 0.060
-            if time_since_last_call < min_delay:
-                sleep_time = min_delay - time_since_last_call
+            # Enforce minimum delay between calls
+            if time_since_last_call < _KOREA_INVESTMENT_RATE_LIMIT_DELAY_SECONDS:
+                sleep_time = _KOREA_INVESTMENT_RATE_LIMIT_DELAY_SECONDS - time_since_last_call
                 time.sleep(sleep_time)
-            
-            # Update last call time
-            object.__setattr__(self, '_last_api_call_time', time.time())
+                # Update to current time after sleep
+                object.__setattr__(self, '_last_api_call_time', time.time())
+            else:
+                # Update to current time (no sleep needed)
+                object.__setattr__(self, '_last_api_call_time', current_time)
 
     def load_stock_master(self, *, asof_date: dt.date | None = None) -> pd.DataFrame:
         """Load stock master from local JSON file."""

@@ -122,6 +122,11 @@ def test_korea_investment_rate_limiting(master_json_path):
     """Test that rate limiting enforces 60ms delay between calls."""
     import time
     
+    # Test constants
+    EXPECTED_DELAY_MS = 60
+    TOLERANCE_MS = 5  # Allow 5ms tolerance for timing variations
+    MIN_DELAY_SECONDS = (EXPECTED_DELAY_MS - TOLERANCE_MS) / 1000.0
+    
     provider = KoreaInvestmentProvider(
         master_json_path=master_json_path,
         appkey="test_key",
@@ -136,17 +141,24 @@ def test_korea_investment_rate_limiting(master_json_path):
         provider._enforce_rate_limit()
         call_times.append(time.time())
     
-    # Check that consecutive calls are at least 60ms apart
+    # Check that consecutive calls are at least 60ms apart (with tolerance)
     for i in range(1, len(call_times)):
         delay = call_times[i] - call_times[i-1]
-        # Allow small tolerance for timing variations
-        assert delay >= 0.055, f"Delay between calls {i-1} and {i} was {delay*1000:.1f}ms, expected >= 55ms"
+        assert delay >= MIN_DELAY_SECONDS, (
+            f"Delay between calls {i-1} and {i} was {delay*1000:.1f}ms, "
+            f"expected >= {(EXPECTED_DELAY_MS - TOLERANCE_MS):.1f}ms"
+        )
 
 
 def test_korea_investment_rate_limiting_thread_safety(master_json_path):
     """Test that rate limiting is thread-safe."""
     import threading
     import time
+    
+    # Test constants
+    EXPECTED_DELAY_MS = 60
+    TOLERANCE_MS = 5  # Allow 5ms tolerance for timing variations
+    MIN_DELAY_SECONDS = (EXPECTED_DELAY_MS - TOLERANCE_MS) / 1000.0
     
     provider = KoreaInvestmentProvider(
         master_json_path=master_json_path,
@@ -176,11 +188,13 @@ def test_korea_investment_rate_limiting_thread_safety(master_json_path):
     # Sort call times to check ordering
     call_times.sort()
     
-    # Check that consecutive calls are at least 60ms apart
+    # Check that consecutive calls are at least 60ms apart (with tolerance)
     for i in range(1, len(call_times)):
         delay = call_times[i] - call_times[i-1]
-        # Allow small tolerance for timing variations
-        assert delay >= 0.055, f"Delay between calls {i-1} and {i} was {delay*1000:.1f}ms, expected >= 55ms"
+        assert delay >= MIN_DELAY_SECONDS, (
+            f"Delay between calls {i-1} and {i} was {delay*1000:.1f}ms, "
+            f"expected >= {(EXPECTED_DELAY_MS - TOLERANCE_MS):.1f}ms"
+        )
 
 
 
