@@ -70,8 +70,7 @@ jobs:
           --industry-meta-output cache/korea_industry_feature_frame.meta.json \
           --industry-benchmark universe \
           --krx-stock-master-json data/krx_stock_master.json \
-          --provider korea_investment
-
+          --provider pykrx
     - name: Detect Generated Files
       id: files
       run: |
