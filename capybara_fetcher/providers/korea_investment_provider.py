@@ -3,7 +3,6 @@ Korea Investment Securities API data provider.
 """
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 import datetime as dt
 

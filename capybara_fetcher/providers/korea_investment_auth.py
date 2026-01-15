@@ -5,9 +5,6 @@ Simplified version based on https://github.com/koreainvestment/open-trading-api
 from __future__ import annotations
 
 import json
-import os
-import time
-from collections import namedtuple
 from datetime import datetime
 
 import requests
