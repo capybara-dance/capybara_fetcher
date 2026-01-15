@@ -98,21 +98,21 @@ def main():
         appkey = args.ki_appkey or os.environ.get("HT_KE")
         appsecret = args.ki_appsecret or os.environ.get("HT_SE")
         
-        if not appkey or not appsecret:
+        if not appkey or not appsecret or not appkey.strip() or not appsecret.strip():
             raise ValueError(
                 "Korea Investment provider requires --ki-appkey and --ki-appsecret arguments "
-                "or HT_KE and HT_SE environment variables"
+                "or HT_KE and HT_SE environment variables (non-empty strings)"
             )
         
         provider = KoreaInvestmentProvider(
             master_json_path=args.krx_stock_master_json,
-            appkey=appkey,
-            appsecret=appsecret,
+            appkey=appkey.strip(),
+            appsecret=appsecret.strip(),
         )
-        print(f"Using Korea Investment provider")
+        print(f"[INFO] Using Korea Investment provider")
     else:
         provider = PykrxProvider(master_json_path=args.krx_stock_master_json)
-        print(f"Using Pykrx provider")
+        print(f"[INFO] Using Pykrx provider")
 
     t0 = perf_counter()
     started_at = dt.datetime.now(dt.timezone.utc)
