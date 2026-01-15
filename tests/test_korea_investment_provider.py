@@ -82,6 +82,42 @@ def test_korea_investment_auth_reuse_across_multiple_calls(master_json_path):
         assert auth is first_auth, "All auth instances should be the same object"
 
 
+def test_korea_investment_auth_thread_safety(master_json_path):
+    """Test that auth caching is thread-safe."""
+    import threading
+    
+    provider = KoreaInvestmentProvider(
+        master_json_path=master_json_path,
+        appkey="test_key",
+        appsecret="test_secret",
+    )
+    
+    auth_instances = []
+    lock = threading.Lock()
+    
+    def get_auth_in_thread():
+        auth = provider._get_auth()
+        with lock:
+            auth_instances.append(auth)
+    
+    # Create multiple threads that all try to get auth simultaneously
+    threads = []
+    for _ in range(10):
+        t = threading.Thread(target=get_auth_in_thread)
+        threads.append(t)
+        t.start()
+    
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+    
+    # All threads should have gotten the same auth instance
+    assert len(auth_instances) == 10, "Should have 10 auth instances from 10 threads"
+    first_auth = auth_instances[0]
+    for auth in auth_instances[1:]:
+        assert auth is first_auth, "All threads should get the same auth instance"
+
+
 def test_korea_investment_load_stock_master(provider_with_env):
     """Test loading stock master."""
     master = provider_with_env.load_stock_master()
