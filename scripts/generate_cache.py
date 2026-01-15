@@ -47,7 +47,7 @@ def main():
         default="/workspace/data/krx_stock_master.json",
         help="Path to krx_stock_master.json (used by data provider for universe/master)",
     )
-    parser.add_argument("--max-workers", type=int, default=8, help="Number of threads")
+    parser.add_argument("--max-workers", type=int, default=8, help="Number of threads (default 8 for pykrx, recommend 1 for korea_investment)")
     parser.add_argument("--test-limit", type=int, default=0, help="Limit number of tickers for testing (0 for all)")
     parser.add_argument(
         "--provider",
@@ -71,6 +71,13 @@ def main():
 
     args = parser.parse_args()
 
+    # Auto-adjust max_workers for Korea Investment provider if not explicitly set
+    max_workers = args.max_workers
+    if args.provider == "korea_investment" and args.max_workers == 8:
+        # Default was not overridden, use 1 for Korea Investment (rate limited API)
+        max_workers = 1
+        print(f"[INFO] Auto-adjusting max_workers to 1 for Korea Investment provider (rate limited API)")
+
     meta_output = args.meta_output or f"{args.output}.meta.json"
     industry_output = args.industry_output.strip() or None
     industry_meta_output = args.industry_meta_output.strip() or None
@@ -87,7 +94,7 @@ def main():
         industry_output_path=industry_output,
         industry_meta_output_path=industry_meta_output,
         industry_benchmark=args.industry_benchmark,
-        max_workers=int(args.max_workers),
+        max_workers=int(max_workers),
         test_limit=int(args.test_limit),
         adjusted=True,
     )

@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import datetime as dt
 import threading
+import time
 
 import pandas as pd
 
@@ -20,6 +21,8 @@ class KoreaInvestmentProvider(DataProvider):
     DataProvider implementation using Korea Investment Securities API:
     - tickers/master: local Seibro-derived JSON (same as pykrx)
     - ohlcv: Korea Investment API
+    
+    Rate limiting: 20 calls/second limit enforced with 60ms delay between calls.
     """
 
     master_json_path: str
@@ -29,6 +32,8 @@ class KoreaInvestmentProvider(DataProvider):
     name: str = "korea_investment"
     _auth: KISAuth | None = field(default=None, init=False, repr=False, compare=False)
     _auth_lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False, compare=False)
+    _last_api_call_time: float = field(default=0.0, init=False, repr=False, compare=False)
+    _rate_limit_lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False, compare=False)
 
     def _get_auth(self) -> KISAuth:
         """Get KIS authentication instance (cached to reuse token across session)."""
@@ -44,6 +49,26 @@ class KoreaInvestmentProvider(DataProvider):
                     auth = KISAuth(self.appkey, self.appsecret, self.base_url)
                     object.__setattr__(self, '_auth', auth)
         return auth
+
+    def _enforce_rate_limit(self) -> None:
+        """
+        Enforce API rate limit of 20 calls/second by ensuring 60ms between calls.
+        Thread-safe implementation using a lock.
+        """
+        rate_limit_lock = object.__getattribute__(self, '_rate_limit_lock')
+        with rate_limit_lock:
+            last_call = object.__getattribute__(self, '_last_api_call_time')
+            current_time = time.time()
+            time_since_last_call = current_time - last_call
+            
+            # Enforce minimum 60ms (0.060 seconds) between calls
+            min_delay = 0.060
+            if time_since_last_call < min_delay:
+                sleep_time = min_delay - time_since_last_call
+                time.sleep(sleep_time)
+            
+            # Update last call time
+            object.__setattr__(self, '_last_api_call_time', time.time())
 
     def load_stock_master(self, *, asof_date: dt.date | None = None) -> pd.DataFrame:
         """Load stock master from local JSON file."""
@@ -82,7 +107,12 @@ class KoreaInvestmentProvider(DataProvider):
         
         Returns DataFrame with Korean column names (like pykrx) for consistency
         with standardization layer.
+        
+        Rate limited to 20 calls/second (60ms delay between calls).
         """
+        # Enforce rate limit before making API call
+        self._enforce_rate_limit()
+        
         auth = self._get_auth()
         
         # API endpoint for daily item chart price

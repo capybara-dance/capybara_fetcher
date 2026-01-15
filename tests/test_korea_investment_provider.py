@@ -118,6 +118,72 @@ def test_korea_investment_auth_thread_safety(master_json_path):
         assert auth is first_auth, "All threads should get the same auth instance"
 
 
+def test_korea_investment_rate_limiting(master_json_path):
+    """Test that rate limiting enforces 60ms delay between calls."""
+    import time
+    
+    provider = KoreaInvestmentProvider(
+        master_json_path=master_json_path,
+        appkey="test_key",
+        appsecret="test_secret",
+    )
+    
+    # Make multiple calls and measure the time between them
+    call_times = []
+    num_calls = 5
+    
+    for _ in range(num_calls):
+        provider._enforce_rate_limit()
+        call_times.append(time.time())
+    
+    # Check that consecutive calls are at least 60ms apart
+    for i in range(1, len(call_times)):
+        delay = call_times[i] - call_times[i-1]
+        # Allow small tolerance for timing variations
+        assert delay >= 0.055, f"Delay between calls {i-1} and {i} was {delay*1000:.1f}ms, expected >= 55ms"
+
+
+def test_korea_investment_rate_limiting_thread_safety(master_json_path):
+    """Test that rate limiting is thread-safe."""
+    import threading
+    import time
+    
+    provider = KoreaInvestmentProvider(
+        master_json_path=master_json_path,
+        appkey="test_key",
+        appsecret="test_secret",
+    )
+    
+    call_times = []
+    lock = threading.Lock()
+    
+    def make_rate_limited_call():
+        provider._enforce_rate_limit()
+        with lock:
+            call_times.append(time.time())
+    
+    # Create multiple threads that all try to make calls
+    threads = []
+    for _ in range(5):
+        t = threading.Thread(target=make_rate_limited_call)
+        threads.append(t)
+        t.start()
+    
+    # Wait for all threads to complete
+    for t in threads:
+        t.join()
+    
+    # Sort call times to check ordering
+    call_times.sort()
+    
+    # Check that consecutive calls are at least 60ms apart
+    for i in range(1, len(call_times)):
+        delay = call_times[i] - call_times[i-1]
+        # Allow small tolerance for timing variations
+        assert delay >= 0.055, f"Delay between calls {i-1} and {i} was {delay*1000:.1f}ms, expected >= 55ms"
+
+
+
 def test_korea_investment_load_stock_master(provider_with_env):
     """Test loading stock master."""
     master = provider_with_env.load_stock_master()
