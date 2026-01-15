@@ -141,7 +141,10 @@ Provider를 세분화하지 않고, “데이터 소스(예: pykrx, 증권사 AP
 
 #### 2) Adapter Implementations (구현체)
 - **`PykrxProvider`**: 가격은 `pykrx`로 수집하고, 유니버스/마스터는 내부에서 로컬 데이터(`data/krx_stock_master.json`)로 제공
-- (향후) **`BrokerApiProvider`**: 유니버스/마스터/가격을 증권사 API로 제공(필요 시 로컬 보조 데이터는 provider 내부에서 사용)
+- **`KoreaInvestmentProvider`**: 한국투자증권 Open Trading API를 사용하여 가격 데이터를 수집하고, 유니버스/마스터는 로컬 데이터(`data/krx_stock_master.json`)로 제공
+  - API 인증: `appkey`(HT_KE), `appsecret`(HT_SE) 필요
+  - API 엔드포인트: `/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice`
+  - 특징: 일자별 OHLCV 데이터 조회 (최대 100일), 수정주가/원주가 선택 가능
 
 #### 3) Error Handling (Fail-fast)
 본 리포지토리의 캐시 생성은 “부분 성공”보다 “정확한 실패 감지”가 중요하므로, **폴백을 사용하지 않습니다.**
