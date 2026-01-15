@@ -5,6 +5,7 @@ Simplified version based on https://github.com/koreainvestment/open-trading-api
 from __future__ import annotations
 
 import json
+import time
 from datetime import datetime
 
 import requests
@@ -65,19 +66,61 @@ class KISAuth:
         headers["custtype"] = "P"
         return headers
     
-    def fetch_api(self, api_path: str, tr_id: str, params: dict) -> dict:
-        """Fetch data from Korea Investment API."""
+    def fetch_api(self, api_path: str, tr_id: str, params: dict, max_retries: int = 3, initial_delay: float = 1.0) -> dict:
+        """
+        Fetch data from Korea Investment API with retry logic for rate limiting.
+        
+        Args:
+            api_path: API endpoint path
+            tr_id: Transaction ID
+            params: Request parameters
+            max_retries: Maximum number of retry attempts (default: 3)
+            initial_delay: Initial delay in seconds for exponential backoff (default: 1.0)
+        
+        Returns:
+            dict: API response data
+            
+        Raises:
+            RuntimeError: If all retries are exhausted or non-retryable error occurs
+        """
         url = f"{self.base_url}{api_path}"
-        headers = self.get_headers(tr_id)
-        headers["tr_cont"] = ""
         
-        res = requests.get(url, headers=headers, params=params)
-        
-        if res.status_code == 200:
-            data = res.json()
-            if data.get("rt_cd") == "0":
-                return data
+        for attempt in range(max_retries + 1):
+            headers = self.get_headers(tr_id)
+            headers["tr_cont"] = ""
+            
+            res = requests.get(url, headers=headers, params=params)
+            
+            if res.status_code == 200:
+                data = res.json()
+                if data.get("rt_cd") == "0":
+                    return data
+                else:
+                    # Check if it's a rate limit error
+                    msg_cd = data.get('msg_cd', '')
+                    if msg_cd == "EGW00201" and attempt < max_retries:
+                        # Rate limit error - retry with exponential backoff
+                        delay = initial_delay * (2 ** attempt)
+                        time.sleep(delay)
+                        continue
+                    else:
+                        raise RuntimeError(f"API error: {data.get('msg_cd')} - {data.get('msg1')}")
+            elif res.status_code == 500 and attempt < max_retries:
+                # Check if response body contains rate limit error
+                try:
+                    data = res.json()
+                    msg_cd = data.get('msg_cd', '')
+                    if msg_cd == "EGW00201":
+                        # Rate limit error - retry with exponential backoff
+                        delay = initial_delay * (2 ** attempt)
+                        time.sleep(delay)
+                        continue
+                except (json.JSONDecodeError, ValueError):
+                    pass
+                # For other 500 errors, raise immediately
+                raise RuntimeError(f"HTTP error: {res.status_code} {res.text}")
             else:
-                raise RuntimeError(f"API error: {data.get('msg_cd')} - {data.get('msg1')}")
-        else:
-            raise RuntimeError(f"HTTP error: {res.status_code} {res.text}")
+                raise RuntimeError(f"HTTP error: {res.status_code} {res.text}")
+        
+        # All retries exhausted
+        raise RuntimeError(f"API request failed after {max_retries + 1} attempts (rate limit exceeded)")
