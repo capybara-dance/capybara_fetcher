@@ -3,7 +3,7 @@ Korea Investment Securities API data provider.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import datetime as dt
 
 import pandas as pd
@@ -26,10 +26,14 @@ class KoreaInvestmentProvider(DataProvider):
     appsecret: str
     base_url: str = "https://openapi.koreainvestment.com:9443"
     name: str = "korea_investment"
+    _auth: KISAuth = field(default=None, init=False, repr=False, compare=False)
 
     def _get_auth(self) -> KISAuth:
-        """Get KIS authentication instance."""
-        return KISAuth(self.appkey, self.appsecret, self.base_url)
+        """Get KIS authentication instance (cached to reuse token across session)."""
+        # Use object.__setattr__ to bypass frozen dataclass restriction
+        if object.__getattribute__(self, '_auth') is None:
+            object.__setattr__(self, '_auth', KISAuth(self.appkey, self.appsecret, self.base_url))
+        return object.__getattribute__(self, '_auth')
 
     def load_stock_master(self, *, asof_date: dt.date | None = None) -> pd.DataFrame:
         """Load stock master from local JSON file."""

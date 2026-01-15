@@ -42,6 +42,46 @@ def test_korea_investment_provider_name(master_json_path):
     assert provider.name == "korea_investment"
 
 
+def test_korea_investment_auth_caching(master_json_path):
+    """Test that auth instance is cached and reused."""
+    provider = KoreaInvestmentProvider(
+        master_json_path=master_json_path,
+        appkey="test_key",
+        appsecret="test_secret",
+    )
+    
+    # Get auth instance twice
+    auth1 = provider._get_auth()
+    auth2 = provider._get_auth()
+    
+    # They should be the same instance (same object in memory)
+    assert auth1 is auth2, "Auth instance should be cached and reused"
+    
+    # Verify the auth has correct credentials
+    assert auth1.appkey == "test_key"
+    assert auth1.appsecret == "test_secret"
+
+
+def test_korea_investment_auth_reuse_across_multiple_calls(master_json_path):
+    """Test that the same auth instance is used across multiple operations."""
+    provider = KoreaInvestmentProvider(
+        master_json_path=master_json_path,
+        appkey="test_key",
+        appsecret="test_secret",
+    )
+    
+    # Simulate multiple operations that would call _get_auth
+    auth_instances = []
+    for _ in range(5):
+        auth = provider._get_auth()
+        auth_instances.append(auth)
+    
+    # All instances should be the same object
+    first_auth = auth_instances[0]
+    for auth in auth_instances[1:]:
+        assert auth is first_auth, "All auth instances should be the same object"
+
+
 def test_korea_investment_load_stock_master(provider_with_env):
     """Test loading stock master."""
     master = provider_with_env.load_stock_master()
