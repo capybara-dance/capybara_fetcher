@@ -4,13 +4,16 @@ Tests for Korea Investment provider.
 import os
 import pytest
 import pandas as pd
+from pathlib import Path
 from capybara_fetcher.providers import KoreaInvestmentProvider
 
 
 @pytest.fixture
 def master_json_path():
     """Path to test stock master JSON."""
-    return "/home/runner/work/capybara_fetcher/capybara_fetcher/data/krx_stock_master.json"
+    # Use relative path from the repository root
+    repo_root = Path(__file__).parent.parent
+    return str(repo_root / "data" / "krx_stock_master.json")
 
 
 @pytest.fixture
