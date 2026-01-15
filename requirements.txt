@@ -10,3 +10,4 @@ requests>=2.31.0
 setuptools>=70.0.0,<81
 openpyxl>=3.1.5
 duckdb>=1.1.0
+pytest>=8.0.0
