@@ -98,23 +98,32 @@ class KISAuth:
                 else:
                     # Check if it's a rate limit error
                     msg_cd = data.get('msg_cd', '')
-                    if msg_cd == "EGW00201" and attempt < max_retries:
-                        # Rate limit error - retry with exponential backoff
-                        delay = initial_delay * (2 ** attempt)
-                        time.sleep(delay)
-                        continue
+                    if msg_cd == "EGW00201":
+                        if attempt < max_retries:
+                            # Rate limit error - retry with exponential backoff
+                            delay = initial_delay * (2 ** attempt)
+                            time.sleep(delay)
+                            continue
+                        else:
+                            # All retries exhausted on rate limit error
+                            raise RuntimeError(f"API request failed after {max_retries + 1} attempts (rate limit exceeded): {data.get('msg1')}")
                     else:
+                        # Non-rate-limit API error
                         raise RuntimeError(f"API error: {data.get('msg_cd')} - {data.get('msg1')}")
-            elif res.status_code == 500 and attempt < max_retries:
+            elif res.status_code == 500:
                 # Check if response body contains rate limit error
                 try:
                     data = res.json()
                     msg_cd = data.get('msg_cd', '')
                     if msg_cd == "EGW00201":
-                        # Rate limit error - retry with exponential backoff
-                        delay = initial_delay * (2 ** attempt)
-                        time.sleep(delay)
-                        continue
+                        if attempt < max_retries:
+                            # Rate limit error - retry with exponential backoff
+                            delay = initial_delay * (2 ** attempt)
+                            time.sleep(delay)
+                            continue
+                        else:
+                            # All retries exhausted on rate limit error
+                            raise RuntimeError(f"API request failed after {max_retries + 1} attempts (rate limit exceeded): {data.get('msg1')}")
                 except (json.JSONDecodeError, ValueError):
                     pass
                 # For other 500 errors, raise immediately
@@ -122,5 +131,5 @@ class KISAuth:
             else:
                 raise RuntimeError(f"HTTP error: {res.status_code} {res.text}")
         
-        # All retries exhausted
-        raise RuntimeError(f"API request failed after {max_retries + 1} attempts (rate limit exceeded)")
+        # This should never be reached but included for completeness
+        raise RuntimeError(f"API request failed after {max_retries + 1} attempts")
