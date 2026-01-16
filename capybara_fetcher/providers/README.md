@@ -41,6 +41,35 @@ Uses Korea Investment Securities Open Trading API to fetch OHLCV data.
   )
   ```
 
+### FdrProvider
+
+Uses FinanceDataReader library to fetch OHLCV data.
+
+- **Universe/Master**: Local JSON file (`data/krx_stock_master.json`)
+- **OHLCV**: FinanceDataReader (FDR) library
+- **Supported Sources**: 
+  - `KRX`: Korean Exchange (default, provides historical data back to 1995)
+  - `NAVER`: Naver Finance (data from 2000 onwards)
+  - `YAHOO`: Yahoo Finance
+- **Library Documentation**: https://github.com/FinanceData/FinanceDataReader
+- **Installation**: `pip install finance-datareader`
+- **Usage**:
+  ```python
+  from capybara_fetcher.providers import FdrProvider
+  
+  # Using KRX source (default)
+  provider = FdrProvider(
+      master_json_path="data/krx_stock_master.json",
+      source="KRX",
+  )
+  
+  # Using NAVER source
+  provider = FdrProvider(
+      master_json_path="data/krx_stock_master.json",
+      source="NAVER",
+  )
+  ```
+
 ## DataProvider Protocol
 
 All providers implement the `DataProvider` protocol defined in `provider.py`:
