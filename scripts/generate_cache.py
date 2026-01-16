@@ -19,7 +19,7 @@ from capybara_fetcher.orchestrator import (
     INDUSTRY_BENCHMARK_UNIVERSE,
 )
 from capybara_fetcher.io_utils import write_json
-from capybara_fetcher.providers import PykrxProvider, KoreaInvestmentProvider
+from capybara_fetcher.providers import PykrxProvider, KoreaInvestmentProvider, FdrProvider
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Korea Universe Feature Cache (fail-fast)")
@@ -53,8 +53,8 @@ def main():
         "--provider",
         type=str,
         default="pykrx",
-        choices=["pykrx", "korea_investment"],
-        help="Data provider to use: 'pykrx' or 'korea_investment'",
+        choices=["pykrx", "korea_investment", "fdr"],
+        help="Data provider to use: 'pykrx', 'korea_investment', or 'fdr'",
     )
     parser.add_argument(
         "--ki-appkey",
@@ -110,6 +110,12 @@ def main():
             appsecret=appsecret.strip(),
         )
         print(f"[INFO] Using Korea Investment provider")
+    elif args.provider == "fdr":
+        provider = FdrProvider(
+            master_json_path=args.krx_stock_master_json,
+            source="KRX",
+        )
+        print(f"[INFO] Using FDR provider (source: KRX)")
     else:
         provider = PykrxProvider(master_json_path=args.krx_stock_master_json)
         print(f"[INFO] Using Pykrx provider")
