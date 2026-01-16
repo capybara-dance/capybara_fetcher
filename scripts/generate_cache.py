@@ -75,7 +75,7 @@ def main():
     max_workers = args.max_workers
     if args.provider == "korea_investment" and args.max_workers == 8:
         # Default was not overridden, use 1 for Korea Investment (rate limited API)
-        max_workers = 1
+        max_workers = 3
         print(f"[INFO] Auto-adjusting max_workers to 1 for Korea Investment provider (rate limited API)")
 
     meta_output = args.meta_output or f"{args.output}.meta.json"
