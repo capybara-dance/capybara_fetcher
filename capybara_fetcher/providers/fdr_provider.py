@@ -53,7 +53,9 @@ class FdrProvider(DataProvider):
             master = master[master["Market"] == m]
         tickers = master["Code"].astype(str).str.zfill(6).unique().tolist()
         tickers = sorted(tickers)
-        market_by_ticker = dict(zip(master["Code"].tolist(), master["Market"].tolist()))
+        # Use zero-filled ticker codes for dictionary keys to match ticker format
+        ticker_codes = master["Code"].astype(str).str.zfill(6).tolist()
+        market_by_ticker = dict(zip(ticker_codes, master["Market"].tolist()))
         return tickers, market_by_ticker
 
     def fetch_ohlcv(
@@ -86,9 +88,10 @@ class FdrProvider(DataProvider):
         elif self.source.upper() == "NAVER":
             symbol = f"NAVER:{ticker_code}"
         elif self.source.upper() == "YAHOO":
-            # Yahoo Finance requires .KS or .KQ suffix for Korean stocks
-            # We'll use .KS as default (KOSPI format)
-            symbol = f"YAHOO:{ticker_code}.KS"
+            # Yahoo Finance requires .KS (KOSPI) or .KQ (KOSDAQ) suffix
+            # We'll default to NAVER for Yahoo to avoid market determination complexity
+            # Users needing Yahoo should specify the full symbol externally
+            symbol = f"NAVER:{ticker_code}"
         else:
             # Default to ticker code without prefix (FDR will use NAVER)
             symbol = ticker_code
@@ -124,7 +127,10 @@ class FdrProvider(DataProvider):
             df = df.sort_index()
             
             # Add 거래대금 (trading value) if not present
-            # Trading value = Volume * Close (approximate)
+            # Trading value approximation: Volume * Close
+            # Note: This is an approximation as true trading value would be the sum of
+            # (price * volume) for each individual trade throughout the day. Using
+            # Volume * Close provides a reasonable estimate when intraday data is unavailable.
             if "거래대금" not in df.columns and "거래량" in df.columns and "종가" in df.columns:
                 df["거래대금"] = df["거래량"] * df["종가"]
             
