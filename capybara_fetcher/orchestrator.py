@@ -155,7 +155,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
     # Use sequential processing with tqdm when max_workers=1
     if cfg.max_workers == 1:
         print("[INFO] Running in sequential mode with progress tracking...")
-        for ticker in tqdm(tickers, desc="Fetching tickers", unit="ticker"):
+        for ticker in tqdm(tickers[0:100], desc="Fetching tickers", unit="ticker"):
             try:
                 frames.append(fetch_one(ticker))
             except Exception as e:
