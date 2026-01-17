@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from dateutil.relativedelta import relativedelta
 
 import pandas as pd
 import FinanceDataReader as fdr
@@ -59,16 +58,16 @@ class FdrProvider(DataProvider):
         market_by_ticker = dict(zip(ticker_codes, master["Market"].tolist()))
         return tickers, market_by_ticker
 
-    def _split_date_range_into_chunks(self, start_date: str, end_date: str, max_years: int = 2) -> list[tuple[str, str]]:
+    def _split_date_range_into_chunks(self, start_date: str, end_date: str, max_days: int = 700) -> list[tuple[str, str]]:
         """
         Split a date range into chunks to handle API limits.
         
-        KRX source has a 2-year limit per request, so we need to split longer ranges.
+        KRX source has approximately a 2-year limit per request (we use 700 days to be safe).
         
         Args:
-            start_date: Start date in YYYY-MM-DD format
-            end_date: End date in YYYY-MM-DD format
-            max_years: Maximum years per chunk (default: 2 for KRX)
+            start_date: Start date in YYYY-MM-DD or YYYYMMDD format
+            end_date: End date in YYYY-MM-DD or YYYYMMDD format
+            max_days: Maximum days per chunk (default: 700 for safety with KRX's ~2 year limit)
             
         Returns:
             List of (start_date, end_date) tuples
@@ -80,8 +79,8 @@ class FdrProvider(DataProvider):
         current_start = start
         
         while current_start < end:
-            # Calculate chunk end (max_years from current_start or end, whichever is earlier)
-            chunk_end = min(current_start + relativedelta(years=max_years), end)
+            # Calculate chunk end (max_days from current_start or end, whichever is earlier)
+            chunk_end = min(current_start + dt.timedelta(days=max_days), end)
             
             chunks.append((
                 current_start.strftime("%Y-%m-%d"),

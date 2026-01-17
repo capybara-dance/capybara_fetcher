@@ -285,21 +285,21 @@ def test_fdr_provider_date_chunking(master_json_path):
     """Test that date range chunking works correctly for KRX 2-year limit."""
     provider = FdrProvider(master_json_path=master_json_path, source="KRX")
     
-    # Test various date ranges
-    # 1 year - should be single chunk
-    chunks_1y = provider._split_date_range_into_chunks("2023-01-01", "2024-01-01", max_years=2)
+    # Test various date ranges with 700 day chunks (approximately 2 years)
+    # 365 days - should be single chunk
+    chunks_1y = provider._split_date_range_into_chunks("2023-01-01", "2024-01-01", max_days=700)
     assert len(chunks_1y) == 1
     
-    # 2 years - should be single chunk
-    chunks_2y = provider._split_date_range_into_chunks("2022-01-01", "2024-01-01", max_years=2)
-    assert len(chunks_2y) == 1
+    # 700 days - should be single chunk
+    chunks_700d = provider._split_date_range_into_chunks("2022-01-01", "2023-12-02", max_days=700)
+    assert len(chunks_700d) == 1
     
-    # 3 years - should be 2 chunks
-    chunks_3y = provider._split_date_range_into_chunks("2021-01-01", "2024-01-01", max_years=2)
-    assert len(chunks_3y) == 2
+    # 1100 days - should be 2 chunks
+    chunks_1100d = provider._split_date_range_into_chunks("2021-01-01", "2024-01-01", max_days=700)
+    assert len(chunks_1100d) == 2
     
-    # 5 years - should be 3 chunks
-    chunks_5y = provider._split_date_range_into_chunks("2019-01-01", "2024-01-01", max_years=2)
+    # 2000 days (5+ years) - should be 3 chunks
+    chunks_5y = provider._split_date_range_into_chunks("2019-01-01", "2024-06-01", max_days=700)
     assert len(chunks_5y) == 3
     
     # Verify chunks don't overlap
@@ -307,6 +307,7 @@ def test_fdr_provider_date_chunking(master_json_path):
         chunk_end = pd.to_datetime(chunks_5y[i][1])
         next_chunk_start = pd.to_datetime(chunks_5y[i + 1][0])
         assert next_chunk_start > chunk_end, "Chunks should not overlap"
+
 
 
 @pytest.mark.external
