@@ -98,6 +98,19 @@
 *   **Runtime/Scale**: 전 종목 수집은 시간이 오래 걸 수 있으며, 네트워크/소스 상태에 영향을 받음. (소요시간은 meta에 기록)
 *   **Upstream Data Quirks**: pykrx/원천 데이터에서 날짜 중복 등이 발생할 수 있어 표준화 단계에서 date dedupe(keep last)를 적용
 
+### ⚠️ Known Data Provider Issues
+
+#### pykrx API Stability
+*   **Ticker List APIs**: pykrx의 코스피/코스닥 종목 리스트 조회 API가 일시적으로 동작하지 않는 경우가 있음
+*   **ETF List API**: ETF 종목 리스트 조회 API도 불안정할 수 있음
+*   **Workaround**: 로컬 JSON 파일(`data/krx_stock_master.json`, Seibro 엑셀 기반)을 사용하여 종목 유니버스를 구성
+
+#### FinanceDataReader Multi-threading
+*   **Thread-Safety Issue**: FinanceDataReader는 멀티스레드 환경에서 OHLCV 데이터를 조회할 때 **스레드 안전하지 않음**
+*   **Symptoms**: `max_workers > 1` 설정 시 2년 제한 에러, 403 Forbidden, 기타 API 오류가 발생할 수 있음
+*   **Solution**: **FdrProvider 사용 시 반드시 `max_workers=1`로 설정**하여 순차 처리해야 함
+*   **Implementation**: Orchestrator는 `max_workers=1`일 때 ThreadPoolExecutor 대신 단순 반복문을 사용하여 tqdm 진행 상황 표시를 최적화함
+
 ## 5. Remaining Tasks
 
 ## 5.1 Data Source Layer Refactoring Plan (데이터 수집부 교체 용이화)
@@ -141,10 +154,16 @@ Provider를 세분화하지 않고, “데이터 소스(예: pykrx, 증권사 AP
 
 #### 2) Adapter Implementations (구현체)
 - **`PykrxProvider`**: 가격은 `pykrx`로 수집하고, 유니버스/마스터는 내부에서 로컬 데이터(`data/krx_stock_master.json`)로 제공
+  - **⚠️ Known Issues**: pykrx의 일부 API(코스피/코스닥 종목 리스트, ETF 리스트 등)가 일시적으로 동작하지 않을 수 있음
+  - 이러한 이유로 로컬 JSON 파일(Seibro 엑셀 기반)을 사용하여 종목 유니버스를 구성
 - **`KoreaInvestmentProvider`**: 한국투자증권 Open Trading API를 사용하여 가격 데이터를 수집하고, 유니버스/마스터는 로컬 데이터(`data/krx_stock_master.json`)로 제공
   - API 인증: `appkey`(HT_KE), `appsecret`(HT_SE) 필요
   - API 엔드포인트: `/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice`
   - 특징: 일자별 OHLCV 데이터 조회 (최대 100일), 수정주가/원주가 선택 가능
+- **`FdrProvider`**: FinanceDataReader 라이브러리를 사용하여 가격 데이터를 수집
+  - **⚠️ Multi-threading Warning**: FinanceDataReader는 멀티스레드 환경에서 **스레드 안전하지 않음**
+  - `max_workers > 1` 설정 시 2년 제한 에러, 403 Forbidden 등의 문제가 발생
+  - **반드시 `max_workers=1`로 설정**하여 순차 처리해야 안정적으로 동작함
 
 #### 3) Error Handling (Fail-fast)
 본 리포지토리의 캐시 생성은 “부분 성공”보다 “정확한 실패 감지”가 중요하므로, **폴백을 사용하지 않습니다.**

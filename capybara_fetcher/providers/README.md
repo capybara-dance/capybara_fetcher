@@ -10,6 +10,10 @@ Uses the `pykrx` library to fetch OHLCV data.
 
 - **Universe/Master**: Local JSON file (`data/krx_stock_master.json`)
 - **OHLCV**: pykrx library
+- **⚠️ Known API Issues**: Some pykrx APIs may experience temporary failures:
+  - Ticker list APIs (KOSPI/KOSDAQ listing) may not work intermittently
+  - ETF listing API may be unavailable at times
+  - This is why we use the local `krx_stock_master.json` file (sourced from Seibro Excel) instead of relying on pykrx's ticker list functions
 - **Usage**:
   ```python
   from capybara_fetcher.providers import PykrxProvider
@@ -38,6 +42,38 @@ Uses Korea Investment Securities Open Trading API to fetch OHLCV data.
       master_json_path="data/krx_stock_master.json",
       appkey=os.environ["HT_KE"],
       appsecret=os.environ["HT_SE"],
+  )
+  ```
+
+### FdrProvider
+
+Uses FinanceDataReader library to fetch OHLCV data.
+
+- **Universe/Master**: Local JSON file (`data/krx_stock_master.json`)
+- **OHLCV**: FinanceDataReader (FDR) library
+- **Supported Sources**: 
+  - `KRX`: Korean Exchange (default, provides historical data back to 1995)
+  - `NAVER`: Naver Finance (data from 2000 onwards)
+  - `YAHOO`: Yahoo Finance
+- **Automatic Fallback**: When using KRX source, automatically falls back to NAVER for unsupported tickers (e.g., ETFs like 069500 KODEX 200)
+- **Fetch All Data**: Fetches all available data using `fdr.DataReader(symbol)` without date parameters, then filters to the requested date range. This avoids API rate limits and threading issues.
+- **Library Documentation**: https://github.com/FinanceData/FinanceDataReader
+- **Installation**: `pip install finance-datareader`
+- **⚠️ Multi-threading Warning**: FinanceDataReader is **NOT thread-safe** when fetching OHLCV data. When using `max_workers > 1` in the orchestrator, the 2-year API limit and other errors may occur. **Always use `max_workers=1` with FdrProvider** to avoid these issues.
+- **Usage**:
+  ```python
+  from capybara_fetcher.providers import FdrProvider
+  
+  # Using KRX source (default)
+  provider = FdrProvider(
+      master_json_path="data/krx_stock_master.json",
+      source="KRX",
+  )
+  
+  # Using NAVER source
+  provider = FdrProvider(
+      master_json_path="data/krx_stock_master.json",
+      source="NAVER",
   )
   ```
 

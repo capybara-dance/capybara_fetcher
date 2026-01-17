@@ -11,6 +11,15 @@ on:
         description: 'End Date (YYYYMMDD) - Defaults to Today'
         required: false
         default: ''
+      provider:
+        description: 'Data Provider'
+        required: false
+        default: 'pykrx'
+        type: choice
+        options:
+          - pykrx
+          - korea_investment
+          - fdr
   schedule:
     # Weekdays 17:00 KST == 08:00 UTC
     - cron: '0 8 * * 1-5'
@@ -59,7 +68,12 @@ jobs:
           END_DATE=$(date +'%Y%m%d')
         fi
         
-        echo "Generating cache from $START_DATE to $END_DATE"
+        PROVIDER="${{ inputs.provider }}"
+        if [ -z "$PROVIDER" ]; then
+          PROVIDER="pykrx"
+        fi
+        
+        echo "Generating cache from $START_DATE to $END_DATE using provider: $PROVIDER"
         
         python scripts/generate_cache.py \
           --start-date "$START_DATE" \
@@ -70,7 +84,7 @@ jobs:
           --industry-meta-output cache/korea_industry_feature_frame.meta.json \
           --industry-benchmark universe \
           --krx-stock-master-json data/krx_stock_master.json \
-          --provider pykrx
+          --provider "$PROVIDER"
     - name: Detect Generated Files
       id: files
       run: |
