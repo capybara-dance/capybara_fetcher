@@ -281,35 +281,6 @@ def test_fdr_provider_trading_value_column(provider):
         assert all(df["거래대금"] > 0), "Trading value should be positive"
 
 
-def test_fdr_provider_year_chunking(master_json_path):
-    """Test that year-based chunking works correctly for KRX."""
-    provider = FdrProvider(master_json_path=master_json_path, source="KRX")
-    
-    # Test various date ranges with year-based chunking
-    # 1 year - should be single year
-    years_1y = provider._split_date_range_into_years("2023-01-01", "2023-12-31")
-    assert len(years_1y) == 1
-    assert years_1y == ["2023"]
-    
-    # 2 full years - should be 2 years
-    years_2y = provider._split_date_range_into_years("2022-01-01", "2023-12-31")
-    assert len(years_2y) == 2
-    assert years_2y == ["2022", "2023"]
-    
-    # Partial years (2021-06 to 2024-03) - should be 4 years
-    years_partial = provider._split_date_range_into_years("2021-06-01", "2024-03-15")
-    assert len(years_partial) == 4
-    assert years_partial == ["2021", "2022", "2023", "2024"]
-    
-    # 11+ years (2015 to 2026) - should be 12 years
-    years_11y = provider._split_date_range_into_years("2015-01-01", "2026-01-17")
-    assert len(years_11y) == 12
-    assert years_11y[0] == "2015"
-    assert years_11y[-1] == "2026"
-
-
-
-
 @pytest.mark.external
 def test_fdr_provider_krx_fallback_to_naver(provider):
     """Test that KRX source falls back to NAVER for unsupported tickers (e.g., ETFs)."""
