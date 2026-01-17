@@ -83,23 +83,45 @@ class FdrProvider(DataProvider):
         ticker_code = str(ticker).zfill(6)
         
         # Build the symbol based on source
+        # Note: KRX source doesn't support all tickers (e.g., ETFs like 069500)
+        # We'll try KRX first, then fall back to NAVER if it fails
         if self.source.upper() == "KRX":
             symbol = f"KRX:{ticker_code}"
+            fallback_symbol = f"NAVER:{ticker_code}"
         elif self.source.upper() == "NAVER":
             symbol = f"NAVER:{ticker_code}"
+            fallback_symbol = None
         elif self.source.upper() == "YAHOO":
             # Yahoo Finance requires .KS (KOSPI) or .KQ (KOSDAQ) suffix
             # We'll default to NAVER for Yahoo to avoid market determination complexity
             # Users needing Yahoo should specify the full symbol externally
             symbol = f"NAVER:{ticker_code}"
+            fallback_symbol = None
         else:
             # Default to ticker code without prefix (FDR will use NAVER)
             symbol = ticker_code
+            fallback_symbol = None
         
         try:
             # Fetch data from FDR
             df = fdr.DataReader(symbol, start_date, end_date)
-            
+        except ValueError as e:
+            # KRX source may not support certain tickers (e.g., ETFs)
+            # Fall back to NAVER if available
+            if fallback_symbol and "is not supported" in str(e):
+                try:
+                    df = fdr.DataReader(fallback_symbol, start_date, end_date)
+                except Exception as fallback_error:
+                    raise RuntimeError(
+                        f"Failed to fetch OHLCV from FDR for {ticker}: "
+                        f"KRX source failed ({str(e)}), NAVER fallback also failed ({str(fallback_error)})"
+                    ) from fallback_error
+            else:
+                raise RuntimeError(f"Failed to fetch OHLCV from FDR for {ticker} (source: {self.source}): {str(e)}") from e
+        except Exception as e:
+            raise RuntimeError(f"Failed to fetch OHLCV from FDR for {ticker} (source: {self.source}): {str(e)}") from e
+        
+        try:
             if df is None or df.empty:
                 return pd.DataFrame()
             
@@ -135,7 +157,5 @@ class FdrProvider(DataProvider):
                 df["거래대금"] = df["거래량"] * df["종가"]
             
             return df
-            
         except Exception as e:
-            # Raise error for fail-fast behavior
-            raise RuntimeError(f"Failed to fetch OHLCV from FDR for {ticker} (source: {self.source}): {str(e)}") from e
+            raise RuntimeError(f"Failed to process OHLCV data from FDR for {ticker}: {str(e)}") from e

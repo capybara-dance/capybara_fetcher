@@ -279,3 +279,27 @@ def test_fdr_provider_trading_value_column(provider):
     if "거래대금" in df.columns:
         # Should be positive
         assert all(df["거래대금"] > 0), "Trading value should be positive"
+
+
+@pytest.mark.external
+def test_fdr_provider_krx_fallback_to_naver(provider):
+    """Test that KRX source falls back to NAVER for unsupported tickers (e.g., ETFs)."""
+    # 069500 is KODEX 200 ETF, which KRX source doesn't support
+    ticker = "069500"
+    start_date = "2024-01-02"
+    end_date = "2024-01-10"
+    
+    # This should use fallback to NAVER and succeed
+    df = provider.fetch_ohlcv(
+        ticker=ticker,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    
+    assert isinstance(df, pd.DataFrame)
+    assert not df.empty, "Should successfully fetch data via NAVER fallback"
+    
+    # Check that we have Korean column names
+    expected_cols = ["시가", "고가", "저가", "종가", "거래량"]
+    for col in expected_cols:
+        assert col in df.columns, f"Column {col} not found in {df.columns.tolist()}"
