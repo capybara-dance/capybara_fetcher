@@ -7,6 +7,7 @@ from time import perf_counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
+from tqdm import tqdm
 
 from .provider import DataProvider
 from .standardize import standardize_ohlcv
@@ -104,10 +105,12 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
     started_at = dt.datetime.now(dt.timezone.utc)
 
     # 1) Universe + master
+    print(f"[TIMING] Loading universe and master data...")
     t_univ0 = perf_counter()
     master_df = provider.load_stock_master()
     tickers, _market_by_ticker = provider.list_tickers()
     t_univ1 = perf_counter()
+    print(f"[TIMING] Universe/master loaded: {t_univ1 - t_univ0:.2f}s ({len(tickers)} tickers)")
 
     if cfg.test_limit > 0:
         tickers = tickers[: cfg.test_limit]
@@ -115,6 +118,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
         raise ValueError("no tickers returned by provider")
 
     # 2) Benchmark for Mansfield RS
+    print(f"[TIMING] Fetching benchmark data for Mansfield RS...")
     t_bench0 = perf_counter()
     bench_raw = provider.fetch_ohlcv(
         ticker=MANSFIELD_BENCHMARK_TICKER,
@@ -129,8 +133,10 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
     if benchmark_close.empty:
         raise ValueError("benchmark close series is empty after standardization")
     t_bench1 = perf_counter()
+    print(f"[TIMING] Benchmark fetched: {t_bench1 - t_bench0:.2f}s")
 
-    # 3) Per-ticker fetch -> standardize -> features (parallel)
+    # 3) Per-ticker fetch -> standardize -> features (parallel or sequential with progress bar)
+    print(f"[TIMING] Fetching OHLCV data for {len(tickers)} tickers (max_workers={cfg.max_workers})...")
     t_fetch0 = perf_counter()
 
     def fetch_one(ticker: str) -> pd.DataFrame:
@@ -145,36 +151,58 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
         return feat
 
     frames: list[pd.DataFrame] = []
-    with ThreadPoolExecutor(max_workers=int(cfg.max_workers)) as ex:
-        future_by_ticker = {ex.submit(fetch_one, t): t for t in tickers}
-        try:
-            for fut in as_completed(future_by_ticker):
-                t = future_by_ticker[fut]
-                try:
-                    frames.append(fut.result())
-                except Exception as e:
-                    raise TickerProcessingError(ticker=t, stage="fetch/standardize/feature", cause=e) from e
-        except Exception:
-            # Best-effort: cancel pending futures (running ones may not stop)
-            for fut in future_by_ticker:
-                fut.cancel()
-            raise
+    
+    # Use sequential processing with tqdm when max_workers=1
+    if cfg.max_workers == 1:
+        print("[INFO] Running in sequential mode with progress tracking...")
+        for ticker in tqdm(tickers, desc="Fetching tickers", unit="ticker"):
+            try:
+                frames.append(fetch_one(ticker))
+            except Exception as e:
+                raise TickerProcessingError(ticker=ticker, stage="fetch/standardize/feature", cause=e) from e
+    else:
+        # Use ThreadPoolExecutor for parallel processing
+        with ThreadPoolExecutor(max_workers=int(cfg.max_workers)) as ex:
+            future_by_ticker = {ex.submit(fetch_one, t): t for t in tickers}
+            try:
+                # Wrap as_completed with tqdm for progress tracking
+                for fut in tqdm(as_completed(future_by_ticker), total=len(tickers), desc="Fetching tickers", unit="ticker"):
+                    t = future_by_ticker[fut]
+                    try:
+                        frames.append(fut.result())
+                    except Exception as e:
+                        raise TickerProcessingError(ticker=t, stage="fetch/standardize/feature", cause=e) from e
+            except Exception:
+                # Best-effort: cancel pending futures (running ones may not stop)
+                for fut in future_by_ticker:
+                    fut.cancel()
+                raise
 
     t_fetch1 = perf_counter()
+    print(f"[TIMING] OHLCV fetch completed: {t_fetch1 - t_fetch0:.2f}s ({len(frames)} tickers processed)")
 
     if not frames:
         raise ValueError("no feature frames produced")
 
+    print(f"[TIMING] Concatenating and sorting dataframes...")
+    t_concat0 = perf_counter()
     full_df = pd.concat(frames, ignore_index=True).sort_values(["Date", "Ticker"])
+    t_concat1 = perf_counter()
+    print(f"[TIMING] Concatenation completed: {t_concat1 - t_concat0:.2f}s (shape: {full_df.shape})")
 
     # 4) Save feature parquet
+    print(f"[TIMING] Saving feature parquet to {cfg.output_path}...")
     t_save0 = perf_counter()
     write_parquet(full_df, cfg.output_path)
     t_save1 = perf_counter()
+    print(f"[TIMING] Feature parquet saved: {t_save1 - t_save0:.2f}s")
 
     # 5) Industry cache (optional)
     industry_meta: dict | None = None
     if cfg.industry_output_path:
+        print(f"[TIMING] Computing industry features...")
+        t_industry0 = perf_counter()
+        
         if cfg.industry_benchmark == INDUSTRY_BENCHMARK_UNIVERSE:
             global_dates = pd.to_datetime(full_df["Date"], errors="raise").dt.normalize().dropna().sort_values().unique()
             global_dates = pd.DatetimeIndex(global_dates)
@@ -202,7 +230,15 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
             for lvl in INDUSTRY_LEVELS
         ]
         industry_df = pd.concat(ind_frames, ignore_index=True)
+        
+        t_industry1 = perf_counter()
+        print(f"[TIMING] Industry features computed: {t_industry1 - t_industry0:.2f}s")
+        
+        print(f"[TIMING] Saving industry parquet to {cfg.industry_output_path}...")
+        t_ind_save0 = perf_counter()
         write_parquet(industry_df, cfg.industry_output_path)
+        t_ind_save1 = perf_counter()
+        print(f"[TIMING] Industry parquet saved: {t_ind_save1 - t_ind_save0:.2f}s")
 
         industry_meta = {
             "generated_at_utc": started_at.isoformat(),
@@ -273,6 +309,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
             "universe_and_master": round(t_univ1 - t_univ0, 4),
             "benchmark_fetch": round(t_bench1 - t_bench0, 4),
             "data_fetch_and_features": round(t_fetch1 - t_fetch0, 4),
+            "concat_and_sort": round(t_concat1 - t_concat0, 4),
             "save_feature_parquet": round(t_save1 - t_save0, 4),
             "total": round(perf_counter() - t0, 4),
         },
@@ -280,5 +317,23 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
     }
 
     write_json(meta, cfg.meta_output_path)
+    
+    # Print timing summary
+    total_time = perf_counter() - t0
+    print(f"\n{'='*60}")
+    print(f"[TIMING] SUMMARY")
+    print(f"{'='*60}")
+    print(f"  Universe/Master:      {t_univ1 - t_univ0:8.2f}s")
+    print(f"  Benchmark fetch:      {t_bench1 - t_bench0:8.2f}s")
+    print(f"  OHLCV fetch/features: {t_fetch1 - t_fetch0:8.2f}s")
+    print(f"  Concat/Sort:          {t_concat1 - t_concat0:8.2f}s")
+    print(f"  Save feature parquet: {t_save1 - t_save0:8.2f}s")
+    if cfg.industry_output_path:
+        print(f"  Industry features:    {t_industry1 - t_industry0:8.2f}s")
+        print(f"  Industry save:        {t_ind_save1 - t_ind_save0:8.2f}s")
+    print(f"  {'─'*58}")
+    print(f"  TOTAL:                {total_time:8.2f}s")
+    print(f"{'='*60}\n")
+    
     return meta
 
