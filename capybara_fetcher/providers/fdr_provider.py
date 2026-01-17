@@ -143,7 +143,7 @@ class FdrProvider(DataProvider):
         
         # Fetch data with chunking if needed (for KRX 2-year limit)
         if use_chunking:
-            chunks = self._split_date_range_into_chunks(start_date, end_date, max_years=2)
+            chunks = self._split_date_range_into_chunks(start_date, end_date, max_days=700)
             dfs = []
             
             for chunk_start, chunk_end in chunks:
