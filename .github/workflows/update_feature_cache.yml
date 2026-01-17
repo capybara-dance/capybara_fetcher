@@ -14,7 +14,7 @@ on:
       provider:
         description: 'Data Provider'
         required: false
-        default: 'fdr'
+        default: 'pykrx'
         type: choice
         options:
           - pykrx
