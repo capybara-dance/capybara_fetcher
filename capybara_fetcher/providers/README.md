@@ -52,8 +52,9 @@ Uses FinanceDataReader library to fetch OHLCV data.
   - `NAVER`: Naver Finance (data from 2000 onwards)
   - `YAHOO`: Yahoo Finance
 - **Automatic Fallback**: When using KRX source, automatically falls back to NAVER for unsupported tickers (e.g., ETFs like 069500 KODEX 200)
+- **Automatic Chunking**: KRX source has a 2-year limit per request. The provider automatically splits longer date ranges into 2-year chunks and concatenates the results.
 - **Library Documentation**: https://github.com/FinanceData/FinanceDataReader
-- **Installation**: `pip install finance-datareader`
+- **Installation**: `pip install finance-datareader python-dateutil`
 - **Usage**:
   ```python
   from capybara_fetcher.providers import FdrProvider

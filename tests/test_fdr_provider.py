@@ -281,6 +281,34 @@ def test_fdr_provider_trading_value_column(provider):
         assert all(df["거래대금"] > 0), "Trading value should be positive"
 
 
+def test_fdr_provider_date_chunking(master_json_path):
+    """Test that date range chunking works correctly for KRX 2-year limit."""
+    provider = FdrProvider(master_json_path=master_json_path, source="KRX")
+    
+    # Test various date ranges
+    # 1 year - should be single chunk
+    chunks_1y = provider._split_date_range_into_chunks("2023-01-01", "2024-01-01", max_years=2)
+    assert len(chunks_1y) == 1
+    
+    # 2 years - should be single chunk
+    chunks_2y = provider._split_date_range_into_chunks("2022-01-01", "2024-01-01", max_years=2)
+    assert len(chunks_2y) == 1
+    
+    # 3 years - should be 2 chunks
+    chunks_3y = provider._split_date_range_into_chunks("2021-01-01", "2024-01-01", max_years=2)
+    assert len(chunks_3y) == 2
+    
+    # 5 years - should be 3 chunks
+    chunks_5y = provider._split_date_range_into_chunks("2019-01-01", "2024-01-01", max_years=2)
+    assert len(chunks_5y) == 3
+    
+    # Verify chunks don't overlap
+    for i in range(len(chunks_5y) - 1):
+        chunk_end = pd.to_datetime(chunks_5y[i][1])
+        next_chunk_start = pd.to_datetime(chunks_5y[i + 1][0])
+        assert next_chunk_start > chunk_end, "Chunks should not overlap"
+
+
 @pytest.mark.external
 def test_fdr_provider_krx_fallback_to_naver(provider):
     """Test that KRX source falls back to NAVER for unsupported tickers (e.g., ETFs)."""
