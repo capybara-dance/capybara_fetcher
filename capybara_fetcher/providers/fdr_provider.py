@@ -148,6 +148,7 @@ class FdrProvider(DataProvider):
             
             for chunk_start, chunk_end in chunks:
                 try:
+                    print(chunk_start, chunk_end)
                     chunk_df = fdr.DataReader(symbol, chunk_start, chunk_end)
                     if chunk_df is not None and not chunk_df.empty:
                         dfs.append(chunk_df)
