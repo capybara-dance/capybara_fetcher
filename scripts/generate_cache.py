@@ -47,7 +47,7 @@ def main():
         default="/workspace/data/krx_stock_master.json",
         help="Path to krx_stock_master.json (used by data provider for universe/master)",
     )
-    parser.add_argument("--max-workers", type=int, default=1, help="Number of threads")
+    parser.add_argument("--max-workers", type=int, default=8, help="Number of threads")
     parser.add_argument("--test-limit", type=int, default=0, help="Limit number of tickers for testing (0 for all)")
     parser.add_argument(
         "--provider",
