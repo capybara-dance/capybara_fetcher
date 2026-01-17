@@ -281,32 +281,32 @@ def test_fdr_provider_trading_value_column(provider):
         assert all(df["거래대금"] > 0), "Trading value should be positive"
 
 
-def test_fdr_provider_date_chunking(master_json_path):
-    """Test that date range chunking works correctly for KRX 2-year limit."""
+def test_fdr_provider_year_chunking(master_json_path):
+    """Test that year-based chunking works correctly for KRX."""
     provider = FdrProvider(master_json_path=master_json_path, source="KRX")
     
-    # Test various date ranges with 700 day chunks (approximately 2 years)
-    # 365 days - should be single chunk
-    chunks_1y = provider._split_date_range_into_chunks("2023-01-01", "2024-01-01", max_days=700)
-    assert len(chunks_1y) == 1
+    # Test various date ranges with year-based chunking
+    # 1 year - should be single year
+    years_1y = provider._split_date_range_into_years("2023-01-01", "2023-12-31")
+    assert len(years_1y) == 1
+    assert years_1y == ["2023"]
     
-    # 700 days - should be single chunk
-    chunks_700d = provider._split_date_range_into_chunks("2022-01-01", "2023-12-02", max_days=700)
-    assert len(chunks_700d) == 1
+    # 2 full years - should be 2 years
+    years_2y = provider._split_date_range_into_years("2022-01-01", "2023-12-31")
+    assert len(years_2y) == 2
+    assert years_2y == ["2022", "2023"]
     
-    # 1100 days - should be 2 chunks
-    chunks_1100d = provider._split_date_range_into_chunks("2021-01-01", "2024-01-01", max_days=700)
-    assert len(chunks_1100d) == 2
+    # Partial years (2021-06 to 2024-03) - should be 4 years
+    years_partial = provider._split_date_range_into_years("2021-06-01", "2024-03-15")
+    assert len(years_partial) == 4
+    assert years_partial == ["2021", "2022", "2023", "2024"]
     
-    # 2000 days (5+ years) - should be 3 chunks
-    chunks_5y = provider._split_date_range_into_chunks("2019-01-01", "2024-06-01", max_days=700)
-    assert len(chunks_5y) == 3
-    
-    # Verify chunks don't overlap
-    for i in range(len(chunks_5y) - 1):
-        chunk_end = pd.to_datetime(chunks_5y[i][1])
-        next_chunk_start = pd.to_datetime(chunks_5y[i + 1][0])
-        assert next_chunk_start > chunk_end, "Chunks should not overlap"
+    # 11+ years (2015 to 2026) - should be 12 years
+    years_11y = provider._split_date_range_into_years("2015-01-01", "2026-01-17")
+    assert len(years_11y) == 12
+    assert years_11y[0] == "2015"
+    assert years_11y[-1] == "2026"
+
 
 
 

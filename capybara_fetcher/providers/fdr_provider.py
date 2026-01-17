@@ -58,39 +58,30 @@ class FdrProvider(DataProvider):
         market_by_ticker = dict(zip(ticker_codes, master["Market"].tolist()))
         return tickers, market_by_ticker
 
-    def _split_date_range_into_chunks(self, start_date: str, end_date: str, max_days: int = 700) -> list[tuple[str, str]]:
+    def _split_date_range_into_years(self, start_date: str, end_date: str) -> list[str]:
         """
-        Split a date range into chunks to handle API limits.
+        Split a date range into year strings for year-by-year fetching.
         
-        KRX source has approximately a 2-year limit per request (we use 700 days to be safe).
+        FDR supports fetching by year using format: fdr.DataReader(symbol, '2020')
+        This is simpler and more reliable than chunking by days.
         
         Args:
             start_date: Start date in YYYY-MM-DD or YYYYMMDD format
             end_date: End date in YYYY-MM-DD or YYYYMMDD format
-            max_days: Maximum days per chunk (default: 700 for safety with KRX's ~2 year limit)
             
         Returns:
-            List of (start_date, end_date) tuples
+            List of year strings (e.g., ['2020', '2021', '2022'])
         """
         start = pd.to_datetime(start_date)
         end = pd.to_datetime(end_date)
         
-        chunks = []
-        current_start = start
+        start_year = start.year
+        end_year = end.year
         
-        while current_start < end:
-            # Calculate chunk end (max_days from current_start or end, whichever is earlier)
-            chunk_end = min(current_start + dt.timedelta(days=max_days), end)
-            
-            chunks.append((
-                current_start.strftime("%Y-%m-%d"),
-                chunk_end.strftime("%Y-%m-%d")
-            ))
-            
-            # Move to next chunk (1 day after current chunk end to avoid overlap)
-            current_start = chunk_end + dt.timedelta(days=1)
+        # Generate list of years as strings
+        years = [str(year) for year in range(start_year, end_year + 1)]
         
-        return chunks
+        return years
 
     def fetch_ohlcv(
         self,
@@ -118,12 +109,12 @@ class FdrProvider(DataProvider):
         
         # Build the symbol based on source
         # Note: KRX source doesn't support all tickers (e.g., ETFs like 069500)
-        # and has a 2-year limit per request
+        # We fetch year-by-year to avoid API limits
         # We'll try KRX first, then fall back to NAVER if it fails
         if self.source.upper() == "KRX":
             symbol = f"KRX:{ticker_code}"
             fallback_symbol = f"NAVER:{ticker_code}"
-            use_chunking = True  # KRX has 2-year limit
+            use_chunking = True  # KRX fetches year-by-year
         elif self.source.upper() == "NAVER":
             symbol = f"NAVER:{ticker_code}"
             fallback_symbol = None
@@ -141,45 +132,50 @@ class FdrProvider(DataProvider):
             fallback_symbol = None
             use_chunking = False
         
-        # Fetch data with chunking if needed (for KRX 2-year limit)
+        # Fetch data with year-by-year chunking if needed (for KRX source)
         if use_chunking:
-            chunks = self._split_date_range_into_chunks(start_date, end_date, max_days=700)
+            years = self._split_date_range_into_years(start_date, end_date)
             dfs = []
             
-            for chunk_start, chunk_end in chunks:
+            for year in years:
                 try:
-                    print(chunk_start, chunk_end)
-                    chunk_df = fdr.DataReader(symbol, chunk_start, chunk_end)
-                    if chunk_df is not None and not chunk_df.empty:
-                        dfs.append(chunk_df)
+                    # Fetch data for entire year using FDR's year format
+                    year_df = fdr.DataReader(symbol, year)
+                    if year_df is not None and not year_df.empty:
+                        dfs.append(year_df)
                 except ValueError as e:
                     # KRX source may not support certain tickers (e.g., ETFs)
                     # Fall back to NAVER if available
                     if fallback_symbol and "is not supported" in str(e):
                         try:
-                            chunk_df = fdr.DataReader(fallback_symbol, chunk_start, chunk_end)
-                            if chunk_df is not None and not chunk_df.empty:
-                                dfs.append(chunk_df)
+                            year_df = fdr.DataReader(fallback_symbol, year)
+                            if year_df is not None and not year_df.empty:
+                                dfs.append(year_df)
                         except Exception as fallback_error:
                             raise RuntimeError(
-                                f"Failed to fetch OHLCV from FDR for {ticker} (chunk {chunk_start} to {chunk_end}): "
+                                f"Failed to fetch OHLCV from FDR for {ticker} (year {year}): "
                                 f"KRX source failed ({str(e)}), NAVER fallback also failed ({str(fallback_error)})"
                             ) from fallback_error
                     else:
                         raise RuntimeError(
-                            f"Failed to fetch OHLCV from FDR for {ticker} (chunk {chunk_start} to {chunk_end}, source: {self.source}): {str(e)}"
+                            f"Failed to fetch OHLCV from FDR for {ticker} (year {year}, source: {self.source}): {str(e)}"
                         ) from e
                 except Exception as e:
                     raise RuntimeError(
-                        f"Failed to fetch OHLCV from FDR for {ticker} (chunk {chunk_start} to {chunk_end}, source: {self.source}): {str(e)}"
+                        f"Failed to fetch OHLCV from FDR for {ticker} (year {year}, source: {self.source}): {str(e)}"
                     ) from e
             
-            # Concatenate all chunks
+            # Concatenate all years
             if dfs:
                 df = pd.concat(dfs, axis=0)
-                # Remove duplicates that might occur at chunk boundaries
+                # Remove duplicates that might occur at year boundaries
                 df = df[~df.index.duplicated(keep='first')]
                 df = df.sort_index()
+                
+                # Filter to requested date range
+                start_dt = pd.to_datetime(start_date)
+                end_dt = pd.to_datetime(end_date)
+                df = df[(df.index >= start_dt) & (df.index <= end_dt)]
             else:
                 df = pd.DataFrame()
         else:
