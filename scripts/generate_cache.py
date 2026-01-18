@@ -1,5 +1,6 @@
 import argparse
 import datetime as dt
+import logging
 import os
 import sys
 from time import perf_counter
@@ -10,6 +11,12 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
+# Configure logging to show INFO level messages
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
+
 from capybara_fetcher.orchestrator import (
     CacheBuildConfig,
     TickerProcessingError,
@@ -19,7 +26,7 @@ from capybara_fetcher.orchestrator import (
     INDUSTRY_BENCHMARK_UNIVERSE,
 )
 from capybara_fetcher.io_utils import write_json
-from capybara_fetcher.providers import PykrxProvider, KoreaInvestmentProvider, FdrProvider
+from capybara_fetcher.providers import PykrxProvider, KoreaInvestmentProvider, FdrProvider, CompositeProvider
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Korea Universe Feature Cache (fail-fast)")
@@ -52,9 +59,9 @@ def main():
     parser.add_argument(
         "--provider",
         type=str,
-        default="pykrx",
-        choices=["pykrx", "korea_investment", "fdr"],
-        help="Data provider to use: 'pykrx', 'korea_investment', or 'fdr'",
+        default="composite",
+        choices=["composite", "pykrx", "korea_investment", "fdr"],
+        help="Data provider to use: 'composite' (default), 'pykrx', 'korea_investment', or 'fdr'",
     )
     parser.add_argument(
         "--ki-appkey",
@@ -93,7 +100,10 @@ def main():
     )
 
     # Create provider based on --provider argument
-    if args.provider == "korea_investment":
+    if args.provider == "composite":
+        provider = CompositeProvider()
+        print(f"[INFO] Using Composite provider")
+    elif args.provider == "korea_investment":
         # Get credentials from arguments or environment variables
         appkey = args.ki_appkey or os.environ.get("HT_KE")
         appsecret = args.ki_appsecret or os.environ.get("HT_SE")
@@ -116,7 +126,7 @@ def main():
             source="KRX",
         )
         print(f"[INFO] Using FDR provider (source: KRX)")
-    else:
+    else:  # pykrx
         provider = PykrxProvider(master_json_path=args.krx_stock_master_json)
         print(f"[INFO] Using Pykrx provider")
 
