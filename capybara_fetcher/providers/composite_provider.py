@@ -8,6 +8,7 @@ is implemented in the method bodies.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,6 +17,7 @@ import pandas as pd
 
 from ..provider import DataProvider
 from .pykrx_provider import PykrxProvider
+from .fdr_provider import FdrProvider
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +38,7 @@ class CompositeProvider(DataProvider):
 
     name: str = "composite"
     _pykrx_provider: DataProvider = field(default=None, init=False, repr=False, compare=False)
+    _fdr_provider: DataProvider = field(default=None, init=False, repr=False, compare=False)
     
     def __post_init__(self):
         """Initialize internal providers."""
@@ -44,8 +47,12 @@ class CompositeProvider(DataProvider):
         pykrx_provider = PykrxProvider(master_json_path=master_json_path)
         object.__setattr__(self, "_pykrx_provider", pykrx_provider)
         
+        # Initialize FdrProvider for list_tickers operation
+        fdr_provider = FdrProvider(master_json_path=master_json_path, source="KRX")
+        object.__setattr__(self, "_fdr_provider", fdr_provider)
+        
         # Log which provider is used for each operation (once at initialization)
-        logger.info(f"CompositeProvider initialized: list_tickers -> '{pykrx_provider.name}', load_stock_master -> '{pykrx_provider.name}', fetch_ohlcv -> '{pykrx_provider.name}'")
+        logger.info(f"CompositeProvider initialized: list_tickers -> '{fdr_provider.name}', load_stock_master -> 'composite', fetch_ohlcv -> '{pykrx_provider.name}'")
     
     def _get_master_json_path(self) -> str:
         """Get the path to master JSON file."""
@@ -75,15 +82,15 @@ class CompositeProvider(DataProvider):
         """
         List tickers from the composite provider.
         
-        Currently delegates to the internal PykrxProvider,
-        same as PykrxProvider.list_tickers.
+        Currently delegates to the internal FdrProvider,
+        same as FdrProvider.list_tickers.
         
         Returns:
           - tickers: list of 6-digit strings (sorted)
           - market_by_ticker: mapping ticker -> market label (if known)
         """
-        pykrx_provider = object.__getattribute__(self, "_pykrx_provider")
-        return pykrx_provider.list_tickers(asof_date=asof_date, market=market)
+        fdr_provider = object.__getattribute__(self, "_fdr_provider")
+        return fdr_provider.list_tickers(asof_date=asof_date, market=market)
 
     def load_stock_master(
         self,
@@ -93,15 +100,53 @@ class CompositeProvider(DataProvider):
         """
         Load stock master from the composite provider.
         
-        Currently delegates to the internal PykrxProvider,
-        same as PykrxProvider.load_stock_master.
+        Loads stock master data from local JSON file which includes KOSPI, KOSDAQ, and ETF data.
         
         Returns a DataFrame that includes at least:
           Code, Name, Market, IndustryLarge, IndustryMid, IndustrySmall, SharesOutstanding
         """
         # asof_date reserved for future providers
-        pykrx_provider = object.__getattribute__(self, "_pykrx_provider")
-        return pykrx_provider.load_stock_master(asof_date=asof_date)
+        
+        # Load master data from JSON file (same logic as provider_utils.load_master_json)
+        master_json_path = self._get_master_json_path()
+        
+        _MASTER_COLS = [
+            "Code",
+            "Name",
+            "Market",
+            "IndustryLarge",
+            "IndustryMid",
+            "IndustrySmall",
+            "SharesOutstanding",
+        ]
+        
+        # Load master data from JSON (includes KOSPI, KOSDAQ, and ETF)
+        with open(master_json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        df = pd.DataFrame(data)
+        if df.empty:
+            raise ValueError(f"stock master is empty: {master_json_path}")
+        
+        for c in _MASTER_COLS:
+            if c not in df.columns:
+                df[c] = pd.NA
+        
+        master = df[_MASTER_COLS].copy()
+        master["Code"] = master["Code"].astype(str).str.strip().str.zfill(6)
+        master["Name"] = master["Name"].astype(str).str.strip()
+        master["Market"] = master["Market"].astype(str).str.strip()
+        
+        # Handle industry columns carefully - don't convert None to "None" string
+        for col in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
+            master[col] = master[col].apply(lambda x: str(x).strip() if pd.notna(x) and x is not None else pd.NA)
+        
+        master["SharesOutstanding"] = pd.to_numeric(master["SharesOutstanding"], errors="coerce").astype("Int64")
+        master = master.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"]).sort_values(["Market", "Code"])
+        
+        if master.empty:
+            raise ValueError(f"stock master has no valid rows: {master_json_path}")
+        
+        return master
 
     def fetch_ohlcv(
         self,

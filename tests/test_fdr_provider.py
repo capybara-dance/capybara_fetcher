@@ -61,6 +61,7 @@ def test_fdr_provider_load_stock_master(provider):
         assert col in master.columns
 
 
+@pytest.mark.external
 def test_fdr_provider_list_tickers(provider):
     """Test listing tickers."""
     tickers, market_by_ticker = provider.list_tickers()
@@ -73,14 +74,18 @@ def test_fdr_provider_list_tickers(provider):
     assert len(market_by_ticker) > 0
 
 
+@pytest.mark.external
 def test_fdr_provider_list_tickers_by_market(provider):
     """Test listing tickers filtered by market."""
     tickers_kospi, _ = provider.list_tickers(market="KOSPI")
     tickers_kosdaq, _ = provider.list_tickers(market="KOSDAQ")
+    tickers_etf, _ = provider.list_tickers(market="ETF")
     
     assert len(tickers_kospi) > 0
     assert len(tickers_kosdaq) > 0
+    assert len(tickers_etf) > 0
     assert len(tickers_kospi) != len(tickers_kosdaq)
+    assert len(tickers_kospi) != len(tickers_etf)
 
 
 @pytest.mark.external

@@ -237,7 +237,22 @@ def query_industry_rank_by_rs(parquet_url: str, level: str, asof_date: dt.date) 
     """
     return con.execute(sql, [parquet_url, level, parquet_url, level, str(asof_date)]).df()
 
+def _normalize_na_to_empty(v: object) -> str:
+    """Normalize NA/None/nan values to empty string for display."""
+    if v is None or pd.isna(v):
+        return ""
+    s = str(v).strip()
+    # Handle string representations of NA
+    if s.lower() in {"nan", "none", "<na>", "na"}:
+        return ""
+    return s
+
 def _industry_label(level: str, large: str, mid: str, small: str) -> str:
+    # Normalize NA values before creating label
+    large = _normalize_na_to_empty(large) or "Unknown"
+    mid = _normalize_na_to_empty(mid) or "Unknown"
+    small = _normalize_na_to_empty(small) or "Unknown"
+    
     if level == "L":
         return f"{large}"
     if level == "LM":
@@ -837,7 +852,7 @@ if repo_name:
 
                     top_df = top_df.copy()
                     top_df["Label"] = top_df.apply(
-                        lambda r: _industry_label(level, str(r["IndustryLarge"]), str(r["IndustryMid"]), str(r["IndustrySmall"])),
+                        lambda r: _industry_label(level, r["IndustryLarge"], r["IndustryMid"], r["IndustrySmall"]),
                         axis=1,
                     )
 
@@ -868,7 +883,7 @@ if repo_name:
 
                     ranked_df = ranked_df.copy()
                     ranked_df["Label"] = ranked_df.apply(
-                        lambda r: _industry_label(level, str(r["IndustryLarge"]), str(r["IndustryMid"]), str(r["IndustrySmall"])),
+                        lambda r: _industry_label(level, r["IndustryLarge"], r["IndustryMid"], r["IndustrySmall"]),
                         axis=1,
                     )
 
@@ -973,6 +988,10 @@ if repo_name:
                                 if master_df is not None and not master_df.empty and "Code" in master_df.columns:
                                     master_copy = master_df.copy()
                                     master_copy["Code"] = master_copy["Code"].astype(str)
+                                    
+                                    # ETF 종목 제외 (업종 강도 계산에서)
+                                    if "Market" in master_copy.columns:
+                                        master_copy = master_copy[master_copy["Market"] != "ETF"]
                                     
                                     # 업종 필터링 (level에 따라 다르게)
                                     if level == "L":
