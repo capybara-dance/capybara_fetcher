@@ -86,6 +86,11 @@ def compute_industry_feature_frame(
     if "Code" not in m.columns:
         raise ValueError("master_df missing Code")
     m["Code"] = m["Code"].astype(str).str.strip().str.zfill(6)
+    
+    # Exclude ETF items from industry strength calculation
+    if "Market" in m.columns:
+        m = m[m["Market"] != "ETF"]
+    
     for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
         if c not in m.columns:
             m[c] = ""

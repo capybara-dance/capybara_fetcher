@@ -974,6 +974,10 @@ if repo_name:
                                     master_copy = master_df.copy()
                                     master_copy["Code"] = master_copy["Code"].astype(str)
                                     
+                                    # ETF 종목 제외 (업종 강도 계산에서)
+                                    if "Market" in master_copy.columns:
+                                        master_copy = master_copy[master_copy["Market"] != "ETF"]
+                                    
                                     # 업종 필터링 (level에 따라 다르게)
                                     if level == "L":
                                         filtered = master_copy[master_copy["IndustryLarge"] == industry_large]
