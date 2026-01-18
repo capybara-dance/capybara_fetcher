@@ -90,6 +90,8 @@ def compute_industry_feature_frame(
     # Exclude ETF items from industry strength calculation
     if "Market" in m.columns:
         m = m[m["Market"] != "ETF"]
+        if "IndustryLarge" in m.columns:
+            m = m[m['IndustryLarge'].notna() & (m['IndustryLarge'] != '')]
     
     for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
         if c not in m.columns:
