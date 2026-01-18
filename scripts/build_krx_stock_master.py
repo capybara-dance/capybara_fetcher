@@ -1,10 +1,15 @@
 import argparse
 import json
+import sys
 import warnings
 from pathlib import Path
 
 import pandas as pd
-import FinanceDataReader as fdr
+
+# Add the parent directory to the path to import from capybara_fetcher
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from capybara_fetcher.providers.fdr_provider import FdrProvider
 
 
 def _read_master_xlsx(path: Path, market: str) -> pd.DataFrame:
@@ -46,17 +51,19 @@ def _read_master_xlsx(path: Path, market: str) -> pd.DataFrame:
 
 
 def _fetch_etf_data() -> pd.DataFrame:
-    """Fetch ETF data from FinanceDataReader."""
+    """Fetch ETF data using FdrProvider."""
     try:
-        df_etf = fdr.StockListing('ETF/KR')
+        # Use FdrProvider's static method to fetch ETF data
+        df_etf = FdrProvider.fetch_etf_listing()
+        
         if df_etf.empty:
-            warnings.warn("No ETF data fetched from FDR")
+            warnings.warn("No ETF data fetched via FdrProvider")
             return pd.DataFrame()
         
         # Map ETF columns to master format
-        # ETF data has: Symbol, Name, and other fields
+        # ETF data has: Code (already renamed from Symbol), Name, and other fields
         etf_master = pd.DataFrame({
-            'Code': df_etf['Symbol'].astype(str).str.strip().str.zfill(6),
+            'Code': df_etf['Code'].astype(str).str.strip().str.zfill(6),
             'Name': df_etf['Name'].astype(str).str.strip(),
             'Market': 'ETF',
             'IndustryLarge': None,
@@ -66,7 +73,7 @@ def _fetch_etf_data() -> pd.DataFrame:
         })
         
         etf_master = etf_master.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"])
-        print(f"Fetched {len(etf_master)} ETF entries from FinanceDataReader")
+        print(f"Fetched {len(etf_master)} ETF entries via FdrProvider")
         return etf_master
         
     except Exception as e:

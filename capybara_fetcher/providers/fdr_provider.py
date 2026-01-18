@@ -42,6 +42,32 @@ class FdrProvider(DataProvider):
         # asof_date reserved for future providers
         return load_master_json(self.master_json_path)
 
+    @staticmethod
+    def fetch_etf_listing() -> pd.DataFrame:
+        """
+        Fetch ETF listing data from FinanceDataReader.
+        
+        This is a static method that can be used by build scripts and other utilities
+        to fetch ETF data in a centralized way.
+        
+        Returns:
+            DataFrame with ETF data including Code, Name, and other fields.
+            Returns empty DataFrame if fetch fails.
+        """
+        try:
+            df_etf = fdr.StockListing('ETF/KR')
+            if not df_etf.empty:
+                # NaverEtfListing returns 'Symbol' instead of 'Code'
+                # Rename for consistency
+                if 'Symbol' in df_etf.columns:
+                    df_etf = df_etf.rename(columns={'Symbol': 'Code'})
+                # Add Market column for ETF
+                df_etf['Market'] = 'ETF'
+            return df_etf
+        except Exception as e:
+            warnings.warn(f"Failed to fetch ETF/KR listings: {str(e)}")
+            return pd.DataFrame()
+
     def list_tickers(
         self,
         *,
@@ -84,12 +110,8 @@ class FdrProvider(DataProvider):
         
         # Fetch ETF/KR data
         try:
-            df_etf = fdr.StockListing('ETF/KR')
+            df_etf = FdrProvider.fetch_etf_listing()
             if not df_etf.empty:
-                # NaverEtfListing returns 'Symbol' instead of 'Code'
-                df_etf = df_etf.rename(columns={'Symbol': 'Code'})
-                # Add Market column for ETF
-                df_etf['Market'] = 'ETF'
                 df_list.append(df_etf)
         except Exception as e:
             warnings.warn(f"Failed to fetch ETF/KR listings: {str(e)}")
