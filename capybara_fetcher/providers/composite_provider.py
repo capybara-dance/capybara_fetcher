@@ -67,7 +67,7 @@ class CompositeProvider(DataProvider):
     name: str = "composite"
     
     # Internal field to cache providers
-    _providers: Sequence[DataProvider] = field(default=None, init=False, repr=False, compare=False)
+    _providers: Sequence[DataProvider] | None = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self):
         """Initialize and validate providers."""
