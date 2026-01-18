@@ -10,12 +10,10 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
-import FinanceDataReader as fdr
 
 from ..provider import DataProvider
 from .pykrx_provider import PykrxProvider
@@ -102,8 +100,7 @@ class CompositeProvider(DataProvider):
         """
         Load stock master from the composite provider.
         
-        Loads stock master data from local JSON file and enriches it with ETF data
-        fetched from fdr.StockListing('ETF/KR').
+        Loads stock master data from local JSON file which includes KOSPI, KOSDAQ, and ETF data.
         
         Returns a DataFrame that includes at least:
           Code, Name, Market, IndustryLarge, IndustryMid, IndustrySmall, SharesOutstanding
@@ -123,7 +120,7 @@ class CompositeProvider(DataProvider):
             "SharesOutstanding",
         ]
         
-        # Load base master data from JSON
+        # Load master data from JSON (includes KOSPI, KOSDAQ, and ETF)
         with open(master_json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         df = pd.DataFrame(data)
@@ -134,51 +131,22 @@ class CompositeProvider(DataProvider):
             if c not in df.columns:
                 df[c] = pd.NA
         
-        base_master = df[_MASTER_COLS].copy()
-        base_master["Code"] = base_master["Code"].astype(str).str.strip().str.zfill(6)
-        base_master["Name"] = base_master["Name"].astype(str).str.strip()
-        base_master["Market"] = base_master["Market"].astype(str).str.strip()
-        base_master["IndustryLarge"] = base_master["IndustryLarge"].astype(str).str.strip()
-        base_master["IndustryMid"] = base_master["IndustryMid"].astype(str).str.strip()
-        base_master["IndustrySmall"] = base_master["IndustrySmall"].astype(str).str.strip()
-        base_master["SharesOutstanding"] = pd.to_numeric(base_master["SharesOutstanding"], errors="coerce").astype("Int64")
-        base_master = base_master.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"]).sort_values(["Market", "Code"])
+        master = df[_MASTER_COLS].copy()
+        master["Code"] = master["Code"].astype(str).str.strip().str.zfill(6)
+        master["Name"] = master["Name"].astype(str).str.strip()
+        master["Market"] = master["Market"].astype(str).str.strip()
         
-        if base_master.empty:
+        # Handle industry columns carefully - don't convert None to "None" string
+        for col in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
+            master[col] = master[col].apply(lambda x: str(x).strip() if pd.notna(x) and x is not None else pd.NA)
+        
+        master["SharesOutstanding"] = pd.to_numeric(master["SharesOutstanding"], errors="coerce").astype("Int64")
+        master = master.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"]).sort_values(["Market", "Code"])
+        
+        if master.empty:
             raise ValueError(f"stock master has no valid rows: {master_json_path}")
         
-        # Fetch ETF data from FDR and add to master
-        try:
-            df_etf = fdr.StockListing('ETF/KR')
-            if not df_etf.empty:
-                # Map ETF columns to master format
-                # ETF data has: Symbol, Name, Price, NAV, EarningRate, Volume, Change, ChangeRate, Amount, MarCap, Category, RiseFall
-                etf_master = pd.DataFrame({
-                    'Code': df_etf['Symbol'].astype(str).str.strip().str.zfill(6),
-                    'Name': df_etf['Name'].astype(str).str.strip(),
-                    'Market': 'ETF',
-                    'IndustryLarge': pd.NA,
-                    'IndustryMid': pd.NA,
-                    'IndustrySmall': pd.NA,
-                    'SharesOutstanding': pd.NA,
-                })
-                
-                # Convert SharesOutstanding to Int64 type to match base_master
-                etf_master["SharesOutstanding"] = etf_master["SharesOutstanding"].astype("Int64")
-                
-                # Remove duplicates and sort
-                etf_master = etf_master.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"]).sort_values(["Market", "Code"])
-                
-                # Combine base master and ETF data
-                combined_master = pd.concat([base_master, etf_master], ignore_index=True)
-                combined_master = combined_master.drop_duplicates(subset=["Code", "Market"]).sort_values(["Market", "Code"])
-                
-                return combined_master
-        except Exception as e:
-            warnings.warn(f"Failed to fetch ETF data for master list: {str(e)}")
-            # Return base master without ETF data if fetch fails
-        
-        return base_master
+        return master
 
     def fetch_ohlcv(
         self,
