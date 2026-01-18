@@ -7,7 +7,7 @@ enabling flexible fallback strategies and multi-source data fetching.
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Sequence
 
 import pandas as pd
