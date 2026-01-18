@@ -14,9 +14,10 @@ on:
       provider:
         description: 'Data Provider'
         required: false
-        default: 'pykrx'
+        default: 'composite'
         type: choice
         options:
+          - composite
           - pykrx
           - korea_investment
           - fdr
@@ -70,7 +71,7 @@ jobs:
         
         PROVIDER="${{ inputs.provider }}"
         if [ -z "$PROVIDER" ]; then
-          PROVIDER="pykrx"
+          PROVIDER="composite"
         fi
         
         echo "Generating cache from $START_DATE to $END_DATE using provider: $PROVIDER"
