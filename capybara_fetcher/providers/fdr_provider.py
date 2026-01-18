@@ -20,7 +20,7 @@ from .provider_utils import load_master_json
 class FdrProvider(DataProvider):
     """
     DataProvider implementation using FinanceDataReader:
-    - tickers/master: local Seibro-derived JSON (same as other providers)
+    - tickers: fetched dynamically via fdr.StockListing() for KOSPI, KOSDAQ, and ETF/KR
     - ohlcv: FinanceDataReader (FDR) library
     
     FDR supports multiple data sources:
@@ -29,6 +29,7 @@ class FdrProvider(DataProvider):
     - Yahoo Finance
     
     The provider uses KRX as the default source for Korean stock data.
+    Note: list_tickers() requires network access to fetch current ticker lists.
     """
 
     master_json_path: str
