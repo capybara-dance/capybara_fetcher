@@ -7,6 +7,7 @@ https://github.com/FinanceData/FinanceDataReader
 from __future__ import annotations
 
 import datetime as dt
+import warnings
 from dataclasses import dataclass
 
 import pandas as pd
@@ -52,6 +53,13 @@ class FdrProvider(DataProvider):
         
         This method fetches ticker data directly from FinanceDataReader instead of
         reading from a local JSON file.
+        
+        Args:
+            asof_date: Not used. Current live data is always fetched.
+            market: Optional market filter ('KOSPI', 'KOSDAQ', or 'ETF')
+            
+        Returns:
+            Tuple of (ticker_list, market_by_ticker_dict)
         """
         # Fetch data from KOSPI, KOSDAQ, and ETF/KR markets
         df_list = []
@@ -64,7 +72,6 @@ class FdrProvider(DataProvider):
                 df_list.append(df_kospi)
         except Exception as e:
             # If fetch fails, log but continue with other markets
-            import warnings
             warnings.warn(f"Failed to fetch KOSPI listings: {str(e)}")
         
         # Fetch KOSDAQ data
@@ -73,7 +80,6 @@ class FdrProvider(DataProvider):
             if not df_kosdaq.empty:
                 df_list.append(df_kosdaq)
         except Exception as e:
-            import warnings
             warnings.warn(f"Failed to fetch KOSDAQ listings: {str(e)}")
         
         # Fetch ETF/KR data
@@ -86,7 +92,6 @@ class FdrProvider(DataProvider):
                 df_etf['Market'] = 'ETF'
                 df_list.append(df_etf)
         except Exception as e:
-            import warnings
             warnings.warn(f"Failed to fetch ETF/KR listings: {str(e)}")
         
         # Combine all dataframes
