@@ -46,16 +46,72 @@ class FdrProvider(DataProvider):
         asof_date: dt.date | None = None,
         market: str | None = None,
     ) -> tuple[list[str], dict[str, str]]:
-        """List tickers from stock master."""
-        master = self.load_stock_master(asof_date=asof_date)
+        """
+        List tickers using fdr.StockListing() for KOSPI, KOSDAQ, and ETF markets.
+        
+        This method fetches ticker data directly from FinanceDataReader instead of
+        reading from a local JSON file.
+        """
+        # Fetch data from KOSPI, KOSDAQ, and ETF/KR markets
+        df_list = []
+        
+        # Fetch KOSPI data
+        try:
+            df_kospi = fdr.StockListing('KOSPI')
+            if not df_kospi.empty:
+                # KrxMarcapListing returns 'Market' column already set
+                df_list.append(df_kospi)
+        except Exception as e:
+            # If fetch fails, log but continue with other markets
+            import warnings
+            warnings.warn(f"Failed to fetch KOSPI listings: {str(e)}")
+        
+        # Fetch KOSDAQ data
+        try:
+            df_kosdaq = fdr.StockListing('KOSDAQ')
+            if not df_kosdaq.empty:
+                df_list.append(df_kosdaq)
+        except Exception as e:
+            import warnings
+            warnings.warn(f"Failed to fetch KOSDAQ listings: {str(e)}")
+        
+        # Fetch ETF/KR data
+        try:
+            df_etf = fdr.StockListing('ETF/KR')
+            if not df_etf.empty:
+                # NaverEtfListing returns 'Symbol' instead of 'Code'
+                df_etf = df_etf.rename(columns={'Symbol': 'Code'})
+                # Add Market column for ETF
+                df_etf['Market'] = 'ETF'
+                df_list.append(df_etf)
+        except Exception as e:
+            import warnings
+            warnings.warn(f"Failed to fetch ETF/KR listings: {str(e)}")
+        
+        # Combine all dataframes
+        if not df_list:
+            # If all fetches failed, return empty results
+            return [], {}
+        
+        master = pd.concat(df_list, ignore_index=True)
+        
+        # Ensure Code column exists and is properly formatted
+        if 'Code' not in master.columns:
+            raise ValueError("Code column not found in fetched data")
+        
+        # Filter by market if specified
         if market:
             m = str(market).strip()
             master = master[master["Market"] == m]
+        
+        # Format ticker codes as 6-digit strings
         tickers = master["Code"].astype(str).str.zfill(6).unique().tolist()
         tickers = sorted(tickers)
-        # Use zero-filled ticker codes for dictionary keys to match ticker format
+        
+        # Create market mapping dictionary
         ticker_codes = master["Code"].astype(str).str.zfill(6).tolist()
         market_by_ticker = dict(zip(ticker_codes, master["Market"].tolist()))
+        
         return tickers, market_by_ticker
 
     def fetch_ohlcv(
