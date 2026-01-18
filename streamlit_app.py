@@ -18,7 +18,7 @@ st.set_page_config(
 st.title("📊 Korea Stock Feature Cache Inspector")
 
 # Settings UI removed (use defaults)
-default_repo = "yunu-lee/capybara_fetcher"
+default_repo = "capybara-dance/capybara_fetcher"
 repo_name = default_repo
 github_token = ""
 
