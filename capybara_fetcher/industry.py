@@ -92,7 +92,7 @@ def compute_industry_feature_frame(
         m = m[m["Market"] != "ETF"]
         # Filter out rows where IndustryLarge is empty
         if "IndustryLarge" in m.columns:
-            m = m[m["IndustryLarge"].notna() & (m["IndustryLarge"] != "")]
+            m = m[m["IndustryLarge"].notna() & (m["IndustryLarge"].astype(str).str.strip() != "")]
     
     for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
         if c not in m.columns:

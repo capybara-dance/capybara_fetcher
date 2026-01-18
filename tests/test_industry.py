@@ -86,3 +86,41 @@ def test_compute_industry_feature_frame_keeps_all_valid_industries():
     unique_industries = sorted(result["IndustryLarge"].unique())
     assert "Technology" in unique_industries
     assert "Finance" in unique_industries
+
+
+def test_compute_industry_feature_frame_filters_whitespace_industry_large():
+    """Test that rows with whitespace-only IndustryLarge values are filtered out."""
+    dates = pd.date_range("2025-01-01", periods=5, freq="D")
+    feature_df = pd.DataFrame({
+        "Date": dates.tolist() * 2,
+        "Ticker": ["000001"] * 5 + ["000002"] * 5,
+        "Close": [100, 101, 102, 103, 104] * 2,
+    })
+
+    # 000002 has whitespace-only IndustryLarge (should be filtered)
+    master_df = pd.DataFrame({
+        "Code": ["000001", "000002"],
+        "Name": ["A", "B"],
+        "Market": ["KOSPI", "KOSDAQ"],
+        "IndustryLarge": ["Technology", "   "],
+        "IndustryMid": ["Software", "Banking"],
+        "IndustrySmall": ["Cloud", "Retail"],
+    })
+
+    global_dates = pd.date_range("2025-01-01", periods=5, freq="D")
+    
+    result = compute_industry_feature_frame(
+        feature_df,
+        master_df=master_df,
+        benchmark_close_by_date=None,
+        level=INDUSTRY_LEVEL_L,
+        global_dates=global_dates,
+    )
+
+    # Only Technology should have constituent count of 1
+    # 000002 should be filtered and grouped as Unknown
+    tech_data = result[result["IndustryLarge"] == "Technology"]
+    assert tech_data["ConstituentCount"].max() == 1
+    
+    unknown_data = result[result["IndustryLarge"] == "Unknown"]
+    assert unknown_data["ConstituentCount"].max() == 1
