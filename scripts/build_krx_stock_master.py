@@ -50,20 +50,30 @@ def _read_master_xlsx(path: Path, market: str) -> pd.DataFrame:
     return out
 
 
-def _fetch_etf_data() -> pd.DataFrame:
-    """Fetch ETF data using FdrProvider."""
+def _fetch_etf_data(master_json_path: str) -> pd.DataFrame:
+    """Fetch ETF data using FdrProvider.list_tickers()."""
     try:
-        # Use FdrProvider's static method to fetch ETF data
-        df_etf = FdrProvider.fetch_etf_listing()
+        # Use FdrProvider's list_tickers with market='ETF' to fetch ETF data
+        fdr_provider = FdrProvider(master_json_path=master_json_path, source="KRX")
+        tickers, market_by_ticker = fdr_provider.list_tickers(market='ETF')
         
-        if df_etf.empty:
+        if not tickers:
             warnings.warn("No ETF data fetched via FdrProvider")
             return pd.DataFrame()
         
+        # We need to fetch the full ETF data with names
+        # Since list_tickers only returns codes, we need to use the internal fetch
+        import FinanceDataReader as fdr
+        df_etf = fdr.StockListing('ETF/KR')
+        
+        if df_etf.empty:
+            warnings.warn("No ETF data fetched")
+            return pd.DataFrame()
+        
         # Map ETF columns to master format
-        # ETF data has: Code (already renamed from Symbol), Name, and other fields
+        # ETF data has: Symbol, Name, and other fields
         etf_master = pd.DataFrame({
-            'Code': df_etf['Code'].astype(str).str.strip().str.zfill(6),
+            'Code': df_etf['Symbol'].astype(str).str.strip().str.zfill(6),
             'Name': df_etf['Name'].astype(str).str.strip(),
             'Market': 'ETF',
             'IndustryLarge': None,
@@ -97,7 +107,7 @@ def main() -> None:
     
     # Fetch and add ETF data if requested
     if args.include_etf:
-        etf_data = _fetch_etf_data()
+        etf_data = _fetch_etf_data(args.output_json)
         if not etf_data.empty:
             master = pd.concat([master, etf_data], ignore_index=True)
     

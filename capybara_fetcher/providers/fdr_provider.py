@@ -42,32 +42,6 @@ class FdrProvider(DataProvider):
         # asof_date reserved for future providers
         return load_master_json(self.master_json_path)
 
-    @staticmethod
-    def fetch_etf_listing() -> pd.DataFrame:
-        """
-        Fetch ETF listing data from FinanceDataReader.
-        
-        This is a static method that can be used by build scripts and other utilities
-        to fetch ETF data in a centralized way.
-        
-        Returns:
-            DataFrame with ETF data including Code, Name, and other fields.
-            Returns empty DataFrame if fetch fails.
-        """
-        try:
-            df_etf = fdr.StockListing('ETF/KR')
-            if not df_etf.empty:
-                # NaverEtfListing returns 'Symbol' instead of 'Code'
-                # Rename for consistency
-                if 'Symbol' in df_etf.columns:
-                    df_etf = df_etf.rename(columns={'Symbol': 'Code'})
-                # Add Market column for ETF
-                df_etf['Market'] = 'ETF'
-            return df_etf
-        except Exception as e:
-            warnings.warn(f"Failed to fetch ETF/KR listings: {str(e)}")
-            return pd.DataFrame()
-
     def list_tickers(
         self,
         *,
@@ -82,39 +56,50 @@ class FdrProvider(DataProvider):
         
         Args:
             asof_date: Not used. Current live data is always fetched.
-            market: Optional market filter ('KOSPI', 'KOSDAQ', or 'ETF')
+            market: Optional market filter. If None, returns all markets (KOSPI, KOSDAQ, ETF).
+                   If specified, returns only tickers from that market ('KOSPI', 'KOSDAQ', or 'ETF')
             
         Returns:
             Tuple of (ticker_list, market_by_ticker_dict)
         """
-        # Fetch data from KOSPI, KOSDAQ, and ETF/KR markets
+        # Fetch data from requested markets
         df_list = []
         
+        # Determine which markets to fetch based on market parameter
+        fetch_kospi = market is None or market == 'KOSPI'
+        fetch_kosdaq = market is None or market == 'KOSDAQ'
+        fetch_etf = market is None or market == 'ETF'
+        
         # Fetch KOSPI data
-        try:
-            df_kospi = fdr.StockListing('KOSPI')
-            if not df_kospi.empty:
-                # KrxMarcapListing returns 'Market' column already set
-                df_list.append(df_kospi)
-        except Exception as e:
-            # If fetch fails, log but continue with other markets
-            warnings.warn(f"Failed to fetch KOSPI listings: {str(e)}")
+        if fetch_kospi:
+            try:
+                df_kospi = fdr.StockListing('KOSPI')
+                if not df_kospi.empty:
+                    df_list.append(df_kospi)
+            except Exception as e:
+                warnings.warn(f"Failed to fetch KOSPI listings: {str(e)}")
         
         # Fetch KOSDAQ data
-        try:
-            df_kosdaq = fdr.StockListing('KOSDAQ')
-            if not df_kosdaq.empty:
-                df_list.append(df_kosdaq)
-        except Exception as e:
-            warnings.warn(f"Failed to fetch KOSDAQ listings: {str(e)}")
+        if fetch_kosdaq:
+            try:
+                df_kosdaq = fdr.StockListing('KOSDAQ')
+                if not df_kosdaq.empty:
+                    df_list.append(df_kosdaq)
+            except Exception as e:
+                warnings.warn(f"Failed to fetch KOSDAQ listings: {str(e)}")
         
         # Fetch ETF/KR data
-        try:
-            df_etf = FdrProvider.fetch_etf_listing()
-            if not df_etf.empty:
-                df_list.append(df_etf)
-        except Exception as e:
-            warnings.warn(f"Failed to fetch ETF/KR listings: {str(e)}")
+        if fetch_etf:
+            try:
+                df_etf = fdr.StockListing('ETF/KR')
+                if not df_etf.empty:
+                    # NaverEtfListing returns 'Symbol' instead of 'Code'
+                    df_etf = df_etf.rename(columns={'Symbol': 'Code'})
+                    # Add Market column for ETF
+                    df_etf['Market'] = 'ETF'
+                    df_list.append(df_etf)
+            except Exception as e:
+                warnings.warn(f"Failed to fetch ETF/KR listings: {str(e)}")
         
         # Combine all dataframes
         if not df_list:
@@ -127,7 +112,8 @@ class FdrProvider(DataProvider):
         if 'Code' not in master.columns:
             raise ValueError("Code column not found in fetched data")
         
-        # Filter by market if specified
+        # Filter by exact market match if specified
+        # This is needed because fdr.StockListing('KOSDAQ') returns both 'KOSDAQ' and 'KOSDAQ GLOBAL'
         if market:
             m = str(market).strip()
             master = master[master["Market"] == m]
