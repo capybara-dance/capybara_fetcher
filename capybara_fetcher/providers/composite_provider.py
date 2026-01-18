@@ -7,12 +7,18 @@ enabling flexible fallback strategies and multi-source data fetching.
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass
-from typing import Sequence
+from dataclasses import dataclass, field
+from typing import Sequence, Literal
 
 import pandas as pd
 
 from ..provider import DataProvider
+from .pykrx_provider import PykrxProvider
+from .fdr_provider import FdrProvider
+from .korea_investment_provider import KoreaInvestmentProvider
+
+
+ProviderType = Literal["pykrx", "fdr", "korea_investment"]
 
 
 @dataclass(frozen=True)
@@ -20,32 +26,85 @@ class CompositeProvider(DataProvider):
     """
     Composite DataProvider that combines multiple providers.
     
-    This provider wraps multiple DataProvider instances and provides
-    an interface to select and combine their functionalities appropriately.
+    This provider internally creates and manages multiple DataProvider instances
+    based on configuration. External users don't need to know about individual
+    provider implementations.
     
     The actual implementation strategy (fallback, merge, priority, etc.)
     will be defined based on specific requirements.
     
     Args:
-        providers: Sequence of DataProvider instances to compose
+        master_json_path: Path to stock master JSON file
+        provider_types: List of provider types to use (e.g., ["pykrx", "fdr"])
+        fdr_source: Source for FDR provider (default: "KRX")
+        korea_investment_appkey: Optional app key for Korea Investment provider
+        korea_investment_appsecret: Optional app secret for Korea Investment provider
+        korea_investment_base_url: Optional base URL for Korea Investment provider
         name: Provider name (default: "composite")
     
     Example:
-        >>> pykrx_provider = PykrxProvider(master_json_path="...")
-        >>> fdr_provider = FdrProvider(master_json_path="...")
+        >>> # Simple usage with default providers
         >>> composite = CompositeProvider(
-        ...     providers=[pykrx_provider, fdr_provider],
-        ...     name="composite"
+        ...     master_json_path="data/krx_stock_master.json",
+        ...     provider_types=["pykrx", "fdr"]
+        ... )
+        >>> 
+        >>> # With Korea Investment provider
+        >>> composite = CompositeProvider(
+        ...     master_json_path="data/krx_stock_master.json",
+        ...     provider_types=["korea_investment", "fdr"],
+        ...     korea_investment_appkey="your_key",
+        ...     korea_investment_appsecret="your_secret"
         ... )
     """
 
-    providers: Sequence[DataProvider]
+    master_json_path: str
+    provider_types: Sequence[ProviderType] = field(default_factory=lambda: ["pykrx"])
+    fdr_source: str = "KRX"
+    korea_investment_appkey: str | None = None
+    korea_investment_appsecret: str | None = None
+    korea_investment_base_url: str = "https://openapi.koreainvestment.com:9443"
     name: str = "composite"
+    
+    # Internal field to cache providers
+    _providers: Sequence[DataProvider] = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        """Validate that at least one provider is provided."""
-        if not self.providers or len(self.providers) == 0:
-            raise ValueError("CompositeProvider requires at least one provider")
+        """Initialize and validate providers."""
+        if not self.provider_types or len(self.provider_types) == 0:
+            raise ValueError("CompositeProvider requires at least one provider type")
+        
+        # Create provider instances based on configuration
+        providers = []
+        for provider_type in self.provider_types:
+            if provider_type == "pykrx":
+                providers.append(PykrxProvider(master_json_path=self.master_json_path))
+            elif provider_type == "fdr":
+                providers.append(FdrProvider(
+                    master_json_path=self.master_json_path,
+                    source=self.fdr_source
+                ))
+            elif provider_type == "korea_investment":
+                if not self.korea_investment_appkey or not self.korea_investment_appsecret:
+                    raise ValueError(
+                        "korea_investment provider requires both appkey and appsecret"
+                    )
+                providers.append(KoreaInvestmentProvider(
+                    master_json_path=self.master_json_path,
+                    appkey=self.korea_investment_appkey,
+                    appsecret=self.korea_investment_appsecret,
+                    base_url=self.korea_investment_base_url
+                ))
+            else:
+                raise ValueError(f"Unknown provider type: {provider_type}")
+        
+        # Use object.__setattr__ to bypass frozen dataclass restriction
+        object.__setattr__(self, '_providers', providers)
+    
+    @property
+    def providers(self) -> Sequence[DataProvider]:
+        """Get the list of internal providers."""
+        return self._providers
 
     def list_tickers(
         self,
