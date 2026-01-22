@@ -160,13 +160,23 @@ def compute_industry_feature_frame(
     out["IndustryMid"] = out["IndustryKey"].map(key_map["IndustryMidOut"]).fillna("")
     out["IndustrySmall"] = out["IndustryKey"].map(key_map["IndustrySmallOut"]).fillna("")
 
+    # 업종별 Mansfield RS 계산
+    # 업종 지수에 대해 개별 종목과 동일한 방식으로 Mansfield RS 계산
+    # 계산 공식: MansfieldRS = (RS_raw / RS_sma - 1) × 100
+    # 자세한 설명은 docs/MANSFIELD_RS.md 참조
     if benchmark_close_by_date is not None and not benchmark_close_by_date.empty:
+        # Step 1: 날짜별 벤치마크 매핑 및 Raw RS 계산
         b = out["Date"].map(benchmark_close_by_date)
         b = pd.to_numeric(b, errors="coerce")
-        rs_raw = out["IndustryClose"] / b
+        rs_raw = out["IndustryClose"] / b  # RS_raw = IndustryClose / Benchmark
+        
+        # Step 2: 업종별로 그룹핑하여 RS의 200일 이동평균 계산
+        # 각 업종이 독립적으로 자체 200일 이동평균 기준 보유
         rs_sma = rs_raw.groupby(out["IndustryKey"]).transform(
             lambda s: s.rolling(window=MANSFIELD_RS_SMA_WINDOW, min_periods=MANSFIELD_RS_SMA_WINDOW).mean()
         )
+        
+        # Step 3: Mansfield RS 계산 (백분율)
         out["MansfieldRS"] = (rs_raw / rs_sma - 1.0) * 100.0
     else:
         out["MansfieldRS"] = pd.NA
