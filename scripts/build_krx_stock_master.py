@@ -76,19 +76,20 @@ def _update_names_from_fdr(df: pd.DataFrame, market: str) -> pd.DataFrame:
         # Create a mapping of Code -> Name from FDR data
         fdr_name_map = dict(zip(fdr_df['Code'], fdr_df['Name']))
         
-        # Update names in the dataframe
+        # Update names in the dataframe using vectorized operations
         df = df.copy()
         original_count = len(df)
-        updated_count = 0
         
-        for idx, row in df.iterrows():
-            code = row['Code']
-            if code in fdr_name_map:
-                old_name = row['Name']
-                new_name = fdr_name_map[code]
-                if old_name != new_name:
-                    df.at[idx, 'Name'] = new_name
-                    updated_count += 1
+        # Count how many names will be updated before updating
+        old_names = df['Name'].copy()
+        new_names = df['Code'].map(fdr_name_map)
+        
+        # Only update where we have FDR data
+        mask = new_names.notna()
+        df.loc[mask, 'Name'] = new_names[mask]
+        
+        # Count how many names actually changed
+        updated_count = (old_names != df['Name']).sum()
         
         print(f"Updated {updated_count} stock names from FDR for {market} (total: {original_count})")
         return df
@@ -96,6 +97,7 @@ def _update_names_from_fdr(df: pd.DataFrame, market: str) -> pd.DataFrame:
     except Exception as e:
         warnings.warn(f"Failed to update names from FDR for {market}: {str(e)}")
         return df
+
 
 
 
