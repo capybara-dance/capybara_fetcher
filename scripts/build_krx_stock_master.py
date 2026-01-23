@@ -99,8 +99,6 @@ def _update_names_from_fdr(df: pd.DataFrame, market: str) -> pd.DataFrame:
         return df
 
 
-
-
 def _fetch_etf_data(master_json_path: str) -> pd.DataFrame:
     """Fetch ETF data using FdrProvider.list_tickers()."""
     try:
