@@ -271,7 +271,7 @@
   },
   {
     "Code": "0019K0",
-    "Name": "TIMEFOLIO 미국나스닥100채권혼합50액티브",
+    "Name": "TIME 미국나스닥100채권혼합50액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -388,7 +388,7 @@
   },
   {
     "Code": "0036D0",
-    "Name": "TIMEFOLIO 미국배당다우존스액티브",
+    "Name": "TIME 미국배당다우존스액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -478,7 +478,7 @@
   },
   {
     "Code": "0043Y0",
-    "Name": "TIMEFOLIO 차이나AI테크액티브",
+    "Name": "TIME 차이나AI테크액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -1234,7 +1234,7 @@
   },
   {
     "Code": "0113D0",
-    "Name": "TIMEFOLIO 글로벌탑픽액티브",
+    "Name": "TIME 글로벌탑픽액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -1620,6 +1620,15 @@
     "SharesOutstanding": null
   },
   {
+    "Code": "0151P0",
+    "Name": "RISE 코리아전략산업액티브",
+    "Market": "ETF",
+    "IndustryLarge": null,
+    "IndustryMid": null,
+    "IndustrySmall": null,
+    "SharesOutstanding": null
+  },
+  {
     "Code": "0151S0",
     "Name": "KODEX 미국AI반도체TOP3플러스",
     "Market": "ETF",
@@ -1631,6 +1640,33 @@
   {
     "Code": "0152E0",
     "Name": "SOL 배당성향탑픽액티브",
+    "Market": "ETF",
+    "IndustryLarge": null,
+    "IndustryMid": null,
+    "IndustrySmall": null,
+    "SharesOutstanding": null
+  },
+  {
+    "Code": "0153K0",
+    "Name": "KODEX 주주환원고배당주",
+    "Market": "ETF",
+    "IndustryLarge": null,
+    "IndustryMid": null,
+    "IndustrySmall": null,
+    "SharesOutstanding": null
+  },
+  {
+    "Code": "0153P0",
+    "Name": "ACE 리츠부동산인프라액티브",
+    "Market": "ETF",
+    "IndustryLarge": null,
+    "IndustryMid": null,
+    "IndustrySmall": null,
+    "SharesOutstanding": null
+  },
+  {
+    "Code": "0154F0",
+    "Name": "WON 초대형IB&금융지주",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -2035,7 +2071,7 @@
   },
   {
     "Code": "138520",
-    "Name": "TIGER 삼성그룹펀더멘털",
+    "Name": "TIGER 삼성그룹",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -2044,7 +2080,7 @@
   },
   {
     "Code": "138530",
-    "Name": "TIGER LG그룹+펀더멘털",
+    "Name": "TIGER LG그룹플러스",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -2053,7 +2089,7 @@
   },
   {
     "Code": "138540",
-    "Name": "TIGER 현대차그룹+펀더멘털",
+    "Name": "TIGER 현대차그룹플러스",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -5356,7 +5392,7 @@
   },
   {
     "Code": "385710",
-    "Name": "TIMEFOLIO K이노베이션액티브",
+    "Name": "TIME K이노베이션액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -5365,7 +5401,7 @@
   },
   {
     "Code": "385720",
-    "Name": "TIMEFOLIO 코스피액티브",
+    "Name": "TIME 코스피액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -5689,7 +5725,7 @@
   },
   {
     "Code": "404120",
-    "Name": "TIMEFOLIO K신재생에너지액티브",
+    "Name": "TIME K신재생에너지액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -5779,7 +5815,7 @@
   },
   {
     "Code": "410870",
-    "Name": "TIMEFOLIO K컬처액티브",
+    "Name": "TIME K컬처액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -6058,7 +6094,7 @@
   },
   {
     "Code": "426020",
-    "Name": "TIMEFOLIO 미국S&P500액티브",
+    "Name": "TIME 미국S&P500액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -6067,7 +6103,7 @@
   },
   {
     "Code": "426030",
-    "Name": "TIMEFOLIO 미국나스닥100액티브",
+    "Name": "TIME 미국나스닥100액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -6535,7 +6571,7 @@
   },
   {
     "Code": "441800",
-    "Name": "TIMEFOLIO Korea플러스배당액티브",
+    "Name": "TIME Korea플러스배당액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -7219,7 +7255,7 @@
   },
   {
     "Code": "456600",
-    "Name": "TIMEFOLIO 글로벌AI인공지능액티브",
+    "Name": "TIME 글로벌AI인공지능액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -7570,7 +7606,7 @@
   },
   {
     "Code": "463050",
-    "Name": "TIMEFOLIO K바이오액티브",
+    "Name": "TIME K바이오액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -8425,7 +8461,7 @@
   },
   {
     "Code": "478150",
-    "Name": "TIMEFOLIO 글로벌우주테크&방산액티브",
+    "Name": "TIME 글로벌우주테크&방산액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -8749,7 +8785,7 @@
   },
   {
     "Code": "485810",
-    "Name": "TIMEFOLIO 글로벌바이오액티브",
+    "Name": "TIME 글로벌바이오액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -9181,7 +9217,7 @@
   },
   {
     "Code": "494180",
-    "Name": "TIMEFOLIO 글로벌소비트렌드액티브",
+    "Name": "TIME 글로벌소비트렌드액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -9307,7 +9343,7 @@
   },
   {
     "Code": "495060",
-    "Name": "TIMEFOLIO 코리아밸류업액티브",
+    "Name": "TIME 코리아밸류업액티브",
     "Market": "ETF",
     "IndustryLarge": null,
     "IndustryMid": null,
@@ -9577,7 +9613,7 @@
   },
   {
     "Code": "0004Y0",
-    "Name": "디비금융제14호기업인수목적",
+    "Name": "디비금융제14호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9676,7 +9712,7 @@
   },
   {
     "Code": "001810",
-    "Name": "무림에스피",
+    "Name": "무림SP",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -9757,7 +9793,7 @@
   },
   {
     "Code": "0037T0",
-    "Name": "케이비제32호기업인수목적",
+    "Name": "KB제32호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9775,7 +9811,7 @@
   },
   {
     "Code": "0041B0",
-    "Name": "교보18호기업인수목적",
+    "Name": "교보18호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9784,7 +9820,7 @@
   },
   {
     "Code": "0041J0",
-    "Name": "엘에스기업인수목적1호",
+    "Name": "엘에스스팩1호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9793,7 +9829,7 @@
   },
   {
     "Code": "0041L0",
-    "Name": "하나35호기업인수목적",
+    "Name": "하나35호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9802,7 +9838,7 @@
   },
   {
     "Code": "0044K0",
-    "Name": "삼성기업인수목적10호",
+    "Name": "삼성스팩10호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9856,7 +9892,7 @@
   },
   {
     "Code": "0054V0",
-    "Name": "엔에이치기업인수목적32호",
+    "Name": "엔에이치스팩32호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9928,7 +9964,7 @@
   },
   {
     "Code": "006730",
-    "Name": "서부티엔디",
+    "Name": "서부T&D",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "소비자 서비스",
@@ -9937,7 +9973,7 @@
   },
   {
     "Code": "0068Y0",
-    "Name": "비엔케이제3호기업인수목적",
+    "Name": "비엔케이제3호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9964,7 +10000,7 @@
   },
   {
     "Code": "0071M0",
-    "Name": "삼성기업인수목적11호",
+    "Name": "삼성스팩11호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -9973,7 +10009,7 @@
   },
   {
     "Code": "0072Z0",
-    "Name": "케이비제33호기업인수목적",
+    "Name": "KB제33호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10036,7 +10072,7 @@
   },
   {
     "Code": "007770",
-    "Name": "한일화학공업",
+    "Name": "한일화학",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -10090,7 +10126,7 @@
   },
   {
     "Code": "0088D0",
-    "Name": "메리츠제1호기업인수목적",
+    "Name": "메리츠제1호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10099,7 +10135,7 @@
   },
   {
     "Code": "0091W0",
-    "Name": "신영해피투모로우제11호기업인수목적",
+    "Name": "신영스팩11호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10117,7 +10153,7 @@
   },
   {
     "Code": "0093G0",
-    "Name": "미래에셋비전기업인수목적8호",
+    "Name": "미래에셋비전스팩8호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10144,7 +10180,7 @@
   },
   {
     "Code": "0096B0",
-    "Name": "삼성기업인수목적12호",
+    "Name": "삼성스팩12호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10153,7 +10189,7 @@
   },
   {
     "Code": "0096D0",
-    "Name": "미래에셋비전기업인수목적9호",
+    "Name": "미래에셋비전스팩9호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10180,7 +10216,7 @@
   },
   {
     "Code": "0097F0",
-    "Name": "미래에셋비전기업인수목적10호",
+    "Name": "미래에셋비전스팩10호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10189,7 +10225,7 @@
   },
   {
     "Code": "0098T0",
-    "Name": "교보19호기업인수목적",
+    "Name": "교보19호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10198,7 +10234,7 @@
   },
   {
     "Code": "0099W0",
-    "Name": "미래에셋비전기업인수목적11호",
+    "Name": "미래에셋비전스팩11호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10207,7 +10243,7 @@
   },
   {
     "Code": "0099X0",
-    "Name": "아이비케이에스제25호기업인수목적",
+    "Name": "IBKS제25호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10225,7 +10261,7 @@
   },
   {
     "Code": "0101C0",
-    "Name": "하나36호기업인수목적",
+    "Name": "하나36호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10261,7 +10297,7 @@
   },
   {
     "Code": "0105P0",
-    "Name": "유진기업인수목적12호",
+    "Name": "유진스팩12호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10279,7 +10315,7 @@
   },
   {
     "Code": "011080",
-    "Name": "형지아이앤씨",
+    "Name": "형지I&C",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -10396,7 +10432,7 @@
   },
   {
     "Code": "013720",
-    "Name": "더큐브앤",
+    "Name": "THE CUBE&",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -10414,7 +10450,7 @@
   },
   {
     "Code": "013990",
-    "Name": "아가방앤컴퍼니",
+    "Name": "아가방컴퍼니",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -10522,7 +10558,7 @@
   },
   {
     "Code": "016250",
-    "Name": "에스지씨이앤씨",
+    "Name": "SGC E&C",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -10531,7 +10567,7 @@
   },
   {
     "Code": "016600",
-    "Name": "큐캐피탈파트너스",
+    "Name": "큐캐피탈",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10549,7 +10585,7 @@
   },
   {
     "Code": "016790",
-    "Name": "현대사료 주식회사",
+    "Name": "현대사료",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -10594,7 +10630,7 @@
   },
   {
     "Code": "017510",
-    "Name": "세명전기공업",
+    "Name": "세명전기",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -10612,7 +10648,7 @@
   },
   {
     "Code": "017890",
-    "Name": "한국알콜산업",
+    "Name": "한국알콜",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -10711,7 +10747,7 @@
   },
   {
     "Code": "019550",
-    "Name": "에스비아이인베스트먼트",
+    "Name": "SBI인베스트먼트",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10720,7 +10756,7 @@
   },
   {
     "Code": "019570",
-    "Name": "플루토스투자",
+    "Name": "플루토스",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10792,7 +10828,7 @@
   },
   {
     "Code": "021080",
-    "Name": "에이티넘인베스트먼트",
+    "Name": "에이티넘인베스트",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -10801,7 +10837,7 @@
   },
   {
     "Code": "021320",
-    "Name": "케이씨씨건설",
+    "Name": "KCC건설",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -10882,7 +10918,7 @@
   },
   {
     "Code": "023770",
-    "Name": "플레이위드코리아",
+    "Name": "플레이위드",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -10900,7 +10936,7 @@
   },
   {
     "Code": "023900",
-    "Name": "풍국주정공업",
+    "Name": "풍국주정",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -10909,7 +10945,7 @@
   },
   {
     "Code": "023910",
-    "Name": "대한약품공업",
+    "Name": "대한약품",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -10936,7 +10972,7 @@
   },
   {
     "Code": "024740",
-    "Name": "한일단조공업",
+    "Name": "한일단조",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -10963,7 +10999,7 @@
   },
   {
     "Code": "024840",
-    "Name": "케이비아이메탈",
+    "Name": "KBI메탈",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -10972,7 +11008,7 @@
   },
   {
     "Code": "024850",
-    "Name": "에이치엘비이노베이션",
+    "Name": "HLB이노베이션",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -10999,7 +11035,7 @@
   },
   {
     "Code": "024940",
-    "Name": "피엔풍년",
+    "Name": "PN풍년",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -11026,7 +11062,7 @@
   },
   {
     "Code": "025440",
-    "Name": "디에이치오토웨어",
+    "Name": "DH오토웨어",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -11134,7 +11170,7 @@
   },
   {
     "Code": "027050",
-    "Name": "코리아나화장품",
+    "Name": "코리아나",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "생활용품",
@@ -11143,7 +11179,7 @@
   },
   {
     "Code": "027360",
-    "Name": "아주아이비투자",
+    "Name": "아주IB투자",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -11170,7 +11206,7 @@
   },
   {
     "Code": "027830",
-    "Name": "대성창업투자",
+    "Name": "대성창투",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -11188,7 +11224,7 @@
   },
   {
     "Code": "028300",
-    "Name": "에이치엘비",
+    "Name": "HLB",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -11287,7 +11323,7 @@
   },
   {
     "Code": "032080",
-    "Name": "아즈텍더블유비이",
+    "Name": "아즈텍WB",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -11332,7 +11368,7 @@
   },
   {
     "Code": "032540",
-    "Name": "티제이미디어",
+    "Name": "TJ미디어",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -11467,7 +11503,7 @@
   },
   {
     "Code": "033130",
-    "Name": "디지틀조선일보",
+    "Name": "디지틀조선",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -11665,7 +11701,7 @@
   },
   {
     "Code": "035600",
-    "Name": "케이지이니시스",
+    "Name": "KG이니시스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -11692,7 +11728,7 @@
   },
   {
     "Code": "035760",
-    "Name": "씨제이이엔엠",
+    "Name": "CJ ENM",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -11719,7 +11755,7 @@
   },
   {
     "Code": "035900",
-    "Name": "제이와이피엔터테인먼트",
+    "Name": "JYP Ent.",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -11818,7 +11854,7 @@
   },
   {
     "Code": "036480",
-    "Name": "대성미생물연구소",
+    "Name": "대성미생물",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -11827,7 +11863,7 @@
   },
   {
     "Code": "036540",
-    "Name": "에스에프에이반도체",
+    "Name": "SFA반도체",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -11836,7 +11872,7 @@
   },
   {
     "Code": "036560",
-    "Name": "케이젯정밀",
+    "Name": "KZ정밀",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -11863,7 +11899,7 @@
   },
   {
     "Code": "036640",
-    "Name": "에이치알에스",
+    "Name": "HRS",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -11971,7 +12007,7 @@
   },
   {
     "Code": "037330",
-    "Name": "인지디스플레이",
+    "Name": "인지디스플레",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "디스플레이",
@@ -11989,7 +12025,7 @@
   },
   {
     "Code": "037370",
-    "Name": "이지",
+    "Name": "EG",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -12007,7 +12043,7 @@
   },
   {
     "Code": "037440",
-    "Name": "희림종합건축사사무소",
+    "Name": "희림",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -12061,7 +12097,7 @@
   },
   {
     "Code": "038070",
-    "Name": "서린바이오사이언스",
+    "Name": "서린바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -12115,7 +12151,7 @@
   },
   {
     "Code": "038530",
-    "Name": "케이바이오컴퍼니",
+    "Name": "케이바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -12142,7 +12178,7 @@
   },
   {
     "Code": "038680",
-    "Name": "에스넷시스템",
+    "Name": "에스넷",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -12151,7 +12187,7 @@
   },
   {
     "Code": "038870",
-    "Name": "에코바이오홀딩스",
+    "Name": "에코바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -12241,7 +12277,7 @@
   },
   {
     "Code": "039340",
-    "Name": "한국경제티브이",
+    "Name": "한국경제TV",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -12295,7 +12331,7 @@
   },
   {
     "Code": "039830",
-    "Name": "오로라월드",
+    "Name": "오로라",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -12322,7 +12358,7 @@
   },
   {
     "Code": "039980",
-    "Name": "폴라리스에이아이",
+    "Name": "폴라리스AI",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -12340,7 +12376,7 @@
   },
   {
     "Code": "040300",
-    "Name": "와이티엔",
+    "Name": "YTN",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -12367,7 +12403,7 @@
   },
   {
     "Code": "040610",
-    "Name": "에스지엔지",
+    "Name": "SG&G",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -12421,7 +12457,7 @@
   },
   {
     "Code": "041510",
-    "Name": "에스엠엔터테인먼트",
+    "Name": "에스엠",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -12457,7 +12493,7 @@
   },
   {
     "Code": "041910",
-    "Name": "폴라리스에이아이파마",
+    "Name": "폴라리스AI파마",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -12583,7 +12619,7 @@
   },
   {
     "Code": "043090",
-    "Name": "더 테크놀로지",
+    "Name": "더테크놀로지",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -12673,7 +12709,7 @@
   },
   {
     "Code": "043610",
-    "Name": "케이티지니뮤직",
+    "Name": "KT지니뮤직",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -12799,7 +12835,7 @@
   },
   {
     "Code": "045340",
-    "Name": "토탈소프트뱅크",
+    "Name": "토탈소프트",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "운송",
@@ -12871,7 +12907,7 @@
   },
   {
     "Code": "046210",
-    "Name": "에이치엘비파나진",
+    "Name": "HLB파나진",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -12880,7 +12916,7 @@
   },
   {
     "Code": "046310",
-    "Name": "백금티앤에이",
+    "Name": "백금T&A",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -12898,7 +12934,7 @@
   },
   {
     "Code": "046440",
-    "Name": "케이지모빌리언스",
+    "Name": "KG모빌리언스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -12979,7 +13015,7 @@
   },
   {
     "Code": "047920",
-    "Name": "에이치엘비제약",
+    "Name": "HLB제약",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -12988,7 +13024,7 @@
   },
   {
     "Code": "048410",
-    "Name": "현대바이오사이언스",
+    "Name": "현대바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "생활용품",
@@ -13015,7 +13051,7 @@
   },
   {
     "Code": "048530",
-    "Name": "인트론바이오테크놀로지",
+    "Name": "인트론바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -13024,7 +13060,7 @@
   },
   {
     "Code": "048550",
-    "Name": "에스엠컬처앤콘텐츠",
+    "Name": "SM C&C",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -13033,7 +13069,7 @@
   },
   {
     "Code": "048770",
-    "Name": "TPC메카트로닉스",
+    "Name": "TPC",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -13312,7 +13348,7 @@
   },
   {
     "Code": "051500",
-    "Name": "씨제이프레시웨이",
+    "Name": "CJ프레시웨이",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -13348,7 +13384,7 @@
   },
   {
     "Code": "052220",
-    "Name": "아이엠비씨",
+    "Name": "iMBC",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -13456,7 +13492,7 @@
   },
   {
     "Code": "052860",
-    "Name": "아이앤씨테크놀로지",
+    "Name": "아이앤씨",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -13465,7 +13501,7 @@
   },
   {
     "Code": "052900",
-    "Name": "케이엑스하이텍",
+    "Name": "KX하이텍",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -13537,7 +13573,7 @@
   },
   {
     "Code": "053280",
-    "Name": "예스이십사",
+    "Name": "예스24",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "유통",
@@ -13546,7 +13582,7 @@
   },
   {
     "Code": "053290",
-    "Name": "엔이능률",
+    "Name": "NE능률",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "소비자 서비스",
@@ -13654,7 +13690,7 @@
   },
   {
     "Code": "054050",
-    "Name": "농업회사법인 엔에이치농우바이오",
+    "Name": "농우바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -13735,7 +13771,7 @@
   },
   {
     "Code": "054620",
-    "Name": "에이피에스",
+    "Name": "APS",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -13852,7 +13888,7 @@
   },
   {
     "Code": "056730",
-    "Name": "씨앤티85",
+    "Name": "CNT85",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -13861,7 +13897,7 @@
   },
   {
     "Code": "057030",
-    "Name": "와이비엠넷",
+    "Name": "YBM넷",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "소비자 서비스",
@@ -13906,7 +13942,7 @@
   },
   {
     "Code": "058400",
-    "Name": "케이엔엔",
+    "Name": "KNN",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -14014,7 +14050,7 @@
   },
   {
     "Code": "060150",
-    "Name": "인선ENT",
+    "Name": "인선이엔티",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -14041,7 +14077,7 @@
   },
   {
     "Code": "060250",
-    "Name": "엔에이치엔케이씨피",
+    "Name": "NHN KCP",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -14068,7 +14104,7 @@
   },
   {
     "Code": "060310",
-    "Name": "삼에스코리아",
+    "Name": "3S",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -14077,7 +14113,7 @@
   },
   {
     "Code": "060370",
-    "Name": "엘에스마린솔루션",
+    "Name": "LS마린솔루션",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -14113,7 +14149,7 @@
   },
   {
     "Code": "060560",
-    "Name": "에이치씨홈센타",
+    "Name": "HC홈센타",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -14158,7 +14194,7 @@
   },
   {
     "Code": "060900",
-    "Name": "에이전트에이아이",
+    "Name": "에이전트AI",
     "Market": "KOSDAQ",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -14194,7 +14230,7 @@
   },
   {
     "Code": "061970",
-    "Name": "엘비세미콘",
+    "Name": "LB세미콘",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -14230,7 +14266,7 @@
   },
   {
     "Code": "063440",
-    "Name": "에스엠라이프디자인그룹",
+    "Name": "SM Life Design",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -14374,7 +14410,7 @@
   },
   {
     "Code": "065150",
-    "Name": "대산에프앤비",
+    "Name": "대산F&B",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -14491,7 +14527,7 @@
   },
   {
     "Code": "065680",
-    "Name": "우주일렉트로닉스",
+    "Name": "우주일렉트로",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -14518,7 +14554,7 @@
   },
   {
     "Code": "065770",
-    "Name": "씨에스",
+    "Name": "CS",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -14617,7 +14653,7 @@
   },
   {
     "Code": "066790",
-    "Name": "씨씨에스충북방송",
+    "Name": "씨씨에스",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -14662,7 +14698,7 @@
   },
   {
     "Code": "067010",
-    "Name": "이씨에스텔레콤",
+    "Name": "이씨에스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -14680,7 +14716,7 @@
   },
   {
     "Code": "067160",
-    "Name": "숲",
+    "Name": "SOOP",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -14707,7 +14743,7 @@
   },
   {
     "Code": "067290",
-    "Name": "제이더블유신약",
+    "Name": "JW신약",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -14752,7 +14788,7 @@
   },
   {
     "Code": "067630",
-    "Name": "에이치엘비생명과학",
+    "Name": "HLB생명과학",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -14788,7 +14824,7 @@
   },
   {
     "Code": "067920",
-    "Name": "이글루코퍼레이션",
+    "Name": "이글루",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -14833,7 +14869,7 @@
   },
   {
     "Code": "068330",
-    "Name": "일신바이오베이스",
+    "Name": "일신바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -14851,7 +14887,7 @@
   },
   {
     "Code": "068790",
-    "Name": "디엠에스",
+    "Name": "DMS",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "디스플레이",
@@ -14995,7 +15031,7 @@
   },
   {
     "Code": "072020",
-    "Name": "중앙백신연구소",
+    "Name": "중앙백신",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -15094,7 +15130,7 @@
   },
   {
     "Code": "073560",
-    "Name": "우리손에프앤지농업회사법인",
+    "Name": "우리손에프앤지",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -15130,7 +15166,7 @@
   },
   {
     "Code": "074600",
-    "Name": "원익큐엔씨",
+    "Name": "원익QnC",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -15184,7 +15220,7 @@
   },
   {
     "Code": "078020",
-    "Name": "엘에스증권",
+    "Name": "LS증권",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "증권",
@@ -15220,7 +15256,7 @@
   },
   {
     "Code": "078150",
-    "Name": "에이치비테크놀러지",
+    "Name": "HB테크놀러지",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "디스플레이",
@@ -15391,7 +15427,7 @@
   },
   {
     "Code": "080160",
-    "Name": "모두투어네트워크",
+    "Name": "모두투어",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "소비자 서비스",
@@ -15499,7 +15535,7 @@
   },
   {
     "Code": "082270",
-    "Name": "젬백스&카엘",
+    "Name": "젬백스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -15517,7 +15553,7 @@
   },
   {
     "Code": "082800",
-    "Name": "비보존제약",
+    "Name": "비보존 제약",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -15553,7 +15589,7 @@
   },
   {
     "Code": "083450",
-    "Name": "글로벌스탠다드테크놀로지",
+    "Name": "GST",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -15607,7 +15643,7 @@
   },
   {
     "Code": "083660",
-    "Name": "씨에스에이코스믹",
+    "Name": "CSA 코스믹",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "생활용품",
@@ -15616,7 +15652,7 @@
   },
   {
     "Code": "083790",
-    "Name": "씨지인바이츠",
+    "Name": "CG인바이츠",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -15832,7 +15868,7 @@
   },
   {
     "Code": "086960",
-    "Name": "엠디에스테크",
+    "Name": "MDS테크",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -15922,7 +15958,7 @@
   },
   {
     "Code": "088800",
-    "Name": "에이스테크놀로지",
+    "Name": "에이스테크",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -15976,7 +16012,7 @@
   },
   {
     "Code": "089230",
-    "Name": "더이앤엠",
+    "Name": "THE E&M",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -15985,7 +16021,7 @@
   },
   {
     "Code": "089600",
-    "Name": "케이티나스미디어",
+    "Name": "KT나스미디어",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -16102,7 +16138,7 @@
   },
   {
     "Code": "091340",
-    "Name": "에스엔케이폴리텍",
+    "Name": "S&K폴리텍",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -16201,7 +16237,7 @@
   },
   {
     "Code": "092460",
-    "Name": "한라아이엠에스",
+    "Name": "한라IMS",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -16381,7 +16417,7 @@
   },
   {
     "Code": "095270",
-    "Name": "웨이브일렉트로닉스",
+    "Name": "웨이브일렉트로",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -16390,7 +16426,7 @@
   },
   {
     "Code": "095340",
-    "Name": "아이에스시",
+    "Name": "ISC",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -16552,7 +16588,7 @@
   },
   {
     "Code": "098120",
-    "Name": "마이크로컨텍솔루션",
+    "Name": "마이크로컨텍솔",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -16561,7 +16597,7 @@
   },
   {
     "Code": "098460",
-    "Name": "고영테크놀러지",
+    "Name": "고영",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -16588,7 +16624,7 @@
   },
   {
     "Code": "099220",
-    "Name": "에스디엔",
+    "Name": "SDN",
     "Market": "KOSDAQ",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -16642,7 +16678,7 @@
   },
   {
     "Code": "099520",
-    "Name": "디지아이티엑스",
+    "Name": "DGI",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -16723,7 +16759,7 @@
   },
   {
     "Code": "101000",
-    "Name": "케이에스인더스트리",
+    "Name": "KS인더스트리",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -16912,7 +16948,7 @@
   },
   {
     "Code": "104200",
-    "Name": "엔에이치엔벅스",
+    "Name": "NHN벅스",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -17083,7 +17119,7 @@
   },
   {
     "Code": "108860",
-    "Name": "셀바스에이아이",
+    "Name": "셀바스AI",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -17308,7 +17344,7 @@
   },
   {
     "Code": "115450",
-    "Name": "에이치엘비테라퓨틱스",
+    "Name": "HLB테라퓨틱스",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -17317,7 +17353,7 @@
   },
   {
     "Code": "115480",
-    "Name": "씨유메디칼시스템",
+    "Name": "씨유메디칼",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -17353,7 +17389,7 @@
   },
   {
     "Code": "115610",
-    "Name": "이미지스테크놀로지",
+    "Name": "이미지스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -17497,7 +17533,7 @@
   },
   {
     "Code": "122450",
-    "Name": "케이엑스이노베이션",
+    "Name": "KX",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -17524,7 +17560,7 @@
   },
   {
     "Code": "122870",
-    "Name": "YG엔터테인먼트",
+    "Name": "와이지엔터테인먼트",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -17677,7 +17713,7 @@
   },
   {
     "Code": "126600",
-    "Name": "비지에프에코머티리얼즈",
+    "Name": "BGF에코머티리얼즈",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -17785,7 +17821,7 @@
   },
   {
     "Code": "130500",
-    "Name": "지에이치신소재",
+    "Name": "GH신소재",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -17803,7 +17839,7 @@
   },
   {
     "Code": "130740",
-    "Name": "티피씨",
+    "Name": "티피씨글로벌",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -18037,7 +18073,7 @@
   },
   {
     "Code": "139050",
-    "Name": "비에프랩스",
+    "Name": "BF랩스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -18118,7 +18154,7 @@
   },
   {
     "Code": "141080",
-    "Name": "리가켐 바이오사이언스",
+    "Name": "리가켐바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -18271,7 +18307,7 @@
   },
   {
     "Code": "148780",
-    "Name": "비큐에이아이",
+    "Name": "비큐AI",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -18325,7 +18361,7 @@
   },
   {
     "Code": "151860",
-    "Name": "케이지에코솔루션",
+    "Name": "KG에코솔루션",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -18361,7 +18397,7 @@
   },
   {
     "Code": "154030",
-    "Name": "농업회사법인아시아종묘",
+    "Name": "아시아종묘",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -18388,7 +18424,7 @@
   },
   {
     "Code": "156100",
-    "Name": "엘앤케이바이오메드",
+    "Name": "엘앤케이바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -18442,7 +18478,7 @@
   },
   {
     "Code": "160550",
-    "Name": "넥스트엔터테인먼트월드",
+    "Name": "NEW",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -18532,7 +18568,7 @@
   },
   {
     "Code": "169330",
-    "Name": "마크로밀엠브레인",
+    "Name": "엠브레인",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -18613,7 +18649,7 @@
   },
   {
     "Code": "173940",
-    "Name": "에프엔씨엔터테인먼트",
+    "Name": "에프엔씨엔터",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -18739,7 +18775,7 @@
   },
   {
     "Code": "180400",
-    "Name": "디엑스앤브이엑스",
+    "Name": "DXVX",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -18748,7 +18784,7 @@
   },
   {
     "Code": "182360",
-    "Name": "큐브엔터테인먼트",
+    "Name": "큐브엔터",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -18784,7 +18820,7 @@
   },
   {
     "Code": "184230",
-    "Name": "에스지에이 솔루션즈",
+    "Name": "SGA솔루션즈",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -18829,7 +18865,7 @@
   },
   {
     "Code": "187420",
-    "Name": "에이치엘비제넥스",
+    "Name": "HLB제넥스",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -18838,7 +18874,7 @@
   },
   {
     "Code": "187660",
-    "Name": "현대에이디엠바이오",
+    "Name": "현대ADM",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -18865,7 +18901,7 @@
   },
   {
     "Code": "188040",
-    "Name": "바이오포트코리아",
+    "Name": "바이오포트",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -18883,7 +18919,7 @@
   },
   {
     "Code": "189300",
-    "Name": "인텔리안테크놀로지스",
+    "Name": "인텔리안테크",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -19036,7 +19072,7 @@
   },
   {
     "Code": "195940",
-    "Name": "에이치케이이노엔",
+    "Name": "HK이노엔",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -19063,7 +19099,7 @@
   },
   {
     "Code": "196300",
-    "Name": "에이치엘비펩",
+    "Name": "HLB펩",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -19198,7 +19234,7 @@
   },
   {
     "Code": "200230",
-    "Name": "텔콘알에프제약",
+    "Name": "텔콘RF제약",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -19306,7 +19342,7 @@
   },
   {
     "Code": "204270",
-    "Name": "(주)제이앤티씨",
+    "Name": "제이앤티씨",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -19315,7 +19351,7 @@
   },
   {
     "Code": "204610",
-    "Name": "티쓰리엔터테인먼트",
+    "Name": "티쓰리",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -19333,7 +19369,7 @@
   },
   {
     "Code": "204630",
-    "Name": "스튜디오산타클로스엔터테인먼트",
+    "Name": "스튜디오산타클로스",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -19387,7 +19423,7 @@
   },
   {
     "Code": "206560",
-    "Name": "덱스터스튜디오",
+    "Name": "덱스터",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -19513,7 +19549,7 @@
   },
   {
     "Code": "211270",
-    "Name": "에이피위성",
+    "Name": "AP위성",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -19576,7 +19612,7 @@
   },
   {
     "Code": "214270",
-    "Name": "에프에스엔",
+    "Name": "FSN",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -19810,7 +19846,7 @@
   },
   {
     "Code": "218410",
-    "Name": "알에프에이치아이씨",
+    "Name": "RFHIC",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -19936,7 +19972,7 @@
   },
   {
     "Code": "222160",
-    "Name": "엔피엑스",
+    "Name": "NPX",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -20017,7 +20053,7 @@
   },
   {
     "Code": "225190",
-    "Name": "엘케이삼양",
+    "Name": "LK삼양",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -20044,7 +20080,7 @@
   },
   {
     "Code": "225530",
-    "Name": "에이치씨보광산업",
+    "Name": "HC보광산업",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -20233,7 +20269,7 @@
   },
   {
     "Code": "232680",
-    "Name": "라온테크",
+    "Name": "라온로보틱스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -20377,7 +20413,7 @@
   },
   {
     "Code": "238120",
-    "Name": "얼라인드제네틱스",
+    "Name": "얼라인드",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -20449,7 +20485,7 @@
   },
   {
     "Code": "240810",
-    "Name": "원익아이피에스",
+    "Name": "원익IPS",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -20458,7 +20494,7 @@
   },
   {
     "Code": "241520",
-    "Name": "디에스씨인베스트먼트",
+    "Name": "DSC인베스트먼트",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -20557,7 +20593,7 @@
   },
   {
     "Code": "245620",
-    "Name": "이원다이애그노믹스",
+    "Name": "EDGC",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -20575,7 +20611,7 @@
   },
   {
     "Code": "246690",
-    "Name": "티에스인베스트먼트",
+    "Name": "TS인베스트먼트",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -20602,7 +20638,7 @@
   },
   {
     "Code": "246960",
-    "Name": "에스씨엘사이언스",
+    "Name": "SCL사이언스",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -20755,7 +20791,7 @@
   },
   {
     "Code": "255220",
-    "Name": "에스지이",
+    "Name": "SG",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -20800,7 +20836,7 @@
   },
   {
     "Code": "256940",
-    "Name": "킵스바이오파마",
+    "Name": "킵스파마",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -20809,7 +20845,7 @@
   },
   {
     "Code": "257370",
-    "Name": "피엔티 엠에스",
+    "Name": "피엔티엠에스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -21070,7 +21106,7 @@
   },
   {
     "Code": "265520",
-    "Name": "에이피시스템",
+    "Name": "AP시스템",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "디스플레이",
@@ -21169,7 +21205,7 @@
   },
   {
     "Code": "272110",
-    "Name": "케이엔제이보통주",
+    "Name": "케이엔제이",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -21232,7 +21268,7 @@
   },
   {
     "Code": "276040",
-    "Name": "스코넥엔터테인먼트",
+    "Name": "스코넥",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -21250,7 +21286,7 @@
   },
   {
     "Code": "277070",
-    "Name": "린드먼아시아인베스트먼트",
+    "Name": "린드먼아시아",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -21295,7 +21331,7 @@
   },
   {
     "Code": "278650",
-    "Name": "에이치엘비바이오스텝",
+    "Name": "HLB바이오스텝",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -21421,7 +21457,7 @@
   },
   {
     "Code": "289080",
-    "Name": "에스브이인베스트먼트",
+    "Name": "SV인베스트먼트",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -21457,7 +21493,7 @@
   },
   {
     "Code": "290120",
-    "Name": "디에이치오토리드",
+    "Name": "DH오토리드",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -21592,7 +21628,7 @@
   },
   {
     "Code": "293580",
-    "Name": "나우아이비캐피탈",
+    "Name": "나우IB",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -21682,7 +21718,7 @@
   },
   {
     "Code": "297890",
-    "Name": "에이치비솔루션",
+    "Name": "HB솔루션",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "디스플레이",
@@ -21772,7 +21808,7 @@
   },
   {
     "Code": "300120",
-    "Name": "라온피플(주)",
+    "Name": "라온피플",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -21934,7 +21970,7 @@
   },
   {
     "Code": "307930",
-    "Name": "컴퍼니케이파트너스",
+    "Name": "컴퍼니케이",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -21979,7 +22015,7 @@
   },
   {
     "Code": "309930",
-    "Name": "주식회사 조이웍스앤코",
+    "Name": "조이웍스앤코",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -21988,7 +22024,7 @@
   },
   {
     "Code": "309960",
-    "Name": "엘비인베스트먼트",
+    "Name": "LB인베스트먼트",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -22042,7 +22078,7 @@
   },
   {
     "Code": "311690",
-    "Name": "씨제이바이오사이언스",
+    "Name": "CJ 바이오사이언스",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -22105,7 +22141,7 @@
   },
   {
     "Code": "317120",
-    "Name": "(주)라닉스",
+    "Name": "라닉스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -22114,7 +22150,7 @@
   },
   {
     "Code": "317240",
-    "Name": "티에스트릴리온",
+    "Name": "TS트릴리온",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "생활용품",
@@ -22168,7 +22204,7 @@
   },
   {
     "Code": "317850",
-    "Name": "대모엔지니어링",
+    "Name": "대모",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -22186,7 +22222,7 @@
   },
   {
     "Code": "318000",
-    "Name": "케이비지",
+    "Name": "KBG",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -22195,7 +22231,7 @@
   },
   {
     "Code": "318010",
-    "Name": "(주)팜스빌",
+    "Name": "팜스빌",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -22303,7 +22339,7 @@
   },
   {
     "Code": "322180",
-    "Name": "엘에스티라유텍",
+    "Name": "LS티라유텍",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -22366,7 +22402,7 @@
   },
   {
     "Code": "327260",
-    "Name": "알에프머트리얼즈",
+    "Name": "RF머트리얼즈",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -22474,7 +22510,7 @@
   },
   {
     "Code": "332570",
-    "Name": "피에스일렉트로닉스",
+    "Name": "PS일렉트로닉스",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -22609,7 +22645,7 @@
   },
   {
     "Code": "340440",
-    "Name": "세림비앤지",
+    "Name": "세림B&G",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -22636,7 +22672,7 @@
   },
   {
     "Code": "340810",
-    "Name": "시선에이아이",
+    "Name": "시선AI",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -22681,7 +22717,7 @@
   },
   {
     "Code": "347700",
-    "Name": "스피어코퍼레이션",
+    "Name": "스피어",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -22726,7 +22762,7 @@
   },
   {
     "Code": "347890",
-    "Name": "엠투아이코퍼레이션",
+    "Name": "엠투아이",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -23014,7 +23050,7 @@
   },
   {
     "Code": "357880",
-    "Name": "스카이월드와이드",
+    "Name": "SKAI",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -23320,7 +23356,7 @@
   },
   {
     "Code": "376270",
-    "Name": "에이치이엠파마",
+    "Name": "HEM파마",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -23419,7 +23455,7 @@
   },
   {
     "Code": "377480",
-    "Name": "마음에이아이",
+    "Name": "마음AI",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -23833,7 +23869,7 @@
   },
   {
     "Code": "403870",
-    "Name": "에이치피에스피",
+    "Name": "HPSP",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -23995,7 +24031,7 @@
   },
   {
     "Code": "417200",
-    "Name": "엘에스머트리얼즈",
+    "Name": "LS머트리얼즈",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -24067,7 +24103,7 @@
   },
   {
     "Code": "418470",
-    "Name": "케이티밀리의서재",
+    "Name": "KT밀리의서재",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -24085,7 +24121,7 @@
   },
   {
     "Code": "418620",
-    "Name": "이에이트",
+    "Name": "E8",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -24121,7 +24157,7 @@
   },
   {
     "Code": "419530",
-    "Name": "에스에이엠지엔터테인먼트",
+    "Name": "SAMG엔터",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -24337,7 +24373,7 @@
   },
   {
     "Code": "440290",
-    "Name": "에이치비인베스트먼트",
+    "Name": "HB인베스트먼트",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24391,7 +24427,7 @@
   },
   {
     "Code": "444920",
-    "Name": "유안타제11호기업인수목적",
+    "Name": "유안타제11호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24427,7 +24463,7 @@
   },
   {
     "Code": "446150",
-    "Name": "유안타제12호기업인수목적",
+    "Name": "유안타제12호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24490,7 +24526,7 @@
   },
   {
     "Code": "450050",
-    "Name": "하이제8호기업인수목적",
+    "Name": "하이제8호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24517,7 +24553,7 @@
   },
   {
     "Code": "450940",
-    "Name": "유안타제14호기업인수목적",
+    "Name": "유안타제14호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24553,7 +24589,7 @@
   },
   {
     "Code": "451700",
-    "Name": "엔에이치기업인수목적29호",
+    "Name": "엔에이치스팩29호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24643,7 +24679,7 @@
   },
   {
     "Code": "452670",
-    "Name": "상상인제4호기업인수목적",
+    "Name": "상상인제4호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24652,7 +24688,7 @@
   },
   {
     "Code": "452980",
-    "Name": "신한제11호기업인수목적",
+    "Name": "신한제11호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24679,7 +24715,7 @@
   },
   {
     "Code": "454640",
-    "Name": "하나29호기업인수목적",
+    "Name": "하나29호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24697,7 +24733,7 @@
   },
   {
     "Code": "455250",
-    "Name": "케이비제25호기업인수목적",
+    "Name": "KB제25호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24706,7 +24742,7 @@
   },
   {
     "Code": "455310",
-    "Name": "한화플러스제4호기업인수목적",
+    "Name": "한화플러스제4호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24724,7 +24760,7 @@
   },
   {
     "Code": "455910",
-    "Name": "에스케이증권제9호기업인수목적",
+    "Name": "에스케이증권제9호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24760,7 +24796,7 @@
   },
   {
     "Code": "456490",
-    "Name": "교보14호기업인수목적",
+    "Name": "교보14호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24796,7 +24832,7 @@
   },
   {
     "Code": "457630",
-    "Name": "대신밸런스제16호기업인수목적",
+    "Name": "대신밸런스제16호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24805,7 +24841,7 @@
   },
   {
     "Code": "457940",
-    "Name": "에스케이증권제10호기업인수목적",
+    "Name": "에스케이증권제10호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24814,7 +24850,7 @@
   },
   {
     "Code": "458610",
-    "Name": "한국제12호기업인수목적",
+    "Name": "한국제12호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24922,7 +24958,7 @@
   },
   {
     "Code": "462020",
-    "Name": "에이치엠씨아이비제6호기업인수목적",
+    "Name": "에이치엠씨제6호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -24976,7 +25012,7 @@
   },
   {
     "Code": "463020",
-    "Name": "뉴엔에이아이",
+    "Name": "뉴엔AI",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -25012,7 +25048,7 @@
   },
   {
     "Code": "464440",
-    "Name": "한국제13호기업인수목적",
+    "Name": "한국제13호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25048,7 +25084,7 @@
   },
   {
     "Code": "464680",
-    "Name": "케이비제27호기업인수목적",
+    "Name": "KB제27호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25057,7 +25093,7 @@
   },
   {
     "Code": "465320",
-    "Name": "교보15호기업인수목적",
+    "Name": "교보15호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25093,7 +25129,7 @@
   },
   {
     "Code": "466690",
-    "Name": "키움히어로제1호기업인수목적",
+    "Name": "키움히어로제1호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25102,7 +25138,7 @@
   },
   {
     "Code": "466910",
-    "Name": "엔에이치기업인수목적30호",
+    "Name": "엔에이치스팩30호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25111,7 +25147,7 @@
   },
   {
     "Code": "467930",
-    "Name": "아이비케이에스제23호기업인수목적",
+    "Name": "IBKS제23호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25129,7 +25165,7 @@
   },
   {
     "Code": "468760",
-    "Name": "유진기업인수목적10호",
+    "Name": "유진스팩10호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25138,7 +25174,7 @@
   },
   {
     "Code": "469480",
-    "Name": "아이비케이에스제24호기업인수목적",
+    "Name": "IBKS제24호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25165,7 +25201,7 @@
   },
   {
     "Code": "469880",
-    "Name": "하나30호기업인수목적",
+    "Name": "하나30호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25174,7 +25210,7 @@
   },
   {
     "Code": "469900",
-    "Name": "하나31호기업인수목적",
+    "Name": "하나31호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25183,7 +25219,7 @@
   },
   {
     "Code": "471050",
-    "Name": "대신밸런스제17호기업인수목적",
+    "Name": "대신밸런스제17호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25201,7 +25237,7 @@
   },
   {
     "Code": "472220",
-    "Name": "신영해피투모로우제10호기업인수목적",
+    "Name": "신영스팩10호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25210,7 +25246,7 @@
   },
   {
     "Code": "472230",
-    "Name": "에스케이증권제11호기업인수목적",
+    "Name": "에스케이증권제11호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25228,7 +25264,7 @@
   },
   {
     "Code": "473000",
-    "Name": "에스케이증권제12호기업인수목적",
+    "Name": "에스케이증권제12호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25237,7 +25273,7 @@
   },
   {
     "Code": "473050",
-    "Name": "유안타제15호기업인수목적",
+    "Name": "유안타제15호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25246,7 +25282,7 @@
   },
   {
     "Code": "473370",
-    "Name": "비엔케이제2호기업인수목적",
+    "Name": "비엔케이제2호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25255,7 +25291,7 @@
   },
   {
     "Code": "473950",
-    "Name": "에스케이증권제13호기업인수목적",
+    "Name": "에스케이증권제13호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25282,7 +25318,7 @@
   },
   {
     "Code": "474490",
-    "Name": "유안타제16호기업인수목적",
+    "Name": "유안타제16호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25291,7 +25327,7 @@
   },
   {
     "Code": "474610",
-    "Name": "알에프시스템즈",
+    "Name": "RF시스템즈",
     "Market": "KOSDAQ",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -25309,7 +25345,7 @@
   },
   {
     "Code": "474660",
-    "Name": "신한제12호기업인수목적",
+    "Name": "신한제12호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25318,7 +25354,7 @@
   },
   {
     "Code": "474930",
-    "Name": "신한제13호기업인수목적",
+    "Name": "신한제13호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25336,7 +25372,7 @@
   },
   {
     "Code": "475240",
-    "Name": "하나32호기업인수목적",
+    "Name": "하나32호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25345,7 +25381,7 @@
   },
   {
     "Code": "475250",
-    "Name": "하나33호기업인수목적",
+    "Name": "하나33호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25372,7 +25408,7 @@
   },
   {
     "Code": "475460",
-    "Name": "미트박스글로벌",
+    "Name": "미트박스",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "유통",
@@ -25435,7 +25471,7 @@
   },
   {
     "Code": "476080",
-    "Name": "엠83",
+    "Name": "M83",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -25453,7 +25489,7 @@
   },
   {
     "Code": "477340",
-    "Name": "에이치엠씨아이비제7호기업인수목적",
+    "Name": "에이치엠씨제7호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25462,7 +25498,7 @@
   },
   {
     "Code": "477380",
-    "Name": "미래에셋비전기업인수목적4호",
+    "Name": "미래에셋비전스팩4호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25471,7 +25507,7 @@
   },
   {
     "Code": "477470",
-    "Name": "미래에셋비전기업인수목적5호",
+    "Name": "미래에셋비전스팩5호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25480,7 +25516,7 @@
   },
   {
     "Code": "477760",
-    "Name": "디비금융제12호기업인수목적",
+    "Name": "DB금융스팩12호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25489,7 +25525,7 @@
   },
   {
     "Code": "478110",
-    "Name": "이베스트기업인수목적6호",
+    "Name": "이베스트스팩6호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25507,7 +25543,7 @@
   },
   {
     "Code": "478390",
-    "Name": "케이비제29호기업인수목적",
+    "Name": "KB제29호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25516,7 +25552,7 @@
   },
   {
     "Code": "478440",
-    "Name": "미래에셋비전기업인수목적6호",
+    "Name": "미래에셋비전스팩6호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25543,7 +25579,7 @@
   },
   {
     "Code": "479880",
-    "Name": "한국제15호기업인수목적",
+    "Name": "한국제15호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25570,7 +25606,7 @@
   },
   {
     "Code": "481890",
-    "Name": "엔에이치기업인수목적31호",
+    "Name": "엔에이치스팩31호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25579,7 +25615,7 @@
   },
   {
     "Code": "482520",
-    "Name": "교보16호기업인수목적",
+    "Name": "교보16호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25597,7 +25633,7 @@
   },
   {
     "Code": "482680",
-    "Name": "미래에셋비전기업인수목적7호",
+    "Name": "미래에셋비전스팩7호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25606,7 +25642,7 @@
   },
   {
     "Code": "482690",
-    "Name": "대신밸런스제19호기업인수목적",
+    "Name": "대신밸런스제19호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25624,7 +25660,7 @@
   },
   {
     "Code": "484130",
-    "Name": "하나34호기업인수목적",
+    "Name": "하나34호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25651,7 +25687,7 @@
   },
   {
     "Code": "486630",
-    "Name": "케이비제30호기업인수목적",
+    "Name": "KB제30호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25669,7 +25705,7 @@
   },
   {
     "Code": "487360",
-    "Name": "신한제14호기업인수목적",
+    "Name": "신한제14호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25678,7 +25714,7 @@
   },
   {
     "Code": "487720",
-    "Name": "키움제10호기업인수목적",
+    "Name": "키움제10호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25687,7 +25723,7 @@
   },
   {
     "Code": "487830",
-    "Name": "신한제15호기업인수목적",
+    "Name": "신한제15호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25696,7 +25732,7 @@
   },
   {
     "Code": "488060",
-    "Name": "유진기업인수목적11호",
+    "Name": "유진스팩11호",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25723,7 +25759,7 @@
   },
   {
     "Code": "489210",
-    "Name": "교보17호기업인수목적",
+    "Name": "교보17호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25741,7 +25777,7 @@
   },
   {
     "Code": "489480",
-    "Name": "키움제11호기업인수목적",
+    "Name": "키움제11호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25759,7 +25795,7 @@
   },
   {
     "Code": "489730",
-    "Name": "디비금융제13호기업인수목적",
+    "Name": "디비금융제13호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25786,7 +25822,7 @@
   },
   {
     "Code": "492220",
-    "Name": "케이비제31호기업인수목적",
+    "Name": "KB제31호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25795,7 +25831,7 @@
   },
   {
     "Code": "493790",
-    "Name": "유안타제17호기업인수목적",
+    "Name": "유안타제17호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25813,7 +25849,7 @@
   },
   {
     "Code": "496070",
-    "Name": "신한제16호기업인수목적",
+    "Name": "신한제16호스팩",
     "Market": "KOSDAQ",
     "IndustryLarge": "금융",
     "IndustryMid": "기타금융",
@@ -25831,7 +25867,7 @@
   },
   {
     "Code": "900070",
-    "Name": "글로벌에스엠테크리미티드",
+    "Name": "글로벌에스엠",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -25840,7 +25876,7 @@
   },
   {
     "Code": "900100",
-    "Name": "애머릿지코퍼레이션",
+    "Name": "애머릿지",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -25849,7 +25885,7 @@
   },
   {
     "Code": "900110",
-    "Name": "이스트아시아홀딩스인베스트먼트리미티드",
+    "Name": "이스트아시아홀딩스",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -25858,7 +25894,7 @@
   },
   {
     "Code": "900120",
-    "Name": "씨엑스아이헬스케어테크놀리지그룹리미티드",
+    "Name": "씨엑스아이",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -25867,7 +25903,7 @@
   },
   {
     "Code": "900250",
-    "Name": "차이나크리스탈신소재홀딩스",
+    "Name": "크리스탈신소재",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -25876,7 +25912,7 @@
   },
   {
     "Code": "900260",
-    "Name": "로스웰인터내셔널",
+    "Name": "로스웰",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -25894,7 +25930,7 @@
   },
   {
     "Code": "900290",
-    "Name": "그레이트리치과기유한공사",
+    "Name": "GRT",
     "Market": "KOSDAQ",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -25903,7 +25939,7 @@
   },
   {
     "Code": "900300",
-    "Name": "오가닉티코스메틱홀딩스",
+    "Name": "오가닉티코스메틱",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "생활용품",
@@ -25912,7 +25948,7 @@
   },
   {
     "Code": "900310",
-    "Name": "컬러레이홀딩스",
+    "Name": "컬러레이",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "생활용품",
@@ -25921,7 +25957,7 @@
   },
   {
     "Code": "900340",
-    "Name": "윙입푸드홀딩스",
+    "Name": "윙입푸드",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -25930,7 +25966,7 @@
   },
   {
     "Code": "950130",
-    "Name": "엑세스바이오 KDR",
+    "Name": "엑세스바이오",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "의료장비 및 서비스",
@@ -25939,7 +25975,7 @@
   },
   {
     "Code": "950140",
-    "Name": "잉글우드랩 KDR",
+    "Name": "잉글우드랩",
     "Market": "KOSDAQ",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "생활용품",
@@ -25957,7 +25993,7 @@
   },
   {
     "Code": "950170",
-    "Name": "JTC KDR",
+    "Name": "JTC",
     "Market": "KOSDAQ",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "유통",
@@ -25966,7 +26002,7 @@
   },
   {
     "Code": "950190",
-    "Name": "고스트스튜디오 KDR",
+    "Name": "고스트스튜디오",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -25975,7 +26011,7 @@
   },
   {
     "Code": "950200",
-    "Name": "소마젠 KDR",
+    "Name": "소마젠",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -25984,7 +26020,7 @@
   },
   {
     "Code": "950220",
-    "Name": "네오이뮨텍 KDR",
+    "Name": "네오이뮨텍",
     "Market": "KOSDAQ",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -25993,7 +26029,7 @@
   },
   {
     "Code": "950250",
-    "Name": "테라뷰 홀딩스 KDR",
+    "Name": "테라뷰",
     "Market": "KOSDAQ",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -26011,7 +26047,7 @@
   },
   {
     "Code": "000040",
-    "Name": "케이알모터스",
+    "Name": "KR모터스",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -26056,7 +26092,7 @@
   },
   {
     "Code": "000120",
-    "Name": "씨제이대한통운",
+    "Name": "CJ대한통운",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "운송",
@@ -26092,7 +26128,7 @@
   },
   {
     "Code": "000210",
-    "Name": "디엘",
+    "Name": "DL",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -26137,7 +26173,7 @@
   },
   {
     "Code": "000300",
-    "Name": "디에이치오토넥스",
+    "Name": "DH오토넥스",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -26164,7 +26200,7 @@
   },
   {
     "Code": "000390",
-    "Name": "삼화페인트공업",
+    "Name": "삼화페인트",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -26191,7 +26227,7 @@
   },
   {
     "Code": "000480",
-    "Name": "시알홀딩스",
+    "Name": "CR홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -26227,7 +26263,7 @@
   },
   {
     "Code": "000540",
-    "Name": "흥국화재해상보험",
+    "Name": "흥국화재",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -26236,7 +26272,7 @@
   },
   {
     "Code": "000590",
-    "Name": "씨에스홀딩스",
+    "Name": "CS홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -26263,7 +26299,7 @@
   },
   {
     "Code": "000660",
-    "Name": "에스케이하이닉스",
+    "Name": "SK하이닉스",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -26317,7 +26353,7 @@
   },
   {
     "Code": "000810",
-    "Name": "삼성화재해상보험",
+    "Name": "삼성화재",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -26380,7 +26416,7 @@
   },
   {
     "Code": "000970",
-    "Name": "한국주철관공업",
+    "Name": "한국주철관",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -26389,7 +26425,7 @@
   },
   {
     "Code": "000990",
-    "Name": "DB 하이텍",
+    "Name": "DB하이텍",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -26407,7 +26443,7 @@
   },
   {
     "Code": "001040",
-    "Name": "씨제이",
+    "Name": "CJ",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -26416,7 +26452,7 @@
   },
   {
     "Code": "001060",
-    "Name": "제이더블유중외제약",
+    "Name": "JW중외제약",
     "Market": "KOSPI",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -26497,7 +26533,7 @@
   },
   {
     "Code": "001250",
-    "Name": "지에스글로벌",
+    "Name": "GS글로벌",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -26533,7 +26569,7 @@
   },
   {
     "Code": "001340",
-    "Name": "피케이씨",
+    "Name": "PKC",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -26551,7 +26587,7 @@
   },
   {
     "Code": "001380",
-    "Name": "에스지글로벌",
+    "Name": "SG글로벌",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -26560,7 +26596,7 @@
   },
   {
     "Code": "001390",
-    "Name": "케이지케미칼",
+    "Name": "KG케미칼",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -26596,7 +26632,7 @@
   },
   {
     "Code": "001450",
-    "Name": "현대해상화재보험",
+    "Name": "현대해상",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -26650,7 +26686,7 @@
   },
   {
     "Code": "001530",
-    "Name": "디아이동일",
+    "Name": "DI동일",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -26668,7 +26704,7 @@
   },
   {
     "Code": "001560",
-    "Name": "제일연마공업",
+    "Name": "제일연마",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -26740,7 +26776,7 @@
   },
   {
     "Code": "001770",
-    "Name": "신화다이나믹스",
+    "Name": "SHD",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -26776,7 +26812,7 @@
   },
   {
     "Code": "001820",
-    "Name": "삼화콘덴서공업",
+    "Name": "삼화콘덴서",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -26857,7 +26893,7 @@
   },
   {
     "Code": "002200",
-    "Name": "한국수출포장공업",
+    "Name": "한국수출포장",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -26929,7 +26965,7 @@
   },
   {
     "Code": "002380",
-    "Name": "케이씨씨",
+    "Name": "KCC",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -26974,7 +27010,7 @@
   },
   {
     "Code": "002460",
-    "Name": "에이치에스화성",
+    "Name": "HS화성",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -27028,7 +27064,7 @@
   },
   {
     "Code": "002710",
-    "Name": "티씨씨스틸",
+    "Name": "TCC스틸",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -27082,7 +27118,7 @@
   },
   {
     "Code": "002820",
-    "Name": "선앤엘",
+    "Name": "SUN&L",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -27118,7 +27154,7 @@
   },
   {
     "Code": "002900",
-    "Name": "티와이엠",
+    "Name": "TYM",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -27199,7 +27235,7 @@
   },
   {
     "Code": "003080",
-    "Name": "에스비성보",
+    "Name": "SB성보",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -27217,7 +27253,7 @@
   },
   {
     "Code": "0030R0",
-    "Name": "대신밸류리츠위탁관리부동산투자회사",
+    "Name": "대신밸류리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -27388,7 +27424,7 @@
   },
   {
     "Code": "003570",
-    "Name": "에스앤티다이내믹스",
+    "Name": "SNT다이내믹스",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -27397,7 +27433,7 @@
   },
   {
     "Code": "003580",
-    "Name": "에이치엘비글로벌",
+    "Name": "HLB글로벌",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "유통",
@@ -27415,7 +27451,7 @@
   },
   {
     "Code": "003620",
-    "Name": "케이지모빌리티",
+    "Name": "KG모빌리티",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -27424,7 +27460,7 @@
   },
   {
     "Code": "003650",
-    "Name": "미창석유공업",
+    "Name": "미창석유",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -27451,7 +27487,7 @@
   },
   {
     "Code": "003690",
-    "Name": "코리안리재보험",
+    "Name": "코리안리",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -27532,7 +27568,7 @@
   },
   {
     "Code": "004060",
-    "Name": "에스지세계물산",
+    "Name": "SG세계물산",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -27550,7 +27586,7 @@
   },
   {
     "Code": "004090",
-    "Name": "한국석유공업",
+    "Name": "한국석유",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -27559,7 +27595,7 @@
   },
   {
     "Code": "004100",
-    "Name": "태양금속공업",
+    "Name": "태양금속",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -27595,7 +27631,7 @@
   },
   {
     "Code": "004250",
-    "Name": "엔피씨",
+    "Name": "NPC",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -27649,7 +27685,7 @@
   },
   {
     "Code": "004410",
-    "Name": "서울식품공업",
+    "Name": "서울식품",
     "Market": "KOSPI",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -27883,7 +27919,7 @@
   },
   {
     "Code": "005090",
-    "Name": "에스지씨에너지",
+    "Name": "SGC에너지",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -27919,7 +27955,7 @@
   },
   {
     "Code": "005300",
-    "Name": "롯데칠성음료",
+    "Name": "롯데칠성",
     "Market": "KOSPI",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -27946,7 +27982,7 @@
   },
   {
     "Code": "005380",
-    "Name": "현대자동차",
+    "Name": "현대차",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -27982,7 +28018,7 @@
   },
   {
     "Code": "005490",
-    "Name": "포스코홀딩스",
+    "Name": "POSCO홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -28000,7 +28036,7 @@
   },
   {
     "Code": "005610",
-    "Name": "에스피씨삼립",
+    "Name": "SPC삼립",
     "Market": "KOSPI",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -28009,7 +28045,7 @@
   },
   {
     "Code": "005680",
-    "Name": "삼영전자공업",
+    "Name": "삼영전자",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -28081,7 +28117,7 @@
   },
   {
     "Code": "005830",
-    "Name": "디비손해보험",
+    "Name": "DB손해보험",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -28099,7 +28135,7 @@
   },
   {
     "Code": "005870",
-    "Name": "휴니드테크놀러지스",
+    "Name": "휴니드",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -28162,7 +28198,7 @@
   },
   {
     "Code": "006060",
-    "Name": "화승인더스트리",
+    "Name": "화승인더",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -28189,7 +28225,7 @@
   },
   {
     "Code": "006120",
-    "Name": "에스케이디스커버리",
+    "Name": "SK디스커버리",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -28243,7 +28279,7 @@
   },
   {
     "Code": "006360",
-    "Name": "지에스건설",
+    "Name": "GS건설",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -28333,7 +28369,7 @@
   },
   {
     "Code": "006840",
-    "Name": "에이케이홀딩스",
+    "Name": "AK홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -28369,7 +28405,7 @@
   },
   {
     "Code": "007070",
-    "Name": "지에스리테일",
+    "Name": "GS리테일",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "유통",
@@ -28432,7 +28468,7 @@
   },
   {
     "Code": "007340",
-    "Name": "디엔오토모티브",
+    "Name": "DN오토모티브",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -28504,7 +28540,7 @@
   },
   {
     "Code": "007700",
-    "Name": "에프앤에프홀딩스",
+    "Name": "F&F홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -28531,7 +28567,7 @@
   },
   {
     "Code": "007980",
-    "Name": "티피",
+    "Name": "TP",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -28576,7 +28612,7 @@
   },
   {
     "Code": "008260",
-    "Name": "엔아이스틸",
+    "Name": "NI스틸",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -28675,7 +28711,7 @@
   },
   {
     "Code": "008970",
-    "Name": "케이비아이동양철관",
+    "Name": "KBI동양철관",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -28684,7 +28720,7 @@
   },
   {
     "Code": "009070",
-    "Name": "케이씨티시",
+    "Name": "KCTC",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "운송",
@@ -28711,7 +28747,7 @@
   },
   {
     "Code": "009160",
-    "Name": "심팩",
+    "Name": "SIMPAC",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -28810,7 +28846,7 @@
   },
   {
     "Code": "009440",
-    "Name": "케이씨그린홀딩스",
+    "Name": "KC그린홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -28846,7 +28882,7 @@
   },
   {
     "Code": "009540",
-    "Name": "에이치디한국조선해양",
+    "Name": "HD한국조선해양",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -28855,7 +28891,7 @@
   },
   {
     "Code": "009580",
-    "Name": "무림피앤피",
+    "Name": "무림P&P",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -28945,7 +28981,7 @@
   },
   {
     "Code": "010120",
-    "Name": "엘에스일렉트릭",
+    "Name": "LS ELECTRIC",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -28999,7 +29035,7 @@
   },
   {
     "Code": "010640",
-    "Name": "진양폴리우레탄",
+    "Name": "진양폴리",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -29062,7 +29098,7 @@
   },
   {
     "Code": "010950",
-    "Name": "S-OIL",
+    "Name": "S-Oil",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -29125,7 +29161,7 @@
   },
   {
     "Code": "011200",
-    "Name": "에이치엠엠",
+    "Name": "HMM",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "운송",
@@ -29143,7 +29179,7 @@
   },
   {
     "Code": "011230",
-    "Name": "삼화전자공업",
+    "Name": "삼화전자",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -29188,7 +29224,7 @@
   },
   {
     "Code": "011420",
-    "Name": "갤럭시아 에스엠",
+    "Name": "갤럭시아에스엠",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -29215,7 +29251,7 @@
   },
   {
     "Code": "011700",
-    "Name": "한신기계공업",
+    "Name": "한신기계",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -29269,7 +29305,7 @@
   },
   {
     "Code": "012030",
-    "Name": "디비아이엔씨",
+    "Name": "DB",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -29377,7 +29413,7 @@
   },
   {
     "Code": "012630",
-    "Name": "에이치디씨",
+    "Name": "HDC",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -29458,7 +29494,7 @@
   },
   {
     "Code": "013580",
-    "Name": "계룡건설산업",
+    "Name": "계룡건설",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -29566,7 +29602,7 @@
   },
   {
     "Code": "014790",
-    "Name": "에이치엘디앤아이한라",
+    "Name": "HL D&I",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -29638,7 +29674,7 @@
   },
   {
     "Code": "015360",
-    "Name": "인베니",
+    "Name": "INVENI",
     "Market": "KOSPI",
     "IndustryLarge": "유틸리티",
     "IndustryMid": "유틸리티",
@@ -29647,7 +29683,7 @@
   },
   {
     "Code": "015590",
-    "Name": "디케이엠이",
+    "Name": "DKME",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -29656,7 +29692,7 @@
   },
   {
     "Code": "015760",
-    "Name": "한국전력공사",
+    "Name": "한국전력",
     "Market": "KOSPI",
     "IndustryLarge": "유틸리티",
     "IndustryMid": "유틸리티",
@@ -29701,7 +29737,7 @@
   },
   {
     "Code": "016380",
-    "Name": "케이지스틸",
+    "Name": "KG스틸",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -29737,7 +29773,7 @@
   },
   {
     "Code": "016610",
-    "Name": "디비증권",
+    "Name": "DB증권",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "증권",
@@ -29809,7 +29845,7 @@
   },
   {
     "Code": "017390",
-    "Name": "서울도시가스",
+    "Name": "서울가스",
     "Market": "KOSPI",
     "IndustryLarge": "유틸리티",
     "IndustryMid": "유틸리티",
@@ -29854,7 +29890,7 @@
   },
   {
     "Code": "017860",
-    "Name": "디에스단석",
+    "Name": "DS단석",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -30025,7 +30061,7 @@
   },
   {
     "Code": "020760",
-    "Name": "일진디스플레이",
+    "Name": "일진디스플",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "디스플레이",
@@ -30061,7 +30097,7 @@
   },
   {
     "Code": "022100",
-    "Name": "포스코디엑스",
+    "Name": "포스코DX",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -30151,7 +30187,7 @@
   },
   {
     "Code": "024070",
-    "Name": "위스컴",
+    "Name": "WISCOM",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -30169,7 +30205,7 @@
   },
   {
     "Code": "024110",
-    "Name": "중소기업은행",
+    "Name": "기업은행",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "은행",
@@ -30214,7 +30250,7 @@
   },
   {
     "Code": "025530",
-    "Name": "에스제이엠홀딩스",
+    "Name": "SJM홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -30223,7 +30259,7 @@
   },
   {
     "Code": "025540",
-    "Name": "한국단자공업",
+    "Name": "한국단자",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -30241,7 +30277,7 @@
   },
   {
     "Code": "025620",
-    "Name": "차에이아이헬스케어",
+    "Name": "차AI헬스케어",
     "Market": "KOSPI",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "생활용품",
@@ -30313,7 +30349,7 @@
   },
   {
     "Code": "027410",
-    "Name": "비지에프",
+    "Name": "BGF",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -30340,7 +30376,7 @@
   },
   {
     "Code": "028050",
-    "Name": "삼성이앤에이",
+    "Name": "삼성E&A",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -30412,7 +30448,7 @@
   },
   {
     "Code": "030190",
-    "Name": "나이스평가정보",
+    "Name": "NICE평가정보",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -30421,7 +30457,7 @@
   },
   {
     "Code": "030200",
-    "Name": "케이티",
+    "Name": "KT",
     "Market": "KOSPI",
     "IndustryLarge": "통신서비스",
     "IndustryMid": "통신서비스",
@@ -30520,7 +30556,7 @@
   },
   {
     "Code": "032830",
-    "Name": "삼성생명보험",
+    "Name": "삼성생명",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -30556,7 +30592,7 @@
   },
   {
     "Code": "033270",
-    "Name": "한국유나이티드제약",
+    "Name": "유나이티드제약",
     "Market": "KOSPI",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -30565,7 +30601,7 @@
   },
   {
     "Code": "033530",
-    "Name": "에스제이지세종",
+    "Name": "SJG세종",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -30574,7 +30610,7 @@
   },
   {
     "Code": "033780",
-    "Name": "케이티앤지",
+    "Name": "KT&G",
     "Market": "KOSPI",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -30601,7 +30637,7 @@
   },
   {
     "Code": "034120",
-    "Name": "에스비에스",
+    "Name": "SBS",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -30628,7 +30664,7 @@
   },
   {
     "Code": "034310",
-    "Name": "NICE홀딩스",
+    "Name": "NICE",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -30664,7 +30700,7 @@
   },
   {
     "Code": "035000",
-    "Name": "에이치에스애드",
+    "Name": "HS애드",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -30691,7 +30727,7 @@
   },
   {
     "Code": "035420",
-    "Name": "네이버",
+    "Name": "NAVER",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -30700,7 +30736,7 @@
   },
   {
     "Code": "035510",
-    "Name": "신세계아이앤씨",
+    "Name": "신세계 I&C",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -30736,7 +30772,7 @@
   },
   {
     "Code": "036530",
-    "Name": "에스앤티홀딩스",
+    "Name": "SNT홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -30763,7 +30799,7 @@
   },
   {
     "Code": "037270",
-    "Name": "와이지플러스",
+    "Name": "YG PLUS",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -30772,7 +30808,7 @@
   },
   {
     "Code": "037560",
-    "Name": "엘지헬로비전",
+    "Name": "LG헬로비전",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -30808,7 +30844,7 @@
   },
   {
     "Code": "039570",
-    "Name": "에이치디씨랩스",
+    "Name": "HDC랩스",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -30835,7 +30871,7 @@
   },
   {
     "Code": "042670",
-    "Name": "에이치디현대인프라코어",
+    "Name": "HD현대인프라코어",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -30862,7 +30898,7 @@
   },
   {
     "Code": "044450",
-    "Name": "케이에스에스해운",
+    "Name": "KSS해운",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "운송",
@@ -30907,7 +30943,7 @@
   },
   {
     "Code": "047810",
-    "Name": "한국항공우주산업",
+    "Name": "한국항공우주",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -30961,7 +30997,7 @@
   },
   {
     "Code": "052690",
-    "Name": "한국전력기술",
+    "Name": "한전기술",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -30970,7 +31006,7 @@
   },
   {
     "Code": "053210",
-    "Name": "케이티스카이라이프",
+    "Name": "스카이라이프",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -30979,7 +31015,7 @@
   },
   {
     "Code": "053690",
-    "Name": "한미글로벌건축사사무소",
+    "Name": "한미글로벌",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -30997,7 +31033,7 @@
   },
   {
     "Code": "055550",
-    "Name": "신한금융지주회사",
+    "Name": "신한지주",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "은행",
@@ -31042,7 +31078,7 @@
   },
   {
     "Code": "058850",
-    "Name": "케이티씨에스",
+    "Name": "KTcs",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -31051,7 +31087,7 @@
   },
   {
     "Code": "058860",
-    "Name": "케이티아이에스",
+    "Name": "KTis",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -31060,7 +31096,7 @@
   },
   {
     "Code": "060980",
-    "Name": "에이치엘홀딩스",
+    "Name": "HL홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -31096,7 +31132,7 @@
   },
   {
     "Code": "064400",
-    "Name": "엘지씨엔에스",
+    "Name": "LG씨엔에스",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -31105,7 +31141,7 @@
   },
   {
     "Code": "064960",
-    "Name": "에스앤티모티브",
+    "Name": "SNT모티브",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -31132,7 +31168,7 @@
   },
   {
     "Code": "067830",
-    "Name": "세이브존아이앤씨",
+    "Name": "세이브존I&C",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "유통",
@@ -31159,7 +31195,7 @@
   },
   {
     "Code": "069260",
-    "Name": "티케이지휴켐스",
+    "Name": "TKG휴켐스",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -31195,7 +31231,7 @@
   },
   {
     "Code": "069730",
-    "Name": "디에스알제강",
+    "Name": "DSR제강",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -31222,7 +31258,7 @@
   },
   {
     "Code": "071050",
-    "Name": "한국투자금융지주",
+    "Name": "한국금융지주",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "증권",
@@ -31240,7 +31276,7 @@
   },
   {
     "Code": "071320",
-    "Name": "한국지역난방공사",
+    "Name": "지역난방공사",
     "Market": "KOSPI",
     "IndustryLarge": "유틸리티",
     "IndustryMid": "유틸리티",
@@ -31267,7 +31303,7 @@
   },
   {
     "Code": "071970",
-    "Name": "에이치디현대마린엔진",
+    "Name": "HD현대마린엔진",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -31366,7 +31402,7 @@
   },
   {
     "Code": "078930",
-    "Name": "지에스",
+    "Name": "GS",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -31375,7 +31411,7 @@
   },
   {
     "Code": "079160",
-    "Name": "씨제이씨지브이",
+    "Name": "CJ CGV",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "미디어",
@@ -31393,7 +31429,7 @@
   },
   {
     "Code": "079550",
-    "Name": "엘아이지넥스원",
+    "Name": "LIG넥스원",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -31420,7 +31456,7 @@
   },
   {
     "Code": "081000",
-    "Name": "일진다이아몬드",
+    "Name": "일진다이아",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -31438,7 +31474,7 @@
   },
   {
     "Code": "082640",
-    "Name": "동양생명보험",
+    "Name": "동양생명",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -31447,7 +31483,7 @@
   },
   {
     "Code": "082740",
-    "Name": "한화엔진 주식회사",
+    "Name": "한화엔진",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -31501,7 +31537,7 @@
   },
   {
     "Code": "084870",
-    "Name": "티비에이치글로벌",
+    "Name": "TBH글로벌",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -31519,7 +31555,7 @@
   },
   {
     "Code": "085620",
-    "Name": "미래에셋생명보험",
+    "Name": "미래에셋생명",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -31546,7 +31582,7 @@
   },
   {
     "Code": "088260",
-    "Name": "이리츠코크렙기업구조조정부동산투자회사",
+    "Name": "이리츠코크렙",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "부동산",
@@ -31555,7 +31591,7 @@
   },
   {
     "Code": "088350",
-    "Name": "한화생명보험",
+    "Name": "한화생명",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -31573,7 +31609,7 @@
   },
   {
     "Code": "088980",
-    "Name": "맥쿼리한국인프라투융자회사",
+    "Name": "맥쿼리인프라",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -31600,7 +31636,7 @@
   },
   {
     "Code": "089860",
-    "Name": "롯데렌탈(주)",
+    "Name": "롯데렌탈",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "소비자 서비스",
@@ -31672,7 +31708,7 @@
   },
   {
     "Code": "092220",
-    "Name": "케이이씨",
+    "Name": "KEC",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "반도체",
@@ -31699,7 +31735,7 @@
   },
   {
     "Code": "092780",
-    "Name": "디와이피",
+    "Name": "DYP",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -31753,7 +31789,7 @@
   },
   {
     "Code": "094800",
-    "Name": "미래에셋맵스리얼티부동산공모투자회사",
+    "Name": "맵스리얼티",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -31762,7 +31798,7 @@
   },
   {
     "Code": "095570",
-    "Name": "에이제이네트웍스",
+    "Name": "AJ네트웍스",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "운송",
@@ -31780,7 +31816,7 @@
   },
   {
     "Code": "096760",
-    "Name": "제이더블유홀딩스",
+    "Name": "JW홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -31798,7 +31834,7 @@
   },
   {
     "Code": "097230",
-    "Name": "에이치제이중공업",
+    "Name": "HJ중공업",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -31816,7 +31852,7 @@
   },
   {
     "Code": "097950",
-    "Name": "씨제이제일제당",
+    "Name": "CJ제일제당",
     "Market": "KOSPI",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -31825,7 +31861,7 @@
   },
   {
     "Code": "100090",
-    "Name": "에스케이오션플랜트",
+    "Name": "SK오션플랜트",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -31852,7 +31888,7 @@
   },
   {
     "Code": "100840",
-    "Name": "에스앤티에너지",
+    "Name": "SNT에너지",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -31924,7 +31960,7 @@
   },
   {
     "Code": "105560",
-    "Name": "KB금융지주",
+    "Name": "KB금융",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "은행",
@@ -32023,7 +32059,7 @@
   },
   {
     "Code": "114090",
-    "Name": "그랜드코리아레저",
+    "Name": "GKL",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "소비자 서비스",
@@ -32050,7 +32086,7 @@
   },
   {
     "Code": "119650",
-    "Name": "케이씨코트렐",
+    "Name": "KC코트렐",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "상업서비스",
@@ -32068,7 +32104,7 @@
   },
   {
     "Code": "120110",
-    "Name": "코오롱인더스트리",
+    "Name": "코오롱인더",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -32095,7 +32131,7 @@
   },
   {
     "Code": "123700",
-    "Name": "에스제이엠",
+    "Name": "SJM",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -32158,7 +32194,7 @@
   },
   {
     "Code": "130660",
-    "Name": "한전산업개발",
+    "Name": "한전산업",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -32221,7 +32257,7 @@
   },
   {
     "Code": "138490",
-    "Name": "코오롱이앤피",
+    "Name": "코오롱ENP",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -32239,7 +32275,7 @@
   },
   {
     "Code": "139130",
-    "Name": "아이엠금융지주",
+    "Name": "iM금융지주",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "은행",
@@ -32266,7 +32302,7 @@
   },
   {
     "Code": "140910",
-    "Name": "에이자기관리부동산투자회사",
+    "Name": "에이리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -32293,7 +32329,7 @@
   },
   {
     "Code": "145270",
-    "Name": "케이탑자기관리부동산투자회사",
+    "Name": "케이탑리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -32320,7 +32356,7 @@
   },
   {
     "Code": "152550",
-    "Name": "한국투자ANKOR유전해외자원개발특별자산투자회사1호(지분증권)",
+    "Name": "한국ANKOR유전",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -32329,7 +32365,7 @@
   },
   {
     "Code": "155660",
-    "Name": "디에스알",
+    "Name": "DSR",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -32392,7 +32428,7 @@
   },
   {
     "Code": "178920",
-    "Name": "피아이첨단소재",
+    "Name": "PI첨단소재",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -32410,7 +32446,7 @@
   },
   {
     "Code": "181710",
-    "Name": "엔에이치엔",
+    "Name": "NHN",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -32500,7 +32536,7 @@
   },
   {
     "Code": "204210",
-    "Name": "스타에스엠자기관리부동산투자회사",
+    "Name": "스타에스엠리츠",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "부동산",
@@ -32509,7 +32545,7 @@
   },
   {
     "Code": "204320",
-    "Name": "에이치엘만도",
+    "Name": "HL만도",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "자동차 및 부품",
@@ -32536,7 +32572,7 @@
   },
   {
     "Code": "210980",
-    "Name": "에스케이디앤디",
+    "Name": "SK디앤디",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "부동산",
@@ -32617,7 +32653,7 @@
   },
   {
     "Code": "229640",
-    "Name": "엘에스에코에너지",
+    "Name": "LS에코에너지",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -32626,7 +32662,7 @@
   },
   {
     "Code": "234080",
-    "Name": "제이더블유생명과학",
+    "Name": "JW생명과학",
     "Market": "KOSPI",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -32653,7 +32689,7 @@
   },
   {
     "Code": "244920",
-    "Name": "에이플러스에셋어드바이저",
+    "Name": "에이플러스에셋",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "보험",
@@ -32707,7 +32743,7 @@
   },
   {
     "Code": "264900",
-    "Name": "크라운제과(신설)",
+    "Name": "크라운제과",
     "Market": "KOSPI",
     "IndustryLarge": "필수소비재",
     "IndustryMid": "음식료 및 담배",
@@ -32716,7 +32752,7 @@
   },
   {
     "Code": "267250",
-    "Name": "에이치디현대",
+    "Name": "HD현대",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -32725,7 +32761,7 @@
   },
   {
     "Code": "267260",
-    "Name": "에이치디현대일렉트릭",
+    "Name": "HD현대일렉트릭",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -32734,7 +32770,7 @@
   },
   {
     "Code": "267270",
-    "Name": "에이치디현대건설기계",
+    "Name": "HD현대건설기계",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -32743,7 +32779,7 @@
   },
   {
     "Code": "267290",
-    "Name": "경동도시가스(신설)",
+    "Name": "경동도시가스",
     "Market": "KOSPI",
     "IndustryLarge": "유틸리티",
     "IndustryMid": "유틸리티",
@@ -32752,7 +32788,7 @@
   },
   {
     "Code": "267850",
-    "Name": "아시아나아이디티",
+    "Name": "아시아나IDT",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "소프트웨어",
@@ -32761,7 +32797,7 @@
   },
   {
     "Code": "268280",
-    "Name": "미원스페셜티케미칼(신설)",
+    "Name": "미원에스씨",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -32788,7 +32824,7 @@
   },
   {
     "Code": "271980",
-    "Name": "제일약품(신설)",
+    "Name": "제일약품",
     "Market": "KOSPI",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -32851,7 +32887,7 @@
   },
   {
     "Code": "282330",
-    "Name": "비지에프리테일(신설)",
+    "Name": "BGF리테일",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "유통",
@@ -32896,7 +32932,7 @@
   },
   {
     "Code": "293940",
-    "Name": "신한알파위탁관리부동산투자회사",
+    "Name": "신한알파리츠",
     "Market": "KOSPI",
     "IndustryLarge": "금융",
     "IndustryMid": "부동산",
@@ -32905,7 +32941,7 @@
   },
   {
     "Code": "294870",
-    "Name": "에이치디씨현대산업개발",
+    "Name": "HDC현대산업개발",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -32941,7 +32977,7 @@
   },
   {
     "Code": "298050",
-    "Name": "에이치에스효성첨단소재",
+    "Name": "HS효성첨단소재",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -32959,7 +32995,7 @@
   },
   {
     "Code": "300720",
-    "Name": "한일시멘트(신설)",
+    "Name": "한일시멘트",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -32968,7 +33004,7 @@
   },
   {
     "Code": "302440",
-    "Name": "에스케이바이오사이언스",
+    "Name": "SK바이오사이언스",
     "Market": "KOSPI",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
@@ -32977,7 +33013,7 @@
   },
   {
     "Code": "306200",
-    "Name": "세아제강(신설)",
+    "Name": "세아제강",
     "Market": "KOSPI",
     "IndustryLarge": "소재",
     "IndustryMid": "소재",
@@ -33013,7 +33049,7 @@
   },
   {
     "Code": "317400",
-    "Name": "자이에스앤디(주)",
+    "Name": "자이에스앤디",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -33031,7 +33067,7 @@
   },
   {
     "Code": "322000",
-    "Name": "에이치디현대에너지솔루션",
+    "Name": "HD현대에너지솔루션",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -33058,7 +33094,7 @@
   },
   {
     "Code": "329180",
-    "Name": "에이치디현대중공업",
+    "Name": "HD현대중공업",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -33067,7 +33103,7 @@
   },
   {
     "Code": "330590",
-    "Name": "롯데위탁관리부동산투자회사",
+    "Name": "롯데리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33076,7 +33112,7 @@
   },
   {
     "Code": "334890",
-    "Name": "이지스밸류플러스위탁관리부동산투자회사",
+    "Name": "이지스밸류플러스리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33085,7 +33121,7 @@
   },
   {
     "Code": "336260",
-    "Name": "두산퓨얼셀보통주",
+    "Name": "두산퓨얼셀",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -33103,7 +33139,7 @@
   },
   {
     "Code": "338100",
-    "Name": "엔에이치프라임위탁관리부동산투자회사",
+    "Name": "NH프라임리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33121,7 +33157,7 @@
   },
   {
     "Code": "344820",
-    "Name": "케이씨씨글라스",
+    "Name": "KCC글라스",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -33130,7 +33166,7 @@
   },
   {
     "Code": "348950",
-    "Name": "제이알글로벌위탁관리부동산투자회사",
+    "Name": "제이알글로벌리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33139,7 +33175,7 @@
   },
   {
     "Code": "350520",
-    "Name": "이지스레지던스위탁관리부동산투자회사",
+    "Name": "이지스레지던스리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33166,7 +33202,7 @@
   },
   {
     "Code": "357120",
-    "Name": "코람코라이프인프라위탁관리부동산투자회사",
+    "Name": "코람코라이프인프라리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33175,7 +33211,7 @@
   },
   {
     "Code": "357250",
-    "Name": "미래에셋맵스제1호위탁관리부동산투자회사",
+    "Name": "미래에셋맵스리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33184,7 +33220,7 @@
   },
   {
     "Code": "357430",
-    "Name": "마스턴프리미어제1호위탁관리부동산투자회사",
+    "Name": "마스턴프리미어리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33193,7 +33229,7 @@
   },
   {
     "Code": "361610",
-    "Name": "에스케이아이이테크놀로지",
+    "Name": "SK아이이테크놀로지",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -33211,7 +33247,7 @@
   },
   {
     "Code": "365550",
-    "Name": "이에스알켄달스퀘어위탁관리부동산투자회사",
+    "Name": "ESR켄달스퀘어리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33229,7 +33265,7 @@
   },
   {
     "Code": "373220",
-    "Name": "엘지에너지솔루션",
+    "Name": "LG에너지솔루션",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -33238,7 +33274,7 @@
   },
   {
     "Code": "375500",
-    "Name": "디엘이앤씨",
+    "Name": "DL이앤씨",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -33247,7 +33283,7 @@
   },
   {
     "Code": "377190",
-    "Name": "디앤디플랫폼위탁관리부동산투자회사",
+    "Name": "디앤디플랫폼리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33292,7 +33328,7 @@
   },
   {
     "Code": "383220",
-    "Name": "에프앤에프(신설)",
+    "Name": "F&F",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "내구 소비재 및 의류",
@@ -33301,7 +33337,7 @@
   },
   {
     "Code": "383800",
-    "Name": "엘엑스홀딩스",
+    "Name": "LX홀딩스",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -33310,7 +33346,7 @@
   },
   {
     "Code": "395400",
-    "Name": "에스케이위탁관리부동산투자회사",
+    "Name": "SK리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33319,7 +33355,7 @@
   },
   {
     "Code": "396690",
-    "Name": "미래에셋글로벌위탁관리부동산투자회사",
+    "Name": "미래에셋글로벌리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33328,7 +33364,7 @@
   },
   {
     "Code": "400760",
-    "Name": "엔에이치올원위탁관리부동산투자회사",
+    "Name": "NH올원리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33355,7 +33391,7 @@
   },
   {
     "Code": "404990",
-    "Name": "신한서부티엔디위탁관리부동산투자회사",
+    "Name": "신한서부티엔디리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33364,7 +33400,7 @@
   },
   {
     "Code": "415640",
-    "Name": "케이비발해인프라투융자회사",
+    "Name": "KB발해인프라",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33373,7 +33409,7 @@
   },
   {
     "Code": "417310",
-    "Name": "코람코더원위탁관리부동산투자회사",
+    "Name": "코람코더원리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33382,7 +33418,7 @@
   },
   {
     "Code": "432320",
-    "Name": "케이비스타위탁관리부동산투자회사",
+    "Name": "KB스타리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33400,7 +33436,7 @@
   },
   {
     "Code": "443060",
-    "Name": "에이치디현대마린솔루션",
+    "Name": "HD현대마린솔루션",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -33418,7 +33454,7 @@
   },
   {
     "Code": "448730",
-    "Name": "삼성에프엔위탁관리부동산투자회사",
+    "Name": "삼성FN리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33427,7 +33463,7 @@
   },
   {
     "Code": "450080",
-    "Name": "에코프로머티리얼즈",
+    "Name": "에코프로머티",
     "Market": "KOSPI",
     "IndustryLarge": "IT",
     "IndustryMid": "하드웨어",
@@ -33445,7 +33481,7 @@
   },
   {
     "Code": "451800",
-    "Name": "한화위탁관리부동산투자회사",
+    "Name": "한화리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33535,7 +33571,7 @@
   },
   {
     "Code": "465770",
-    "Name": "STX 그린로지스",
+    "Name": "STX그린로지스",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "운송",
@@ -33544,7 +33580,7 @@
   },
   {
     "Code": "475150",
-    "Name": "에스케이이터닉스",
+    "Name": "SK이터닉스",
     "Market": "KOSPI",
     "IndustryLarge": "에너지",
     "IndustryMid": "에너지",
@@ -33571,7 +33607,7 @@
   },
   {
     "Code": "481850",
-    "Name": "신한글로벌액티브위탁관리부동산투자회사",
+    "Name": "신한글로벌액티브리츠",
     "Market": "KOSPI",
     "IndustryLarge": "nan",
     "IndustryMid": "nan",
@@ -33598,7 +33634,7 @@
   },
   {
     "Code": "487570",
-    "Name": "에이치에스효성",
+    "Name": "HS효성",
     "Market": "KOSPI",
     "IndustryLarge": "산업재",
     "IndustryMid": "자본재",
@@ -33616,7 +33652,7 @@
   },
   {
     "Code": "499790",
-    "Name": "지에스피앤엘",
+    "Name": "GS피앤엘",
     "Market": "KOSPI",
     "IndustryLarge": "경기소비재",
     "IndustryMid": "소비자 서비스",
@@ -33634,7 +33670,7 @@
   },
   {
     "Code": "950210",
-    "Name": "프레스티지바이오파마 KDR",
+    "Name": "프레스티지바이오파마",
     "Market": "KOSPI",
     "IndustryLarge": "의료",
     "IndustryMid": "제약 및 바이오",
