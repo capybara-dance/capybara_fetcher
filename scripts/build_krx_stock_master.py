@@ -5,6 +5,7 @@ import warnings
 from pathlib import Path
 
 import pandas as pd
+import FinanceDataReader as fdr
 
 # Add the parent directory to the path to import from capybara_fetcher
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -48,6 +49,54 @@ def _read_master_xlsx(path: Path, market: str) -> pd.DataFrame:
     )
     out = out.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"])
     return out
+
+
+def _update_names_from_fdr(df: pd.DataFrame, market: str) -> pd.DataFrame:
+    """
+    Update stock names from FinanceDataReader to ensure accuracy.
+    
+    Args:
+        df: DataFrame with stock data (must have 'Code' and 'Name' columns)
+        market: Market name ('KOSPI' or 'KOSDAQ')
+    
+    Returns:
+        DataFrame with updated names from FDR
+    """
+    try:
+        # Fetch stock listing from FDR
+        fdr_df = fdr.StockListing(market)
+        
+        if fdr_df.empty:
+            warnings.warn(f"No data fetched from FDR for {market}")
+            return df
+        
+        # Ensure Code column is properly formatted in FDR data
+        fdr_df['Code'] = fdr_df['Code'].astype(str).str.strip().str.zfill(6)
+        
+        # Create a mapping of Code -> Name from FDR data
+        fdr_name_map = dict(zip(fdr_df['Code'], fdr_df['Name']))
+        
+        # Update names in the dataframe
+        df = df.copy()
+        original_count = len(df)
+        updated_count = 0
+        
+        for idx, row in df.iterrows():
+            code = row['Code']
+            if code in fdr_name_map:
+                old_name = row['Name']
+                new_name = fdr_name_map[code]
+                if old_name != new_name:
+                    df.at[idx, 'Name'] = new_name
+                    updated_count += 1
+        
+        print(f"Updated {updated_count} stock names from FDR for {market} (total: {original_count})")
+        return df
+        
+    except Exception as e:
+        warnings.warn(f"Failed to update names from FDR for {market}: {str(e)}")
+        return df
+
 
 
 def _fetch_etf_data(master_json_path: str) -> pd.DataFrame:
@@ -102,6 +151,10 @@ def main() -> None:
 
     kospi = _read_master_xlsx(Path(args.kospi_xlsx), market="KOSPI")
     kosdaq = _read_master_xlsx(Path(args.kosdaq_xlsx), market="KOSDAQ")
+    
+    # Update stock names from FDR to ensure accuracy
+    kospi = _update_names_from_fdr(kospi, market="KOSPI")
+    kosdaq = _update_names_from_fdr(kosdaq, market="KOSDAQ")
 
     master = pd.concat([kospi, kosdaq], ignore_index=True)
     
