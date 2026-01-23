@@ -49,6 +49,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Build KRX Stock Master (JSON with FDR name updates)
+      run: |
+        python scripts/build_krx_stock_master.py --kospi-xlsx data/kospi.xlsx --kosdaq-xlsx data/kosdaq.xlsx --output-json data/krx_stock_master.json --include-etf
+
     - name: Export KRX Stock Master (parquet)
       run: |
         python scripts/export_krx_stock_master_parquet.py --input-json data/krx_stock_master.json --output-parquet cache/krx_stock_master.parquet
