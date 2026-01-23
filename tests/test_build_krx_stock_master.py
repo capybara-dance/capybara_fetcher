@@ -77,6 +77,30 @@ def test_update_names_from_fdr_kosdaq():
     assert '196170' in result['Code'].values
 
 
+@pytest.mark.external
+def test_update_names_from_fdr_specific_stock():
+    """Test that code 240810 name is correctly updated from '원익아이피에스' to '원익IPS'."""
+    # Create a DataFrame with stock code 240810 (원익IPS)
+    df = pd.DataFrame({
+        'Code': ['240810'],
+        'Name': ['원익아이피에스'],  # Old incorrect name
+        'Market': ['KOSDAQ'],
+        'IndustryLarge': ['전기전자'],
+    })
+    
+    # Update names from FDR
+    result = _update_names_from_fdr(df, market='KOSDAQ')
+    
+    # Verify the name was updated correctly
+    assert result.shape == df.shape
+    assert result['Code'].iloc[0] == '240810'
+    assert result['Name'].iloc[0] == '원익IPS', f"Expected '원익IPS' but got '{result['Name'].iloc[0]}'"
+    
+    # Verify other columns are preserved
+    assert result['Market'].iloc[0] == 'KOSDAQ'
+    assert result['IndustryLarge'].iloc[0] == '전기전자'
+
+
 def test_update_names_from_fdr_empty_dataframe():
     """Test that empty DataFrame is handled correctly."""
     df = pd.DataFrame(columns=['Code', 'Name', 'Market'])
