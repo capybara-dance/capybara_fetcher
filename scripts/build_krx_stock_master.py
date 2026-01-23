@@ -114,7 +114,6 @@ def _fetch_etf_data(master_json_path: str) -> pd.DataFrame:
         
         # We need to fetch the full ETF data with names
         # Since list_tickers only returns codes, we need to use the internal fetch
-        import FinanceDataReader as fdr
         df_etf = fdr.StockListing('ETF/KR')
         
         if df_etf.empty:
