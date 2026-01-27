@@ -228,10 +228,32 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
    - 처리: `scripts/build_krx_stock_master.py`로 JSON 변환 후 사용
 
 2. **가격 데이터 (OHLCV)**
-   - 기본 출처: `pykrx` 라이브러리 (한국거래소 데이터)
-   - 대체 출처 (CompositeProvider 사용 시):
-     - `KoreaInvestmentProvider`: 한국투자증권 Open Trading API
-     - `FdrProvider`: FinanceDataReader (KRX, NAVER, YAHOO)
+   
+   본 프로젝트는 여러 데이터 소스를 지원하는 **Provider 시스템**을 사용합니다:
+
+   #### CompositeProvider (기본값)
+   - 여러 데이터 소스를 결합하여 안정적인 데이터 수집을 제공
+   - `list_tickers`: FdrProvider 사용
+   - `load_stock_master`: 로컬 JSON 파일 사용
+   - `fetch_ohlcv`: PykrxProvider 사용
+   - 자동으로 최적의 데이터 소스 선택
+
+   #### PykrxProvider
+   - 출처: `pykrx` 라이브러리 (한국거래소 데이터)
+   - 장점: 한국 시장 데이터에 특화, 수정주가 지원
+   - 제약: 일부 API가 간헐적으로 불안정할 수 있음
+
+   #### KoreaInvestmentProvider
+   - 출처: 한국투자증권 Open Trading API
+   - 장점: 공식 증권사 API, 안정적
+   - 제약: API 키 필요 (appkey, appsecret)
+   - 문서: https://github.com/koreainvestment/open-trading-api
+
+   #### FdrProvider
+   - 출처: FinanceDataReader 라이브러리
+   - 지원 소스: KRX (1995년~), NAVER (2000년~), YAHOO
+   - 장점: 장기 과거 데이터 제공, 자동 폴백 기능
+   - 제약: **멀티스레딩 불가** (`max_workers=1` 필수)
 
 ### 데이터 수집 프로세스
 
@@ -241,6 +263,17 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
 4. **업종 강도 계산**: 동일가중 지수 및 업종별 RS 계산
 5. **저장**: Parquet 형식 (zstd 압축)으로 저장
 6. **릴리즈**: GitHub Actions를 통해 자동으로 GitHub Releases에 업로드
+
+### Provider 선택 및 설정
+
+GitHub Actions 워크플로우에서 데이터 소스를 선택할 수 있습니다:
+
+- **composite** (기본값): 여러 소스를 자동으로 결합하여 안정적인 수집
+- **pykrx**: pykrx 라이브러리만 사용
+- **korea_investment**: 한국투자증권 API 사용 (API 키 필요)
+- **fdr**: FinanceDataReader 사용 (순차 처리 필수)
+
+워크플로우 실행 시 `provider` 파라미터로 선택할 수 있으며, 선택된 provider는 메타데이터에 기록됩니다.
 
 ---
 
