@@ -20,7 +20,7 @@ Capybara Fetcher는 한국 주식 시장(KOSPI, KOSDAQ, ETF)의 가격 데이터
 
 ### 데이터 구조
 
-전체 종목의 일별 가격 데이터와 기술적 지표를 담은 멀티인덱스 시계열 데이터입니다.
+전체 종목의 일별 가격 데이터와 기술적 지표를 담은 시계열 데이터입니다. Date와 Ticker는 일반 컬럼으로 저장되어 있어 쉽게 필터링하고 쿼리할 수 있습니다.
 
 ### 컬럼 정의
 
@@ -56,6 +56,8 @@ Capybara Fetcher는 한국 주식 시장(KOSPI, KOSDAQ, ETF)의 가격 데이터
 **계산 방식**:
 ```
 SMA_n(t) = (Close(t) + Close(t-1) + ... + Close(t-n+1)) / n
+
+예: SMA_5는 최근 5일 종가의 평균
 ```
 - 최소 데이터 개수(`min_periods`): n일
 - n일 미만 데이터가 있는 경우: NA
@@ -67,9 +69,9 @@ SMA_n(t) = (Close(t) + Close(t-1) + ... + Close(t-n+1)) / n
 
 **계산 방식**:
 ```
-RS_raw(t) = Close_ticker(t) / Close_benchmark(t)
-RS_sma(t) = SMA_200(RS_raw(t))
-MansfieldRS(t) = (RS_raw(t) / RS_sma(t) - 1) × 100
+1. RS_raw(t) = Close_ticker(t) / Close_benchmark(t)
+2. RS_sma(t) = SMA_200(RS_raw(t))
+3. MansfieldRS(t) = (RS_raw(t) / RS_sma(t) - 1) × 100
 ```
 
 - **벤치마크**: `069500` (KODEX 200, 수정주가 기준)
@@ -118,14 +120,18 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
 **동일가중 방식**으로 계산됩니다:
 
 ```
-# 1. 각 종목의 일간 수익률 계산
-Return_ticker(t) = (Close(t) - Close(t-1)) / Close(t-1)
+1. 각 종목의 일간 수익률 계산:
+   Return_ticker(t) = (Close(t) - Close(t-1)) / Close(t-1)
 
-# 2. 업종 일간 수익률 = 해당 업종 구성 종목들의 평균 수익률
-IndustryReturn(t) = mean(Return_ticker(t) for all tickers in industry)
+2. 업종 일간 수익률 = 해당 업종 구성 종목들의 평균 수익률:
+   IndustryReturn(t) = mean(Return_ticker(t) for all tickers in industry)
 
-# 3. 업종 지수 = 누적 수익률 × 100 (기준값)
-IndustryClose(t) = 100 × ∏(1 + IndustryReturn(i)) for i from start to t
+3. 업종 지수 = 누적 수익률 × 100 (기준값):
+   IndustryClose(0) = 100
+   IndustryClose(t) = IndustryClose(t-1) × (1 + IndustryReturn(t))
+   
+   또는 전체 기간 누적:
+   IndustryClose(t) = 100 × (1 + IndustryReturn(1)) × (1 + IndustryReturn(2)) × ... × (1 + IndustryReturn(t))
 ```
 
 **특징**:
@@ -243,18 +249,22 @@ IndustryClose(t) = 100 × ∏(1 + IndustryReturn(i)) for i from start to t
 
 대용량 Parquet 파일을 전체 다운로드하지 않고 필요한 부분만 쿼리하는 방식입니다.
 
+**요구사항**: DuckDB 0.8.0 이상
+
 ```python
 import duckdb
 
 # GitHub Release URL (실제 릴리즈에서 확인)
-url = "https://github.com/capybara-dance/capybara_fetcher/releases/download/v2024.01.27/korea_universe_feature_frame.parquet"
+# 릴리즈 태그 형식: data-YYYYMMDD-HHMM (예: data-20240127-1700)
+url = "https://github.com/capybara-dance/capybara_fetcher/releases/download/data-20240127-1700/korea_universe_feature_frame.parquet"
 
-# DuckDB로 원격 Parquet 쿼리
+# DuckDB로 원격 Parquet 쿼리 (httpfs 확장 필요)
 con = duckdb.connect()
 con.execute("INSTALL httpfs")
 con.execute("LOAD httpfs")
 
 # 특정 종목, 기간만 조회 (메모리 효율적)
+# 참고: Parquet 파일의 Date, Ticker 컬럼은 일반 컬럼으로 저장되어 직접 쿼리 가능
 query = f"""
     SELECT * FROM read_parquet('{url}')
     WHERE Ticker = '005930'
@@ -271,7 +281,8 @@ print(df)
 ```python
 import pandas as pd
 
-url = "https://github.com/capybara-dance/capybara_fetcher/releases/download/v2024.01.27/korea_universe_feature_frame.parquet"
+# 릴리즈 태그 형식: data-YYYYMMDD-HHMM (예: data-20240127-1700)
+url = "https://github.com/capybara-dance/capybara_fetcher/releases/download/data-20240127-1700/korea_universe_feature_frame.parquet"
 df = pd.read_parquet(url)
 
 # 특정 종목 필터링
@@ -328,4 +339,4 @@ streamlit run streamlit_app.py
 
 ## 라이선스
 
-본 프로젝트의 라이선스는 레포지토리의 LICENSE 파일을 참조하세요.
+본 프로젝트는 오픈소스 프로젝트입니다. 라이선스에 대한 자세한 내용은 레포지토리 관리자에게 문의하시기 바랍니다.
