@@ -68,6 +68,13 @@ def standardize_ohlcv(raw_df: pd.DataFrame, *, ticker: str) -> pd.DataFrame:
     for c in ["Open", "High", "Low", "Close", "Volume", "TradingValue", "Change"]:
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
+    # Optimize data types for storage efficiency (reduce parquet file size)
+    # OHLC prices: int64 -> Int32 (Korean stock max price ~2.5M fits safely in int32 max 2.1B)
+    df["Open"] = df["Open"].astype("Int32")
+    df["High"] = df["High"].astype("Int32")
+    df["Low"] = df["Low"].astype("Int32")
+    df["Close"] = df["Close"].astype("Int32")
+
     df = df.dropna(subset=["Date", "Close"]).sort_values("Date")
     # Enforce one row per date (keep last) to avoid downstream index collisions.
     df = df.drop_duplicates(subset=["Date"], keep="last")
