@@ -111,7 +111,7 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
 | `IndustrySmall` | string | 소분류 업종명 (Level이 "L", "LM"인 경우 빈 문자열) |
 | `IndustryKey` | string | 업종 식별자 (내부용) |
 | `IndustryClose` | float32 | 업종 지수 (기준값: 100) |
-| `IndustryReturn` | float32 | 업종 일간 수익률 (%) |
+| `IndustryReturn` | float32 | 업종 일간 수익률 (소수, 예: 0.01 = 1%) |
 | `ConstituentCount` | int16 | 해당 업종 구성 종목 수 |
 | `MansfieldRS` | float32 | 업종 Mansfield 상대 강도 (%) |
 
@@ -120,10 +120,11 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
 **동일가중 방식**으로 계산됩니다:
 
 ```
-1. 각 종목의 일간 수익률 계산:
+1. 각 종목의 일간 수익률 계산 (소수 형태):
    Return_ticker(t) = (Close(t) - Close(t-1)) / Close(t-1)
+   예: 1% 상승 = 0.01
 
-2. 업종 일간 수익률 = 해당 업종 구성 종목들의 평균 수익률:
+2. 업종 일간 수익률 = 해당 업종 구성 종목들의 평균 수익률 (소수 형태):
    IndustryReturn(t) = mean(Return_ticker(t) for all tickers in industry)
 
 3. 업종 지수 = 누적 수익률 × 100 (기준값):
@@ -254,9 +255,10 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
 ```python
 import duckdb
 
-# GitHub Release URL (실제 릴리즈에서 확인)
-# 릴리즈 태그 형식: data-YYYYMMDD-HHMM (예: data-20240127-1700)
-url = "https://github.com/capybara-dance/capybara_fetcher/releases/download/data-20240127-1700/korea_universe_feature_frame.parquet"
+# GitHub Release URL
+# 릴리즈 태그 형식: data-YYYYMMDD-HHMM
+# 실제 릴리즈 목록: https://github.com/capybara-dance/capybara_fetcher/releases
+url = "https://github.com/capybara-dance/capybara_fetcher/releases/download/data-YYYYMMDD-HHMM/korea_universe_feature_frame.parquet"
 
 # DuckDB로 원격 Parquet 쿼리 (httpfs 확장 필요)
 con = duckdb.connect()
@@ -268,7 +270,7 @@ con.execute("LOAD httpfs")
 query = f"""
     SELECT * FROM read_parquet('{url}')
     WHERE Ticker = '005930'
-    AND Date BETWEEN '2025-01-01' AND '2026-01-01'
+    AND Date BETWEEN '2024-01-01' AND '2025-01-01'
 """
 df = con.execute(query).df()
 print(df)
@@ -281,8 +283,9 @@ print(df)
 ```python
 import pandas as pd
 
-# 릴리즈 태그 형식: data-YYYYMMDD-HHMM (예: data-20240127-1700)
-url = "https://github.com/capybara-dance/capybara_fetcher/releases/download/data-20240127-1700/korea_universe_feature_frame.parquet"
+# 릴리즈 태그 형식: data-YYYYMMDD-HHMM
+# 실제 릴리즈 목록: https://github.com/capybara-dance/capybara_fetcher/releases
+url = "https://github.com/capybara-dance/capybara_fetcher/releases/download/data-YYYYMMDD-HHMM/korea_universe_feature_frame.parquet"
 df = pd.read_parquet(url)
 
 # 특정 종목 필터링
