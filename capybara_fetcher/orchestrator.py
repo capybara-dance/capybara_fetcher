@@ -193,6 +193,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
     # Convert raw MRS values to percentile ranks (cross-sectional per date)
     print(f"[TIMING] Computing MRS percentile ranks...")
     t_pct0 = perf_counter()
+    raw_cols_to_drop = []
     for col_name in MRS_WINDOWS.keys():
         raw_col = f"{col_name}_raw"
         if raw_col in full_df.columns:
@@ -204,8 +205,10 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
                 .round(2)
                 .astype("float32")
             )
-            # Drop the raw column after percentile conversion
-            full_df = full_df.drop(columns=[raw_col])
+            raw_cols_to_drop.append(raw_col)
+    # Drop all raw columns at once (more efficient than dropping in loop)
+    if raw_cols_to_drop:
+        full_df = full_df.drop(columns=raw_cols_to_drop)
     t_pct1 = perf_counter()
     print(f"[TIMING] MRS percentile ranks computed: {t_pct1 - t_pct0:.2f}s")
 
