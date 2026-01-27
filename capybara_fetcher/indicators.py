@@ -30,8 +30,9 @@ def compute_features(
     close = pd.to_numeric(df["Close"], errors="raise")
 
     # Moving averages
+    # Optimize to float32 for storage efficiency (sufficient precision for financial indicators)
     for w in MA_WINDOWS:
-        df[f"SMA_{w}"] = close.rolling(window=w, min_periods=w).mean()
+        df[f"SMA_{w}"] = close.rolling(window=w, min_periods=w).mean().astype("float32")
 
     # Mansfield Relative Strength (vs benchmark)
     if benchmark_close_by_date is not None and not benchmark_close_by_date.empty:
@@ -44,7 +45,8 @@ def compute_features(
         bench = pd.to_numeric(bench, errors="coerce")
         rs_raw = close / bench
         rs_sma = rs_raw.rolling(window=MANSFIELD_RS_SMA_WINDOW, min_periods=MANSFIELD_RS_SMA_WINDOW).mean()
-        df["MansfieldRS"] = (rs_raw / rs_sma - 1.0) * 100.0
+        # Optimize to float32 for storage efficiency
+        df["MansfieldRS"] = ((rs_raw / rs_sma - 1.0) * 100.0).astype("float32")
     else:
         df["MansfieldRS"] = pd.NA
 
