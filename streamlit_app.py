@@ -195,6 +195,10 @@ def query_industry_top_by_rs(parquet_url: str, level: str, asof_date: dt.date, l
           "IndustryMid",
           "IndustrySmall",
           "MansfieldRS",
+          "MRS_1M",
+          "MRS_3M",
+          "MRS_6M",
+          "MRS_12M",
           "ConstituentCount",
           "Date"
         FROM read_parquet(?)
@@ -223,6 +227,10 @@ def query_industry_rank_by_rs(parquet_url: str, level: str, asof_date: dt.date) 
           "IndustryMid",
           "IndustrySmall",
           "MansfieldRS",
+          "MRS_1M",
+          "MRS_3M",
+          "MRS_6M",
+          "MRS_12M",
           "ConstituentCount",
           "Date"
         FROM read_parquet(?)
@@ -848,7 +856,7 @@ if repo_name:
                     top_df = query_industry_top_by_rs(industry_url, level, end_d, limit=5)
                     if top_df is None or top_df.empty:
                         st.info("Top 5 industries not available (MansfieldRS may be NA in this range).")
-                        top_df = pd.DataFrame(columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"])
+                        top_df = pd.DataFrame(columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M", "ConstituentCount", "Date"])
 
                     top_df = top_df.copy()
                     top_df["Label"] = top_df.apply(
@@ -858,7 +866,7 @@ if repo_name:
 
                     st.markdown("**Top 5 (as-of end date, sorted by MansfieldRS)**")
 
-                    top5_display_df = top_df[["Date", "Label", "MansfieldRS", "ConstituentCount"]].copy()
+                    top5_display_df = top_df[["Date", "Label", "MansfieldRS", "MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M", "ConstituentCount"]].copy()
                     top5_event = st.dataframe(
                         top5_display_df,
                         hide_index=True,
@@ -878,7 +886,7 @@ if repo_name:
                     if ranked_df is None or ranked_df.empty:
                         st.info("Industry ranking not available for this date.")
                         ranked_df = pd.DataFrame(
-                            columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"]
+                            columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M", "ConstituentCount", "Date"]
                         )
 
                     ranked_df = ranked_df.copy()
