@@ -940,16 +940,20 @@ if repo_name:
                                 c,
                                 start_d,
                                 end_d,
-                                ("Date", "MansfieldRS", "ConstituentCount"),
+                                ("Date", "MansfieldRS", "MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M", "ConstituentCount"),
                             )
                             if one is None or one.empty:
                                 continue
                             one["Date"] = _ensure_datetime(one["Date"])
                             one["MansfieldRS"] = pd.to_numeric(one["MansfieldRS"], errors="coerce")
+                            one["MRS_1M"] = pd.to_numeric(one["MRS_1M"], errors="coerce")
+                            one["MRS_3M"] = pd.to_numeric(one["MRS_3M"], errors="coerce")
+                            one["MRS_6M"] = pd.to_numeric(one["MRS_6M"], errors="coerce")
+                            one["MRS_12M"] = pd.to_numeric(one["MRS_12M"], errors="coerce")
                             one["ConstituentCount"] = pd.to_numeric(one["ConstituentCount"], errors="coerce")
                             one = one.dropna(subset=["Date"]).sort_values("Date")
                             one["Industry"] = lab
-                            series_frames.append(one[["Date", "Industry", "MansfieldRS", "ConstituentCount"]])
+                            series_frames.append(one[["Date", "Industry", "MansfieldRS", "MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M", "ConstituentCount"]])
 
                         if not series_frames:
                             st.warning("No data to plot for selected industries.")
@@ -966,6 +970,10 @@ if repo_name:
                                         alt.Tooltip("Date:T"),
                                         alt.Tooltip("Industry:N"),
                                         alt.Tooltip("MansfieldRS:Q", format=".2f"),
+                                        alt.Tooltip("MRS_1M:Q", format=".2f", title="MRS_1M"),
+                                        alt.Tooltip("MRS_3M:Q", format=".2f", title="MRS_3M"),
+                                        alt.Tooltip("MRS_6M:Q", format=".2f", title="MRS_6M"),
+                                        alt.Tooltip("MRS_12M:Q", format=".2f", title="MRS_12M"),
                                         alt.Tooltip("ConstituentCount:Q", title="N"),
                                     ],
                                 )
@@ -1058,10 +1066,15 @@ if repo_name:
 
                                                 rs_candidates = ["MansfieldRS", "RS", "RelativeStrength"]
                                                 rs_col = next((c for c in rs_candidates if c in cols), None)
+                                                
+                                                # Check for MRS columns
+                                                mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+                                                available_mrs = [c for c in mrs_cols if c in cols]
 
                                                 chart_cols = ["Date", "Ticker", "Close"]
                                                 if rs_col:
                                                     chart_cols.append(rs_col)
+                                                chart_cols.extend(available_mrs)
 
                                                 try:
                                                     ts = query_feature_parquet(
@@ -1083,6 +1096,10 @@ if repo_name:
                                                     ts["Close"] = pd.to_numeric(ts["Close"], errors="coerce")
                                                     if rs_col and rs_col in ts.columns:
                                                         ts[rs_col] = pd.to_numeric(ts[rs_col], errors="coerce")
+                                                    # Convert MRS columns to numeric
+                                                    for mrs_col in available_mrs:
+                                                        if mrs_col in ts.columns:
+                                                            ts[mrs_col] = pd.to_numeric(ts[mrs_col], errors="coerce")
 
                                                     st.markdown(f"**📈 `{selected_ticker}` 종가**")
                                                     price_chart = (
@@ -1101,17 +1118,29 @@ if repo_name:
 
                                                     if rs_col and rs_col in ts.columns:
                                                         st.markdown(f"**📉 RS (`{rs_col}`)**")
-                                                        rs_base = ts[["Date", rs_col]].copy()
+                                                        # Include available MRS columns in the RS chart
+                                                        rs_chart_cols = ["Date", rs_col]
+                                                        for mrs_col in available_mrs:
+                                                            if mrs_col in ts.columns:
+                                                                rs_chart_cols.append(mrs_col)
+                                                        rs_base = ts[rs_chart_cols].copy()
+                                                        
+                                                        # Build tooltip dynamically
+                                                        rs_tooltip = [
+                                                            alt.Tooltip("Date:T"),
+                                                            alt.Tooltip(f"{rs_col}:Q", title=rs_col),
+                                                        ]
+                                                        for mrs_col in available_mrs:
+                                                            if mrs_col in rs_base.columns:
+                                                                rs_tooltip.append(alt.Tooltip(f"{mrs_col}:Q", format=".2f", title=mrs_col))
+                                                        
                                                         rs_line = (
                                                             alt.Chart(rs_base)
                                                             .mark_line()
                                                             .encode(
                                                                 x=alt.X("Date:T", title="Date"),
                                                                 y=alt.Y(f"{rs_col}:Q", title=rs_col),
-                                                                tooltip=[
-                                                                    alt.Tooltip("Date:T"),
-                                                                    alt.Tooltip(f"{rs_col}:Q", title=rs_col),
-                                                                ],
+                                                                tooltip=rs_tooltip,
                                                             )
                                                         )
                                                         zero = (
