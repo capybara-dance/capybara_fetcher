@@ -79,6 +79,39 @@ SMA_n(t) = (Close(t) + Close(t-1) + ... + Close(t-n+1)) / n
 - **최소 기간**: 200 거래일 미만인 경우 NA
 - **의미**: 양수이면 벤치마크 대비 상대적으로 강세, 음수이면 약세
 
+#### 다중 기간 상대 강도 백분위수 (Multi-timeframe Relative Strength Percentiles)
+| 컬럼명 | 데이터 타입 | 설명 |
+|--------|------------|------|
+| `MRS_1M` | float32 | 1개월(21일) 기준 상대 강도 백분위수 (0-100) |
+| `MRS_3M` | float32 | 3개월(63일) 기준 상대 강도 백분위수 (0-100) |
+| `MRS_6M` | float32 | 6개월(126일) 기준 상대 강도 백분위수 (0-100) |
+| `MRS_12M` | float32 | 12개월(250일) 기준 상대 강도 백분위수 (0-100) |
+
+**계산 방식**:
+```
+1. 각 기간별로 Mansfield RS 계산:
+   RS_raw(t) = Close_ticker(t) / Close_benchmark(t)
+   RS_sma_n(t) = SMA_n(RS_raw(t))  # n = 21, 63, 126, 250
+   MRS_raw(t) = (RS_raw(t) / RS_sma_n(t) - 1) × 100
+
+2. 같은 날짜의 전체 종목을 대상으로 백분위수 변환:
+   MRS_n(t) = percentile_rank(MRS_raw(t)) × 100
+   
+   예: MRS_1M = 75.0 → 해당 종목이 전체의 75% 위치 (상위 25%)
+```
+
+- **벤치마크**: `069500` (KODEX 200, 수정주가 기준)
+- **윈도우**: 
+  - `MRS_1M`: 21 거래일 (약 1개월)
+  - `MRS_3M`: 63 거래일 (약 3개월)
+  - `MRS_6M`: 126 거래일 (약 6개월)
+  - `MRS_12M`: 250 거래일 (약 12개월)
+- **최소 기간**: 각 윈도우 미만인 경우 NA
+- **의미**: 
+  - 100에 가까울수록 해당 기간 동안 벤치마크 대비 상대적 성과가 우수
+  - 0에 가까울수록 상대적 성과가 부진
+  - 각 날짜의 전체 종목 중 상대적 순위를 나타냄 (횡단면 비교)
+
 #### 신고가 여부
 | 컬럼명 | 데이터 타입 | 설명 |
 |--------|------------|------|
@@ -182,7 +215,7 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
   "tickers_requested": 1234,
   "tickers_succeeded": 1234,
   "row_count": 3456789,
-  "column_count": 18,
+  "column_count": 21,
   "file_size_bytes": 123456789,
   "indicators": {
     "moving_averages": [5, 10, 20, 60, 120, 200],
@@ -191,6 +224,16 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
       "window": 200,
       "adjusted": true,
       "fetch_success": true
+    },
+    "multi_timeframe_rs": {
+      "windows": {
+        "MRS_1M": 21,
+        "MRS_3M": 63,
+        "MRS_6M": 126,
+        "MRS_12M": 250
+      },
+      "benchmark_ticker": "069500",
+      "adjusted": true
     },
     "new_high_1y": {
       "window": 252
