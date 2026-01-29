@@ -149,6 +149,7 @@ def fetch_with_etag(url, etag=None):
 Rate limit에 도달했을 때 재시도 로직을 구현하세요:
 
 ```python
+import os
 import time
 import requests
 from datetime import datetime

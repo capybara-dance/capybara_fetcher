@@ -45,8 +45,7 @@ def get_releases(repo, token=None):
             reset_time = response.headers.get('X-RateLimit-Reset', '?')
             
             if remaining == '0' and reset_time != '?':
-                import datetime as dt_module
-                reset_dt = dt_module.datetime.fromtimestamp(int(reset_time))
+                reset_dt = dt.datetime.fromtimestamp(int(reset_time))
                 st.error(
                     f"⚠️ GitHub API rate limit exceeded. "
                     f"Reset at: {reset_dt.strftime('%Y-%m-%d %H:%M:%S')}.\n\n"
