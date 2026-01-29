@@ -189,18 +189,27 @@ def query_industry_top_by_rs(parquet_url: str, level: str, asof_date: dt.date, l
     지정 날짜(asof) 기준(해당 날짜 이전 최신 거래일) MansfieldRS 상위 업종을 조회합니다.
     """
     con = get_duckdb_conn()
-    sql = """
-        SELECT
-          "IndustryLarge",
-          "IndustryMid",
-          "IndustrySmall",
-          "MansfieldRS",
-          "MRS_1M",
-          "MRS_3M",
-          "MRS_6M",
-          "MRS_12M",
-          "ConstituentCount",
-          "Date"
+    
+    # Check which columns are available in the parquet file
+    try:
+        available_cols = get_parquet_columns(parquet_url)
+    except Exception:
+        available_cols = []
+    
+    # Build column list based on what's available
+    base_cols = ["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"]
+    mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+    
+    select_cols = base_cols[:]
+    # Insert MRS columns after MansfieldRS if they exist
+    for mrs_col in mrs_cols:
+        if mrs_col in available_cols:
+            select_cols.insert(select_cols.index("ConstituentCount"), mrs_col)
+    
+    cols_sql = ", ".join([f'"{c}"' for c in select_cols])
+    
+    sql = f"""
+        SELECT {cols_sql}
         FROM read_parquet(?)
         WHERE "Level" = ?
           AND "Date" = (
@@ -221,18 +230,27 @@ def query_industry_rank_by_rs(parquet_url: str, level: str, asof_date: dt.date) 
     지정 날짜(asof) 기준(해당 날짜 이전 최신 거래일) 업종별 MansfieldRS 랭킹(내림차순)을 반환합니다.
     """
     con = get_duckdb_conn()
-    sql = """
-        SELECT
-          "IndustryLarge",
-          "IndustryMid",
-          "IndustrySmall",
-          "MansfieldRS",
-          "MRS_1M",
-          "MRS_3M",
-          "MRS_6M",
-          "MRS_12M",
-          "ConstituentCount",
-          "Date"
+    
+    # Check which columns are available in the parquet file
+    try:
+        available_cols = get_parquet_columns(parquet_url)
+    except Exception:
+        available_cols = []
+    
+    # Build column list based on what's available
+    base_cols = ["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"]
+    mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+    
+    select_cols = base_cols[:]
+    # Insert MRS columns after MansfieldRS if they exist
+    for mrs_col in mrs_cols:
+        if mrs_col in available_cols:
+            select_cols.insert(select_cols.index("ConstituentCount"), mrs_col)
+    
+    cols_sql = ", ".join([f'"{c}"' for c in select_cols])
+    
+    sql = f"""
+        SELECT {cols_sql}
         FROM read_parquet(?)
         WHERE "Level" = ?
           AND "Date" = (
@@ -856,7 +874,7 @@ if repo_name:
                     top_df = query_industry_top_by_rs(industry_url, level, end_d, limit=5)
                     if top_df is None or top_df.empty:
                         st.info("Top 5 industries not available (MansfieldRS may be NA in this range).")
-                        top_df = pd.DataFrame(columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M", "ConstituentCount", "Date"])
+                        top_df = pd.DataFrame(columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"])
 
                     top_df = top_df.copy()
                     top_df["Label"] = top_df.apply(
@@ -866,7 +884,15 @@ if repo_name:
 
                     st.markdown("**Top 5 (as-of end date, sorted by MansfieldRS)**")
 
-                    top5_display_df = top_df[["Date", "Label", "MansfieldRS", "MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M", "ConstituentCount"]].copy()
+                    # Build display columns based on what's available in top_df
+                    display_cols = ["Date", "Label", "MansfieldRS"]
+                    mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+                    for mrs_col in mrs_cols:
+                        if mrs_col in top_df.columns:
+                            display_cols.append(mrs_col)
+                    display_cols.append("ConstituentCount")
+                    
+                    top5_display_df = top_df[display_cols].copy()
                     top5_event = st.dataframe(
                         top5_display_df,
                         hide_index=True,
@@ -886,7 +912,7 @@ if repo_name:
                     if ranked_df is None or ranked_df.empty:
                         st.info("Industry ranking not available for this date.")
                         ranked_df = pd.DataFrame(
-                            columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M", "ConstituentCount", "Date"]
+                            columns=["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"]
                         )
 
                     ranked_df = ranked_df.copy()
