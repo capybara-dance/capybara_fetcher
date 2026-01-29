@@ -399,6 +399,32 @@ streamlit run streamlit_app.py
 - 전체 종목 Feature 데이터는 수백 MB~수 GB까지 커질 수 있습니다
 - Streamlit Cloud, Colab 등 메모리 제약 환경에서는 DuckDB 방식 사용을 권장합니다
 
+### GitHub API Rate Limit
+
+GitHub API를 통해 릴리즈 정보를 가져올 때 **rate limit**에 도달할 수 있습니다:
+
+- **인증 없음**: 시간당 60회 제한
+- **인증 있음**: 시간당 5,000회 제한
+
+**해결 방법**:
+1. **GitHub Personal Access Token 사용** (권장)
+   - [Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)에서 토큰 발급
+   - 환경 변수로 설정: `export GITHUB_TOKEN="your_token_here"`
+   
+2. **로컬 캐싱 구현**
+   - API 호출 결과를 로컬에 캐싱하여 재사용
+   - 일정 시간 동안 캐시된 데이터 우선 사용
+   
+3. **직접 다운로드 URL 사용**
+   - 릴리즈 태그를 알고 있다면 API 없이 직접 다운로드
+   - 예: `https://github.com/capybara-dance/capybara_fetcher/releases/download/TAG/FILE`
+
+4. **Retry with Exponential Backoff**
+   - Rate limit 도달 시 대기 후 재시도
+   - Reset 시간 확인 후 적절히 대기
+
+**자세한 가이드**: [API_RATE_LIMIT_GUIDE.md](./API_RATE_LIMIT_GUIDE.md) 참고
+
 ---
 
 ## 8. 업데이트 주기

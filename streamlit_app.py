@@ -33,11 +33,28 @@ def get_releases(repo, token=None):
     
     url = f"https://api.github.com/repos/{repo}/releases"
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 404:
             st.error(f"Repository not found: {repo}")
+            return []
+        elif response.status_code == 403:
+            # Rate limit handling
+            remaining = response.headers.get('X-RateLimit-Remaining', '?')
+            reset_time = response.headers.get('X-RateLimit-Reset', '?')
+            
+            if remaining == '0' and reset_time != '?':
+                import datetime as dt_module
+                reset_dt = dt_module.datetime.fromtimestamp(int(reset_time))
+                st.error(
+                    f"⚠️ GitHub API rate limit exceeded. "
+                    f"Reset at: {reset_dt.strftime('%Y-%m-%d %H:%M:%S')}.\n\n"
+                    f"**Solution**: Set `GITHUB_TOKEN` environment variable to increase limit from 60/hour to 5,000/hour.\n\n"
+                    f"See [API_RATE_LIMIT_GUIDE.md](https://github.com/capybara-dance/capybara_fetcher/blob/main/API_RATE_LIMIT_GUIDE.md) for details."
+                )
+            else:
+                st.error(f"Failed to fetch releases: 403 {response.reason}")
             return []
         else:
             st.error(f"Failed to fetch releases: {response.status_code} {response.reason}")
