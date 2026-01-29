@@ -189,14 +189,28 @@ def query_industry_top_by_rs(parquet_url: str, level: str, asof_date: dt.date, l
     지정 날짜(asof) 기준(해당 날짜 이전 최신 거래일) MansfieldRS 상위 업종을 조회합니다.
     """
     con = get_duckdb_conn()
-    sql = """
-        SELECT
-          "IndustryLarge",
-          "IndustryMid",
-          "IndustrySmall",
-          "MansfieldRS",
-          "ConstituentCount",
-          "Date"
+    
+    # Check which columns are available in the parquet file
+    try:
+        available_cols = get_parquet_columns(parquet_url)
+    except Exception:
+        available_cols = []
+    
+    # Build column list based on what's available
+    base_cols = ["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"]
+    mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+    
+    select_cols = base_cols[:4]  # Up to MansfieldRS
+    # Add MRS columns if they exist
+    for mrs_col in mrs_cols:
+        if mrs_col in available_cols:
+            select_cols.append(mrs_col)
+    select_cols.extend(base_cols[4:])  # Add ConstituentCount and Date
+    
+    cols_sql = ", ".join([f'"{c}"' for c in select_cols])
+    
+    sql = f"""
+        SELECT {cols_sql}
         FROM read_parquet(?)
         WHERE "Level" = ?
           AND "Date" = (
@@ -217,14 +231,28 @@ def query_industry_rank_by_rs(parquet_url: str, level: str, asof_date: dt.date) 
     지정 날짜(asof) 기준(해당 날짜 이전 최신 거래일) 업종별 MansfieldRS 랭킹(내림차순)을 반환합니다.
     """
     con = get_duckdb_conn()
-    sql = """
-        SELECT
-          "IndustryLarge",
-          "IndustryMid",
-          "IndustrySmall",
-          "MansfieldRS",
-          "ConstituentCount",
-          "Date"
+    
+    # Check which columns are available in the parquet file
+    try:
+        available_cols = get_parquet_columns(parquet_url)
+    except Exception:
+        available_cols = []
+    
+    # Build column list based on what's available
+    base_cols = ["IndustryLarge", "IndustryMid", "IndustrySmall", "MansfieldRS", "ConstituentCount", "Date"]
+    mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+    
+    select_cols = base_cols[:4]  # Up to MansfieldRS
+    # Add MRS columns if they exist
+    for mrs_col in mrs_cols:
+        if mrs_col in available_cols:
+            select_cols.append(mrs_col)
+    select_cols.extend(base_cols[4:])  # Add ConstituentCount and Date
+    
+    cols_sql = ", ".join([f'"{c}"' for c in select_cols])
+    
+    sql = f"""
+        SELECT {cols_sql}
         FROM read_parquet(?)
         WHERE "Level" = ?
           AND "Date" = (
@@ -858,7 +886,15 @@ if repo_name:
 
                     st.markdown("**Top 5 (as-of end date, sorted by MansfieldRS)**")
 
-                    top5_display_df = top_df[["Date", "Label", "MansfieldRS", "ConstituentCount"]].copy()
+                    # Build display columns based on what's available in top_df
+                    display_cols = ["Date", "Label", "MansfieldRS"]
+                    mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+                    for mrs_col in mrs_cols:
+                        if mrs_col in top_df.columns:
+                            display_cols.append(mrs_col)
+                    display_cols.append("ConstituentCount")
+                    
+                    top5_display_df = top_df[display_cols].copy()
                     top5_event = st.dataframe(
                         top5_display_df,
                         hide_index=True,
@@ -932,6 +968,19 @@ if repo_name:
                             if tup is None:
                                 continue
                             a, b, c = tup
+                            
+                            # Check which columns are available
+                            try:
+                                available_cols = get_parquet_columns(industry_url)
+                            except Exception:
+                                available_cols = []
+                            
+                            # Build columns to query
+                            query_cols = ["Date", "MansfieldRS", "ConstituentCount"]
+                            mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+                            available_mrs = [c for c in mrs_cols if c in available_cols]
+                            query_cols[1:1] = available_mrs  # Insert after Date but before ConstituentCount
+                            
                             one = query_industry_parquet(
                                 industry_url,
                                 level,
@@ -940,21 +989,44 @@ if repo_name:
                                 c,
                                 start_d,
                                 end_d,
-                                ("Date", "MansfieldRS", "ConstituentCount"),
+                                tuple(query_cols),
                             )
                             if one is None or one.empty:
                                 continue
                             one["Date"] = _ensure_datetime(one["Date"])
                             one["MansfieldRS"] = pd.to_numeric(one["MansfieldRS"], errors="coerce")
+                            # Convert MRS columns if they exist
+                            for mrs_col in available_mrs:
+                                if mrs_col in one.columns:
+                                    one[mrs_col] = pd.to_numeric(one[mrs_col], errors="coerce")
                             one["ConstituentCount"] = pd.to_numeric(one["ConstituentCount"], errors="coerce")
                             one = one.dropna(subset=["Date"]).sort_values("Date")
                             one["Industry"] = lab
-                            series_frames.append(one[["Date", "Industry", "MansfieldRS", "ConstituentCount"]])
+                            
+                            # Build frame columns dynamically
+                            frame_cols = ["Date", "Industry", "MansfieldRS"]
+                            for mrs_col in available_mrs:
+                                if mrs_col in one.columns:
+                                    frame_cols.append(mrs_col)
+                            frame_cols.append("ConstituentCount")
+                            series_frames.append(one[frame_cols])
 
                         if not series_frames:
                             st.warning("No data to plot for selected industries.")
                         else:
                             plot_df = pd.concat(series_frames, ignore_index=True)
+                            
+                            # Build tooltip dynamically based on available columns
+                            tooltip_list = [
+                                alt.Tooltip("Date:T"),
+                                alt.Tooltip("Industry:N"),
+                                alt.Tooltip("MansfieldRS:Q", format=".2f"),
+                            ]
+                            for mrs_col in mrs_cols:
+                                if mrs_col in plot_df.columns:
+                                    tooltip_list.append(alt.Tooltip(f"{mrs_col}:Q", format=".2f", title=mrs_col))
+                            tooltip_list.append(alt.Tooltip("ConstituentCount:Q", title="N"))
+                            
                             chart = (
                                 alt.Chart(plot_df)
                                 .mark_line()
@@ -962,12 +1034,7 @@ if repo_name:
                                     x=alt.X("Date:T", title="Date"),
                                     y=alt.Y("MansfieldRS:Q", title="MansfieldRS"),
                                     color=alt.Color("Industry:N", title="Industry"),
-                                    tooltip=[
-                                        alt.Tooltip("Date:T"),
-                                        alt.Tooltip("Industry:N"),
-                                        alt.Tooltip("MansfieldRS:Q", format=".2f"),
-                                        alt.Tooltip("ConstituentCount:Q", title="N"),
-                                    ],
+                                    tooltip=tooltip_list,
                                 )
                             )
                             st.altair_chart(chart, use_container_width=True)
@@ -1058,10 +1125,15 @@ if repo_name:
 
                                                 rs_candidates = ["MansfieldRS", "RS", "RelativeStrength"]
                                                 rs_col = next((c for c in rs_candidates if c in cols), None)
+                                                
+                                                # Check for MRS columns
+                                                mrs_cols = ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]
+                                                available_mrs = [c for c in mrs_cols if c in cols]
 
                                                 chart_cols = ["Date", "Ticker", "Close"]
                                                 if rs_col:
                                                     chart_cols.append(rs_col)
+                                                chart_cols.extend(available_mrs)
 
                                                 try:
                                                     ts = query_feature_parquet(
@@ -1083,6 +1155,10 @@ if repo_name:
                                                     ts["Close"] = pd.to_numeric(ts["Close"], errors="coerce")
                                                     if rs_col and rs_col in ts.columns:
                                                         ts[rs_col] = pd.to_numeric(ts[rs_col], errors="coerce")
+                                                    # Convert MRS columns to numeric
+                                                    for mrs_col in available_mrs:
+                                                        if mrs_col in ts.columns:
+                                                            ts[mrs_col] = pd.to_numeric(ts[mrs_col], errors="coerce")
 
                                                     st.markdown(f"**📈 `{selected_ticker}` 종가**")
                                                     price_chart = (
@@ -1101,17 +1177,29 @@ if repo_name:
 
                                                     if rs_col and rs_col in ts.columns:
                                                         st.markdown(f"**📉 RS (`{rs_col}`)**")
-                                                        rs_base = ts[["Date", rs_col]].copy()
+                                                        # Include available MRS columns in the RS chart
+                                                        rs_chart_cols = ["Date", rs_col]
+                                                        for mrs_col in available_mrs:
+                                                            if mrs_col in ts.columns:
+                                                                rs_chart_cols.append(mrs_col)
+                                                        rs_base = ts[rs_chart_cols].copy()
+                                                        
+                                                        # Build tooltip dynamically
+                                                        rs_tooltip = [
+                                                            alt.Tooltip("Date:T"),
+                                                            alt.Tooltip(f"{rs_col}:Q", title=rs_col),
+                                                        ]
+                                                        for mrs_col in available_mrs:
+                                                            if mrs_col in rs_base.columns:
+                                                                rs_tooltip.append(alt.Tooltip(f"{mrs_col}:Q", format=".2f", title=mrs_col))
+                                                        
                                                         rs_line = (
                                                             alt.Chart(rs_base)
                                                             .mark_line()
                                                             .encode(
                                                                 x=alt.X("Date:T", title="Date"),
                                                                 y=alt.Y(f"{rs_col}:Q", title=rs_col),
-                                                                tooltip=[
-                                                                    alt.Tooltip("Date:T"),
-                                                                    alt.Tooltip(f"{rs_col}:Q", title=rs_col),
-                                                                ],
+                                                                tooltip=rs_tooltip,
                                                             )
                                                         )
                                                         zero = (

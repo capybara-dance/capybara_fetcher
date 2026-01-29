@@ -256,6 +256,28 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
         t_industry1 = perf_counter()
         print(f"[TIMING] Industry features computed: {t_industry1 - t_industry0:.2f}s")
         
+        # Convert raw MRS values to percentile ranks (cross-sectional per date and level)
+        print(f"[TIMING] Computing industry MRS percentile ranks...")
+        t_ind_pct0 = perf_counter()
+        raw_cols_to_drop = []
+        for col_name in MRS_WINDOWS.keys():
+            raw_col = f"{col_name}_raw"
+            if raw_col in industry_df.columns:
+                # Calculate percentile rank within each date and level (0-100 scale, 2 decimal places)
+                industry_df[col_name] = (
+                    industry_df.groupby(["Date", "Level"])[raw_col]
+                    .rank(pct=True, method="average")
+                    .mul(100.0)
+                    .round(2)
+                    .astype("float32")
+                )
+                raw_cols_to_drop.append(raw_col)
+        # Drop all raw columns at once (more efficient than dropping in loop)
+        if raw_cols_to_drop:
+            industry_df = industry_df.drop(columns=raw_cols_to_drop)
+        t_ind_pct1 = perf_counter()
+        print(f"[TIMING] Industry MRS percentile ranks computed: {t_ind_pct1 - t_ind_pct0:.2f}s")
+        
         print(f"[TIMING] Saving industry parquet to {cfg.industry_output_path}...")
         t_ind_save0 = perf_counter()
         write_parquet(industry_df, cfg.industry_output_path)
@@ -273,6 +295,12 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
             "method": {
                 "industry_index": "equal_weighted_daily_return_mean_then_cumprod_base_100",
                 "mansfield_rs": {"benchmark": industry_benchmark_meta, "sma_window": MANSFIELD_RS_SMA_WINDOW},
+                "mrs_multi_timeframe": {
+                    "benchmark": industry_benchmark_meta,
+                    "windows": MRS_WINDOWS,
+                    "percentile_precision": 2,
+                    "description": "Cross-sectional percentile ranks (0-100.0) per date and level",
+                },
             },
             "data_file": {
                 "path": cfg.industry_output_path,
@@ -360,6 +388,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
     print(f"  Save feature parquet: {t_save1 - t_save0:8.2f}s")
     if cfg.industry_output_path:
         print(f"  Industry features:    {t_industry1 - t_industry0:8.2f}s")
+        print(f"  Ind MRS percentiles:  {t_ind_pct1 - t_ind_pct0:8.2f}s")
         print(f"  Industry save:        {t_ind_save1 - t_ind_save0:8.2f}s")
     print(f"  {'─'*58}")
     print(f"  TOTAL:                {total_time:8.2f}s")
