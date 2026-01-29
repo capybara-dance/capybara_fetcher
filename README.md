@@ -423,7 +423,9 @@ GitHub API를 통해 릴리즈 정보를 가져올 때 **rate limit**에 도달�
    - Rate limit 도달 시 대기 후 재시도
    - Reset 시간 확인 후 적절히 대기
 
-**자세한 가이드**: [API_RATE_LIMIT_GUIDE.md](./API_RATE_LIMIT_GUIDE.md) 참고
+**자세한 가이드**: 
+- [API_RATE_LIMIT_GUIDE.md](./API_RATE_LIMIT_GUIDE.md) - 전체 솔루션 및 예제 코드
+- [API_RATE_LIMIT_QUICK_REF.md](./API_RATE_LIMIT_QUICK_REF.md) - 빠른 참조 가이드
 
 ---
 
