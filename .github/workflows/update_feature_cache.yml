@@ -202,3 +202,27 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Notify Telegram
+      if: always()
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID_TEST: ${{ secrets.TELEGRAM_CHAT_ID_TEST }}
+        JOB_STATUS: ${{ job.status }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        WORKFLOW_NAME: ${{ github.workflow }}
+        JOB_NAME: ${{ github.job }}
+      run: |
+        python - <<'PY'
+        import os
+
+        from scripts.telegram import TelegramSender
+
+        status = os.getenv("JOB_STATUS", "unknown")
+        run_url = os.getenv("RUN_URL", "")
+        workflow = os.getenv("WORKFLOW_NAME", "workflow")
+        job = os.getenv("JOB_NAME", "job")
+        message = f"[{workflow}] job '{job}' finished with status: {status}\n{run_url}"
+
+        TelegramSender().send_message(message, parse_mode=None)
+        PY
