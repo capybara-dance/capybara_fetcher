@@ -23,7 +23,7 @@ on:
           - fdr
   schedule:
     # Weekdays 17:00 KST == 08:00 UTC
-    - cron: '0 1,8 * * 1-5'
+    - cron: '0 0,8 * * 1-5'
 
 permissions:
   contents: write
