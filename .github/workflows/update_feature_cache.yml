@@ -198,3 +198,12 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Send Release Stats to Telegram
+      if: success() && steps.files.outputs.has_meta == 'true'
+      run: |
+        python scripts/send_release_stats_telegram.py \
+          --cache-dir cache
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
