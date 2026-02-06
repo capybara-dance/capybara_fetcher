@@ -28,6 +28,7 @@ def compute_features(
 
     df = df.sort_values("Date")
     close = pd.to_numeric(df["Close"], errors="raise")
+    high = pd.to_numeric(df["High"], errors="raise")
 
     # Moving averages
     for w in MA_WINDOWS:
@@ -48,9 +49,9 @@ def compute_features(
     else:
         df["MansfieldRS"] = pd.NA
 
-    # 1Y new high (Close is the highest close in last ~1 year trading days, inclusive)
-    roll_max = close.rolling(window=NEW_HIGH_WINDOW_TRADING_DAYS, min_periods=NEW_HIGH_WINDOW_TRADING_DAYS).max()
-    df["IsNewHigh1Y"] = close.eq(roll_max).astype("boolean")
+    # 1Y new high (High is the highest high in last ~1 year trading days, inclusive)
+    roll_max = high.rolling(window=NEW_HIGH_WINDOW_TRADING_DAYS, min_periods=NEW_HIGH_WINDOW_TRADING_DAYS).max()
+    df["IsNewHigh1Y"] = high.eq(roll_max).astype("boolean")
 
     return df
 
