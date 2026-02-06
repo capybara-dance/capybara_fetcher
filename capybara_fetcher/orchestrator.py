@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from .provider import DataProvider
 from .standardize import standardize_ohlcv
-from .indicators import compute_features, MA_WINDOWS, NEW_HIGH_WINDOW_TRADING_DAYS, MANSFIELD_RS_SMA_WINDOW
+from .indicators import compute_features, MA_WINDOWS, NEW_HIGH_WINDOW_TRADING_DAYS, MANSFIELD_RS_SMA_WINDOW, MRS_WINDOWS
 from .industry import (
     INDUSTRY_LEVELS,
     compute_industry_feature_frame,
@@ -190,6 +190,28 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
     t_concat1 = perf_counter()
     print(f"[TIMING] Concatenation completed: {t_concat1 - t_concat0:.2f}s (shape: {full_df.shape})")
 
+    # Convert raw MRS values to percentile ranks (cross-sectional per date)
+    print(f"[TIMING] Computing MRS percentile ranks...")
+    t_pct0 = perf_counter()
+    raw_cols_to_drop = []
+    for col_name in MRS_WINDOWS.keys():
+        raw_col = f"{col_name}_raw"
+        if raw_col in full_df.columns:
+            # Calculate percentile rank within each date (0-100 scale, 2 decimal places)
+            full_df[col_name] = (
+                full_df.groupby("Date")[raw_col]
+                .rank(pct=True, method="average")
+                .mul(100.0)
+                .round(2)
+                .astype("float32")
+            )
+            raw_cols_to_drop.append(raw_col)
+    # Drop all raw columns at once (more efficient than dropping in loop)
+    if raw_cols_to_drop:
+        full_df = full_df.drop(columns=raw_cols_to_drop)
+    t_pct1 = perf_counter()
+    print(f"[TIMING] MRS percentile ranks computed: {t_pct1 - t_pct0:.2f}s")
+
     # 4) Save feature parquet
     print(f"[TIMING] Saving feature parquet to {cfg.output_path}...")
     t_save0 = perf_counter()
@@ -276,12 +298,18 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
         "ticker_count": len(tickers),
         "rows": int(len(full_df)),
         "columns": list(full_df.columns),
-        "features": [f"SMA_{w}" for w in MA_WINDOWS] + ["MansfieldRS", "IsNewHigh1Y"],
+        "features": [f"SMA_{w}" for w in MA_WINDOWS] + ["MansfieldRS", "IsNewHigh1Y"] + list(MRS_WINDOWS.keys()),
         "indicators": {
             "moving_averages": MA_WINDOWS,
             "mansfield_rs": {
                 "benchmark_ticker": MANSFIELD_BENCHMARK_TICKER,
                 "sma_window": MANSFIELD_RS_SMA_WINDOW,
+            },
+            "mrs_multi_timeframe": {
+                "benchmark_ticker": MANSFIELD_BENCHMARK_TICKER,
+                "windows": MRS_WINDOWS,
+                "percentile_precision": 2,
+                "description": "Cross-sectional percentile ranks (0-100.0) per date",
             },
             "new_high_1y": {"window_trading_days": NEW_HIGH_WINDOW_TRADING_DAYS},
         },
@@ -310,6 +338,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
             "benchmark_fetch": round(t_bench1 - t_bench0, 4),
             "data_fetch_and_features": round(t_fetch1 - t_fetch0, 4),
             "concat_and_sort": round(t_concat1 - t_concat0, 4),
+            "mrs_percentile_ranks": round(t_pct1 - t_pct0, 4),
             "save_feature_parquet": round(t_save1 - t_save0, 4),
             "total": round(perf_counter() - t0, 4),
         },
@@ -327,6 +356,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
     print(f"  Benchmark fetch:      {t_bench1 - t_bench0:8.2f}s")
     print(f"  OHLCV fetch/features: {t_fetch1 - t_fetch0:8.2f}s")
     print(f"  Concat/Sort:          {t_concat1 - t_concat0:8.2f}s")
+    print(f"  MRS percentile ranks: {t_pct1 - t_pct0:8.2f}s")
     print(f"  Save feature parquet: {t_save1 - t_save0:8.2f}s")
     if cfg.industry_output_path:
         print(f"  Industry features:    {t_industry1 - t_industry0:8.2f}s")

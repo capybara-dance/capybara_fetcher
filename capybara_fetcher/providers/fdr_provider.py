@@ -7,6 +7,7 @@ https://github.com/FinanceData/FinanceDataReader
 from __future__ import annotations
 
 import datetime as dt
+import warnings
 from dataclasses import dataclass
 
 import pandas as pd
@@ -20,7 +21,7 @@ from .provider_utils import load_master_json
 class FdrProvider(DataProvider):
     """
     DataProvider implementation using FinanceDataReader:
-    - tickers/master: local Seibro-derived JSON (same as other providers)
+    - tickers: fetched dynamically via fdr.StockListing() for KOSPI, KOSDAQ, and ETF/KR
     - ohlcv: FinanceDataReader (FDR) library
     
     FDR supports multiple data sources:
@@ -29,6 +30,7 @@ class FdrProvider(DataProvider):
     - Yahoo Finance
     
     The provider uses KRX as the default source for Korean stock data.
+    Note: list_tickers() requires network access to fetch current ticker lists.
     """
 
     master_json_path: str
@@ -46,16 +48,84 @@ class FdrProvider(DataProvider):
         asof_date: dt.date | None = None,
         market: str | None = None,
     ) -> tuple[list[str], dict[str, str]]:
-        """List tickers from stock master."""
-        master = self.load_stock_master(asof_date=asof_date)
+        """
+        List tickers using fdr.StockListing() for KOSPI, KOSDAQ, and ETF markets.
+        
+        This method fetches ticker data directly from FinanceDataReader instead of
+        reading from a local JSON file.
+        
+        Args:
+            asof_date: Not used. Current live data is always fetched.
+            market: Optional market filter. If None, returns all markets (KOSPI, KOSDAQ, ETF).
+                   If specified, returns only tickers from that market ('KOSPI', 'KOSDAQ', or 'ETF')
+            
+        Returns:
+            Tuple of (ticker_list, market_by_ticker_dict)
+        """
+        # Fetch data from requested markets
+        df_list = []
+        
+        # Determine which markets to fetch based on market parameter
+        fetch_kospi = market is None or market == 'KOSPI'
+        fetch_kosdaq = market is None or market == 'KOSDAQ'
+        fetch_etf = market is None or market == 'ETF'
+        
+        # Fetch KOSPI data
+        if fetch_kospi:
+            try:
+                df_kospi = fdr.StockListing('KOSPI')
+                if not df_kospi.empty:
+                    df_list.append(df_kospi)
+            except Exception as e:
+                warnings.warn(f"Failed to fetch KOSPI listings: {str(e)}")
+        
+        # Fetch KOSDAQ data
+        if fetch_kosdaq:
+            try:
+                df_kosdaq = fdr.StockListing('KOSDAQ')
+                if not df_kosdaq.empty:
+                    df_list.append(df_kosdaq)
+            except Exception as e:
+                warnings.warn(f"Failed to fetch KOSDAQ listings: {str(e)}")
+        
+        # Fetch ETF/KR data
+        if fetch_etf:
+            try:
+                df_etf = fdr.StockListing('ETF/KR')
+                if not df_etf.empty:
+                    # NaverEtfListing returns 'Symbol' instead of 'Code'
+                    df_etf = df_etf.rename(columns={'Symbol': 'Code'})
+                    # Add Market column for ETF
+                    df_etf['Market'] = 'ETF'
+                    df_list.append(df_etf)
+            except Exception as e:
+                warnings.warn(f"Failed to fetch ETF/KR listings: {str(e)}")
+        
+        # Combine all dataframes
+        if not df_list:
+            # If all fetches failed, return empty results
+            return [], {}
+        
+        master = pd.concat(df_list, ignore_index=True)
+        
+        # Ensure Code column exists and is properly formatted
+        if 'Code' not in master.columns:
+            raise ValueError("Code column not found in fetched data")
+        
+        # Filter by exact market match if specified
+        # This is needed because fdr.StockListing('KOSDAQ') returns both 'KOSDAQ' and 'KOSDAQ GLOBAL'
         if market:
             m = str(market).strip()
             master = master[master["Market"] == m]
+        
+        # Format ticker codes as 6-digit strings
         tickers = master["Code"].astype(str).str.zfill(6).unique().tolist()
         tickers = sorted(tickers)
-        # Use zero-filled ticker codes for dictionary keys to match ticker format
+        
+        # Create market mapping dictionary
         ticker_codes = master["Code"].astype(str).str.zfill(6).tolist()
         market_by_ticker = dict(zip(ticker_codes, master["Market"].tolist()))
+        
         return tickers, market_by_ticker
 
     def fetch_ohlcv(

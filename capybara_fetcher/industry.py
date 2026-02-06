@@ -86,6 +86,11 @@ def compute_industry_feature_frame(
     if "Code" not in m.columns:
         raise ValueError("master_df missing Code")
     m["Code"] = m["Code"].astype(str).str.strip().str.zfill(6)
+    
+    # Exclude ETF items from industry strength calculation
+    if "Market" in m.columns:
+        m = m[m["Market"] != "ETF"]
+    
     for c in ["IndustryLarge", "IndustryMid", "IndustrySmall"]:
         if c not in m.columns:
             m[c] = ""
@@ -138,10 +143,13 @@ def compute_industry_feature_frame(
 
     full_idx = pd.MultiIndex.from_product([keys, global_dates], names=["IndustryKey", "Date"])
     g = g.set_index(["IndustryKey", "Date"]).reindex(full_idx).sort_index()
-    g["IndustryReturn"] = pd.to_numeric(g["IndustryReturn"], errors="coerce").fillna(0.0)
-    g["ConstituentCount"] = pd.to_numeric(g["ConstituentCount"], errors="coerce").fillna(0).astype("int64")
+    # Optimize to float32 for storage efficiency
+    g["IndustryReturn"] = pd.to_numeric(g["IndustryReturn"], errors="coerce").fillna(0.0).astype("float32")
+    # Optimize to int16 (max constituents ~1200 fits safely in int16 max 32767)
+    g["ConstituentCount"] = pd.to_numeric(g["ConstituentCount"], errors="coerce").fillna(0).astype("int16")
 
-    g["IndustryClose"] = (1.0 + g["IndustryReturn"]).groupby(level=0, sort=False).cumprod() * 100.0
+    # Optimize to float32 for storage efficiency
+    g["IndustryClose"] = ((1.0 + g["IndustryReturn"]).groupby(level=0, sort=False).cumprod() * 100.0).astype("float32")
 
     out = g.reset_index()
     out["Level"] = level
@@ -162,7 +170,8 @@ def compute_industry_feature_frame(
         rs_sma = rs_raw.groupby(out["IndustryKey"]).transform(
             lambda s: s.rolling(window=MANSFIELD_RS_SMA_WINDOW, min_periods=MANSFIELD_RS_SMA_WINDOW).mean()
         )
-        out["MansfieldRS"] = (rs_raw / rs_sma - 1.0) * 100.0
+        # Optimize to float32 for storage efficiency
+        out["MansfieldRS"] = ((rs_raw / rs_sma - 1.0) * 100.0).astype("float32")
     else:
         out["MansfieldRS"] = pd.NA
 

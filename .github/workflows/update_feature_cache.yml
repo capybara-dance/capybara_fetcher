@@ -23,7 +23,7 @@ on:
           - fdr
   schedule:
     # Weekdays 17:00 KST == 08:00 UTC
-    - cron: '0 8 * * 1-5'
+    - cron: '0 0,8 * * 1-5'
 
 permissions:
   contents: write
@@ -48,6 +48,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
+    - name: Build KRX Stock Master (JSON with FDR name updates)
+      run: |
+        python scripts/build_krx_stock_master.py --kospi-xlsx data/kospi.xlsx --kosdaq-xlsx data/kosdaq.xlsx --output-json data/krx_stock_master.json --include-etf
 
     - name: Export KRX Stock Master (parquet)
       run: |
@@ -206,4 +210,4 @@ jobs:
           --cache-dir cache
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_TEST }}
