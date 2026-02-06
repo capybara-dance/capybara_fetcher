@@ -36,6 +36,7 @@ def compute_features(
 
     df = df.sort_values("Date")
     close = pd.to_numeric(df["Close"], errors="raise")
+    high = pd.to_numeric(df["High"], errors="raise")
 
     # Moving averages
     # Optimize to float32 for storage efficiency (sufficient precision for financial indicators)
@@ -67,9 +68,9 @@ def compute_features(
         for col_name in MRS_WINDOWS.keys():
             df[f"{col_name}_raw"] = pd.NA
 
-    # 1Y new high (Close is the highest close in last ~1 year trading days, inclusive)
-    roll_max = close.rolling(window=NEW_HIGH_WINDOW_TRADING_DAYS, min_periods=NEW_HIGH_WINDOW_TRADING_DAYS).max()
-    df["IsNewHigh1Y"] = close.eq(roll_max).astype("boolean")
+    # 1Y new high (High is the highest high in last ~1 year trading days, inclusive)
+    roll_max = high.rolling(window=NEW_HIGH_WINDOW_TRADING_DAYS, min_periods=NEW_HIGH_WINDOW_TRADING_DAYS).max()
+    df["IsNewHigh1Y"] = high.eq(roll_max).astype("boolean")
 
     return df
 

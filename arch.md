@@ -25,7 +25,7 @@
           - \(RS_{raw}(t) = Close_{ticker}(t) / Close_{benchmark}(t)\)
           - \(RS_{sma}(t) = SMA_{200}(RS_{raw}(t))\)
           - \(MansfieldRS(t) = (RS_{raw}(t) / RS_{sma}(t) - 1) * 100\)
-      - 1년 신고가 여부(종가 기준): `IsNewHigh1Y` (최근 252 거래일 롤링, `min_periods=252`)
+      - 1년 신고가 여부(고가 기준): `IsNewHigh1Y` (최근 252 거래일 롤링, `min_periods=252`)
 7.  **Industry Strength (A안)**:
     - `KRX Stock Master`의 업종 분류(대/중/소)에 따라 종목을 그룹핑
     - 업종 지수(기준값 100)를 **동일가중(일간 수익률 평균 → 누적)**으로 생성
