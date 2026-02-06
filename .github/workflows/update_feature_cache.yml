@@ -200,7 +200,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Send Release Stats to Telegram
-      if: success() && steps.files.outputs.has_meta == 'true'
+      if: success() && steps.files.outputs.has_meta == 'true' && secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
       run: |
         python scripts/send_release_stats_telegram.py \
           --cache-dir cache
