@@ -82,3 +82,43 @@ def test_orchestrator_fail_fast(tmp_path):
     # fail-fast: should not leave a parquet behind
     assert not (tmp_path / "feat.parquet").exists()
 
+
+def test_orchestrator_industry_with_mrs_indicators(tmp_path):
+    """Test that industry release data includes MRS_* indicators."""
+    cfg = CacheBuildConfig(
+        start_date="20250101",
+        end_date="20251231",
+        output_path=str(tmp_path / "feat.parquet"),
+        meta_output_path=str(tmp_path / "feat.meta.json"),
+        industry_output_path=str(tmp_path / "industry.parquet"),
+        industry_meta_output_path=str(tmp_path / "industry.meta.json"),
+        industry_benchmark="universe",
+        max_workers=2,
+        test_limit=2,
+        adjusted=True,
+    )
+    meta = run_cache_build(cfg, provider=FakeProvider())
+    assert meta["run_status"] == "success"
+    assert (tmp_path / "industry.parquet").exists()
+    assert (tmp_path / "industry.meta.json").exists()
+    
+    # Load and verify industry data has MRS columns
+    industry_df = pd.read_parquet(tmp_path / "industry.parquet")
+    assert "MRS_1M" in industry_df.columns
+    assert "MRS_3M" in industry_df.columns
+    assert "MRS_6M" in industry_df.columns
+    assert "MRS_12M" in industry_df.columns
+    
+    # Verify that raw columns are not in the output
+    assert "MRS_1M_raw" not in industry_df.columns
+    assert "MRS_3M_raw" not in industry_df.columns
+    assert "MRS_6M_raw" not in industry_df.columns
+    assert "MRS_12M_raw" not in industry_df.columns
+    
+    # Verify MRS values are in valid percentile range (0-100)
+    for col in ["MRS_1M", "MRS_3M", "MRS_6M", "MRS_12M"]:
+        non_null = industry_df[col].dropna()
+        if len(non_null) > 0:
+            assert non_null.min() >= 0.0
+            assert non_null.max() <= 100.0
+
