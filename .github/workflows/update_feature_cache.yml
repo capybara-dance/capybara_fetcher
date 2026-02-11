@@ -90,7 +90,43 @@ jobs:
           --industry-benchmark universe \
           --krx-stock-master-json data/krx_stock_master.json \
           --provider "$PROVIDER"
+
+    - name: Validate Data Quality
+      id: validate
+      continue-on-error: true
+      run: |
+        echo "Validating generated data before release..."
+        python scripts/validate_data.py --cache-dir cache 2> validation_errors.txt
+        VALIDATION_EXIT_CODE=$?
+        if [ $VALIDATION_EXIT_CODE -ne 0 ]; then
+          echo "validation_failed=true" >> "$GITHUB_OUTPUT"
+          echo "Validation failed with exit code: $VALIDATION_EXIT_CODE"
+        else
+          echo "validation_failed=false" >> "$GITHUB_OUTPUT"
+          echo "Validation passed successfully"
+        fi
+        exit $VALIDATION_EXIT_CODE
+
+    - name: Send Validation Failure to Telegram
+      if: failure() && steps.validate.outputs.validation_failed == 'true'
+      run: |
+        # Read validation errors and send to Telegram
+        if [ -f validation_errors.txt ]; then
+          ERRORS=$(cat validation_errors.txt)
+        else
+          ERRORS="Validation failed but no error details available"
+        fi
+        
+        python scripts/send_release_stats_telegram.py \
+          --cache-dir cache \
+          --validation-failed \
+          --validation-errors "$ERRORS"
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_TEST }}
+        
     - name: Detect Generated Files
+      if: success()
       id: files
       run: |
         if [ -f "cache/krx_stock_master.parquet" ]; then
@@ -120,7 +156,7 @@ jobs:
         fi
         
     - name: Upload Artifact (meta only)
-      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
+      if: success() && steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
       uses: actions/upload-artifact@v4
       with:
         name: feature-cache-meta
@@ -130,7 +166,7 @@ jobs:
         retention-days: 7
 
     - name: Upload Artifact (full, without industry)
-      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry != 'true'
+      if: success() && steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry != 'true'
       uses: actions/upload-artifact@v4
       with:
         name: feature-cache-parquet
@@ -141,7 +177,7 @@ jobs:
         retention-days: 7
 
     - name: Upload Artifact (full, with industry)
-      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry == 'true'
+      if: success() && steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: feature-cache-parquet
@@ -154,11 +190,12 @@ jobs:
         retention-days: 7
 
     - name: Generate Tag Name
+      if: success()
       id: tag
       run: echo "tag_name=data-$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
 
     - name: Create Release (meta only)
-      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
+      if: success() && steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature != 'true'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.tag.outputs.tag_name }}
@@ -172,7 +209,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create Release (full, without industry)
-      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry != 'true'
+      if: success() && steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry != 'true'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.tag.outputs.tag_name }}
@@ -187,7 +224,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Create Release (full, with industry)
-      if: steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry == 'true'
+      if: success() && steps.files.outputs.has_meta == 'true' && steps.files.outputs.has_feature == 'true' && steps.files.outputs.has_industry == 'true'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.tag.outputs.tag_name }}

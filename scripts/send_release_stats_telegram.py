@@ -59,6 +59,55 @@ def format_number(num: int) -> str:
     return f"{num:,}"
 
 
+def build_validation_failure_message(cache_dir: str = "cache", validation_errors: list[str] = None) -> str:
+    """Build Telegram message for validation failure."""
+    message_lines = ["❌ <b>Feature Cache Validation Failed</b>", ""]
+    message_lines.append("<b>⚠️ Release Blocked - Data Quality Issues Detected</b>")
+    message_lines.append("")
+    
+    # List validation errors
+    if validation_errors:
+        message_lines.append("<b>🔍 Validation Errors:</b>")
+        for i, error in enumerate(validation_errors, 1):
+            # Escape HTML special characters in error messages
+            error_escaped = error.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            message_lines.append(f"  {i}. {error_escaped}")
+        message_lines.append("")
+    
+    # Show file statistics for context
+    message_lines.append("<b>📊 Generated Files:</b>")
+    files_info = [
+        ("krx_stock_master.parquet", "KRX Stock Master"),
+        ("korea_universe_feature_frame.parquet", "Universe Features"),
+        ("korea_industry_feature_frame.parquet", "Industry Features"),
+    ]
+    
+    for filename, label in files_info:
+        file_path = os.path.join(cache_dir, filename)
+        if os.path.exists(file_path):
+            size_mb = get_file_size_mb(file_path)
+            row_count = get_parquet_row_count(file_path)
+            size_str = format_filesize(size_mb)
+            if row_count > 0:
+                message_lines.append(f"  • {label}: {size_str} ({format_number(row_count)} rows)")
+            else:
+                message_lines.append(f"  • {label}: {size_str}")
+    
+    message_lines.append("")
+    
+    # Show ticker count if available in metadata
+    universe_meta_path = os.path.join(cache_dir, "korea_universe_feature_frame.meta.json")
+    universe_meta = load_meta_json(universe_meta_path)
+    if universe_meta and "ticker_count" in universe_meta:
+        ticker_count = universe_meta.get("ticker_count")
+        message_lines.append(f"<b>📈 Ticker Count:</b> {format_number(ticker_count)}")
+        message_lines.append("")
+    
+    message_lines.append("⛔ <b>Action Required:</b> Fix data quality issues before releasing.")
+    
+    return "\n".join(message_lines)
+
+
 def build_telegram_message(cache_dir: str = "cache") -> str:
     """Build Telegram message with release statistics."""
     message_lines = ["🎉 <b>Feature Cache Release Report</b>", ""]
@@ -166,6 +215,8 @@ if __name__ == "__main__":
     parser.add_argument("--bot-token", help="Telegram bot token (or TELEGRAM_BOT_TOKEN env var)")
     parser.add_argument("--chat-id", help="Telegram chat ID (or TELEGRAM_CHAT_ID env var)")
     parser.add_argument("--dry-run", action="store_true", help="Print message without sending")
+    parser.add_argument("--validation-failed", action="store_true", help="Send validation failure message")
+    parser.add_argument("--validation-errors", help="Validation error messages (one per line)")
 
     args = parser.parse_args()
 
@@ -174,7 +225,15 @@ if __name__ == "__main__":
     chat_id = args.chat_id or os.environ.get("TELEGRAM_CHAT_ID", "")
 
     # Build message
-    message = build_telegram_message(args.cache_dir)
+    if args.validation_failed:
+        # Parse validation errors from argument (newline-separated)
+        validation_errors = []
+        if args.validation_errors:
+            validation_errors = args.validation_errors.strip().split("\n")
+        message = build_validation_failure_message(args.cache_dir, validation_errors)
+    else:
+        message = build_telegram_message(args.cache_dir)
+    
     print(message)
 
     if args.dry_run:
