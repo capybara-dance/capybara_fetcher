@@ -126,11 +126,11 @@ def validate_data_completeness(df: pd.DataFrame, meta: dict[str, Any]) -> None:
     if actual_tickers == 0:
         raise ValidationError("Universe data has no tickers")
     
-    # Requirement: Ticker count must be greater than 3800
-    MIN_TICKER_COUNT = 3800
-    if actual_tickers <= MIN_TICKER_COUNT:
+    # Requirement: Ticker count must be strictly greater than 3800 (exclusive)
+    REQUIRED_TICKER_THRESHOLD = 3800
+    if actual_tickers <= REQUIRED_TICKER_THRESHOLD:
         raise ValidationError(
-            f"Ticker count too low: {actual_tickers} (must be > {MIN_TICKER_COUNT})"
+            f"Ticker count too low: {actual_tickers} (must be > {REQUIRED_TICKER_THRESHOLD})"
         )
     
     if meta_ticker_count > 0 and actual_tickers < meta_ticker_count * 0.8:
