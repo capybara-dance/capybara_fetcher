@@ -15,6 +15,7 @@ Exit codes:
 Validation errors are written to stderr for capture by workflow.
 """
 import argparse
+import html
 import json
 import logging
 import sys
@@ -39,7 +40,7 @@ def validate_file_exists(path: Path, file_type: str, min_size_mb: float | None =
     Args:
         path: Path to the file
         file_type: Description of the file type for error messages
-        min_size_mb: Minimum required file size in MB (optional)
+        min_size_mb: Minimum required file size in MB (optional, exclusive)
     """
     if not path.exists():
         raise ValidationError(f"{file_type} file not found: {path}")
@@ -52,7 +53,7 @@ def validate_file_exists(path: Path, file_type: str, min_size_mb: float | None =
     if file_size_bytes == 0:
         raise ValidationError(f"{file_type} file is empty: {path}")
     
-    # Check minimum size requirement if specified
+    # Check minimum size requirement if specified (exclusive: must be strictly greater)
     if min_size_mb is not None and file_size_mb <= min_size_mb:
         raise ValidationError(
             f"{file_type} file size too small: {file_size_mb:.2f} MB (must be > {min_size_mb} MB)"

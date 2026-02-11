@@ -153,7 +153,7 @@ def test_validate_data_completeness_too_few_tickers():
     """Test data completeness validation fails for too few tickers."""
     df = pd.DataFrame({
         "Date": ["2025-01-01"] * 3800,
-        "Ticker": [f"{i:06d}" for i in range(3800)],  # Exactly 3800, should fail
+        "Ticker": [f"{i:06d}" for i in range(3800)],  # Exactly 3800 (fails since requirement is > 3800)
     })
     meta = {"rows": 3800, "ticker_count": 3800}
     
@@ -308,24 +308,24 @@ def test_validation_script_integration(tmp_path):
     cache_dir = tmp_path / "cache"
     cache_dir.mkdir()
     
-    # Create valid universe data
+    # Create universe data with too few tickers (will fail validation)
     universe_df = pd.DataFrame({
-        "Date": ["2025-01-01"] * 4500,
-        "Ticker": [f"{i:06d}" for i in range(4500)],
-        "Open": range(4500),
-        "High": range(4500),
-        "Low": range(4500),
-        "Close": range(4500),
-        "Volume": [1000] * 4500,
+        "Date": ["2025-01-01"] * 3500,  # Less than 3800 threshold
+        "Ticker": [f"{i:06d}" for i in range(3500)],
+        "Open": range(3500),
+        "High": range(3500),
+        "Low": range(3500),
+        "Close": range(3500),
+        "Volume": [1000] * 3500,
     })
     universe_file = cache_dir / "korea_universe_feature_frame.parquet"
     universe_df.to_parquet(universe_file)
     
-    # Create valid metadata
+    # Create metadata indicating success
     meta = {
         "run_status": "success",
-        "ticker_count": 4500,
-        "rows": 4500,
+        "ticker_count": 3500,
+        "rows": 3500,
         "columns": ["Date", "Ticker", "Open", "High", "Low", "Close", "Volume"],
     }
     meta_file = cache_dir / "korea_universe_feature_frame.meta.json"
@@ -340,7 +340,7 @@ def test_validation_script_integration(tmp_path):
     master_file = cache_dir / "krx_stock_master.parquet"
     master_df.to_parquet(master_file)
     
-    # Run validation script
+    # Run validation script - should fail due to file size and ticker count
     script_path = Path(__file__).parent.parent / "scripts" / "validate_data.py"
     result = subprocess.run(
         [sys.executable, str(script_path), "--cache-dir", str(cache_dir), "--skip-krx-master"],
@@ -348,7 +348,8 @@ def test_validation_script_integration(tmp_path):
         text=True,
     )
     
-    # Should succeed but fail on file size check (universe file is too small)
-    # Since we can't easily create a 300MB+ file in tests, this will fail
-    # but we can verify the script runs
-    assert result.returncode in [0, 1]  # Either success or validation failure
+    # Should fail validation (file size < 300MB and ticker count <= 3800)
+    assert result.returncode == 1, f"Expected validation to fail but got returncode {result.returncode}"
+    # Check that stderr contains the expected error about file size or ticker count
+    assert "file size too small" in result.stderr or "Ticker count too low" in result.stderr, \
+        f"Expected validation error in stderr, got: {result.stderr}"

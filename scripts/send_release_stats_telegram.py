@@ -6,6 +6,7 @@ Collects file sizes, row counts, and metadata from generated cache files
 and sends a formatted report to a Telegram chat.
 """
 
+import html
 import json
 import os
 import sys
@@ -65,12 +66,12 @@ def build_validation_failure_message(cache_dir: str = "cache", validation_errors
     message_lines.append("<b>⚠️ Release Blocked - Data Quality Issues Detected</b>")
     message_lines.append("")
     
-    # List validation errors
+    # List validation errors with proper HTML escaping
     if validation_errors:
         message_lines.append("<b>🔍 Validation Errors:</b>")
         for i, error in enumerate(validation_errors, 1):
-            # Escape HTML special characters in error messages
-            error_escaped = error.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            # Use html.escape for proper HTML escaping
+            error_escaped = html.escape(error)
             message_lines.append(f"  {i}. {error_escaped}")
         message_lines.append("")
     
