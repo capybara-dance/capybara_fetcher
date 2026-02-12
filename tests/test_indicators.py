@@ -1,6 +1,6 @@
 import pandas as pd
 
-from capybara_fetcher.indicators import compute_features, MA_WINDOWS, MRS_WINDOWS
+from capybara_fetcher.indicators import compute_features, MA_WINDOWS, MRS_WINDOWS, VMA_WINDOWS
 
 
 def test_compute_features_adds_columns_and_new_high_flag():
@@ -23,6 +23,8 @@ def test_compute_features_adds_columns_and_new_high_flag():
     out = compute_features(df, benchmark_close_by_date=bench)
     for w in MA_WINDOWS:
         assert f"SMA_{w}" in out.columns
+    for w in VMA_WINDOWS:
+        assert f"VMA_{w}" in out.columns
     assert "MansfieldRS" in out.columns
     assert "IsNewHigh1Y" in out.columns
     # At the very end, close is increasing so last point should be new high (after 252 days)
@@ -122,5 +124,47 @@ def test_mrs_percentile_conversion():
             assert date_data.iloc[0]["MRS_1M"] == date_data["MRS_1M"].max()
             # Lowest raw value should have lowest percentile
             assert date_data.iloc[-1]["MRS_1M"] == date_data["MRS_1M"].min()
+
+
+def test_volume_moving_averages():
+    """Test that volume moving averages are calculated correctly."""
+    dates = pd.date_range("2025-01-01", periods=100, freq="D")
+    # Create increasing volume
+    volumes = list(range(100, 200))
+    df = pd.DataFrame(
+        {
+            "Date": dates,
+            "Open": [100] * 100,
+            "High": [110] * 100,
+            "Low": [90] * 100,
+            "Close": [100] * 100,
+            "Volume": volumes,
+            "TradingValue": [None] * 100,
+            "Change": [None] * 100,
+            "Ticker": ["000001"] * 100,
+        }
+    )
+    bench = pd.Series([100.0] * 100, index=dates.normalize())
+    
+    out = compute_features(df, benchmark_close_by_date=bench)
+    
+    # Check that VMA columns exist
+    assert "VMA_20" in out.columns
+    assert "VMA_50" in out.columns
+    
+    # Check that VMA_20 has values after 20 days
+    assert out["VMA_20"].notna().sum() == 81  # 100 - 20 + 1
+    assert pd.isna(out["VMA_20"].iloc[18])  # 19th day should be NA (0-indexed)
+    assert pd.notna(out["VMA_20"].iloc[19])  # 20th day should have a value
+    
+    # Check that VMA_50 has values after 50 days
+    assert out["VMA_50"].notna().sum() == 51  # 100 - 50 + 1
+    assert pd.isna(out["VMA_50"].iloc[48])  # 49th day should be NA (0-indexed)
+    assert pd.notna(out["VMA_50"].iloc[49])  # 50th day should have a value
+    
+    # Verify calculation for VMA_20 at day 20 (index 19)
+    # Should be average of volumes[0:20] = range(100, 120)
+    expected_vma_20 = sum(range(100, 120)) / 20
+    assert abs(out["VMA_20"].iloc[19] - expected_vma_20) < 0.01
 
 

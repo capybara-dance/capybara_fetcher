@@ -4,6 +4,7 @@ import pandas as pd
 
 
 MA_WINDOWS = [5, 10, 20, 60, 120, 200]
+VMA_WINDOWS = [20, 50]  # Volume Moving Average windows
 NEW_HIGH_WINDOW_TRADING_DAYS = 252
 MANSFIELD_RS_SMA_WINDOW = 200
 
@@ -37,11 +38,16 @@ def compute_features(
     df = df.sort_values("Date")
     close = pd.to_numeric(df["Close"], errors="raise")
     high = pd.to_numeric(df["High"], errors="raise")
+    volume = pd.to_numeric(df["Volume"], errors="coerce")
 
     # Moving averages
     # Optimize to float32 for storage efficiency (sufficient precision for financial indicators)
     for w in MA_WINDOWS:
         df[f"SMA_{w}"] = close.rolling(window=w, min_periods=w).mean().astype("float32")
+    
+    # Volume Moving averages
+    for w in VMA_WINDOWS:
+        df[f"VMA_{w}"] = volume.rolling(window=w, min_periods=w).mean().astype("float32")
 
     # Mansfield Relative Strength (vs benchmark)
     if benchmark_close_by_date is not None and not benchmark_close_by_date.empty:
