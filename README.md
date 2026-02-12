@@ -234,6 +234,7 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
   "file_size_bytes": 123456789,
   "indicators": {
     "moving_averages": [5, 10, 20, 60, 120, 200],
+    "volume_moving_averages": [20, 50],
     "mansfield_rs": {
       "benchmark_ticker": "069500",
       "window": 200,
