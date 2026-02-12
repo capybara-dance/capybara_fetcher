@@ -93,7 +93,6 @@ jobs:
 
     - name: Validate Data Quality
       id: validate
-      continue-on-error: true
       run: |
         echo "Validating generated data before release..."
         python scripts/validate_data.py --cache-dir cache 2> validation_errors.txt
