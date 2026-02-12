@@ -45,7 +45,7 @@ def compute_features(
     for w in MA_WINDOWS:
         df[f"SMA_{w}"] = close.rolling(window=w, min_periods=w).mean().astype("float32")
     
-    # Volume Moving averages
+    # Volume moving averages
     for w in VMA_WINDOWS:
         df[f"VMA_{w}"] = volume.rolling(window=w, min_periods=w).mean().astype("float32")
 
