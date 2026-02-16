@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from .provider import DataProvider
 from .standardize import standardize_ohlcv
-from .indicators import compute_features, MA_WINDOWS, NEW_HIGH_WINDOW_TRADING_DAYS, MANSFIELD_RS_SMA_WINDOW, MRS_WINDOWS
+from .indicators import compute_features, MA_WINDOWS, NEW_HIGH_WINDOW_TRADING_DAYS, NEW_LOW_WINDOW_TRADING_DAYS, MANSFIELD_RS_SMA_WINDOW, MRS_WINDOWS
 from .industry import (
     INDUSTRY_LEVELS,
     compute_industry_feature_frame,
@@ -298,7 +298,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
         "ticker_count": len(tickers),
         "rows": int(len(full_df)),
         "columns": list(full_df.columns),
-        "features": [f"SMA_{w}" for w in MA_WINDOWS] + ["MansfieldRS", "IsNewHigh1Y"] + list(MRS_WINDOWS.keys()),
+        "features": [f"SMA_{w}" for w in MA_WINDOWS] + ["MansfieldRS", "IsNewHigh1Y", "IsNewLow1Y"] + list(MRS_WINDOWS.keys()),
         "indicators": {
             "moving_averages": MA_WINDOWS,
             "mansfield_rs": {
@@ -312,6 +312,7 @@ def run_cache_build(cfg: CacheBuildConfig, *, provider: DataProvider) -> dict:
                 "description": "Cross-sectional percentile ranks (0-100.0) per date",
             },
             "new_high_1y": {"window_trading_days": NEW_HIGH_WINDOW_TRADING_DAYS},
+            "new_low_1y": {"window_trading_days": NEW_LOW_WINDOW_TRADING_DAYS},
         },
         "industry_cache": {
             "enabled": bool(cfg.industry_output_path),

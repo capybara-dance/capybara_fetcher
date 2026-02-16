@@ -5,6 +5,7 @@ import pandas as pd
 
 MA_WINDOWS = [5, 10, 20, 60, 120, 200]
 NEW_HIGH_WINDOW_TRADING_DAYS = 252
+NEW_LOW_WINDOW_TRADING_DAYS = 252
 MANSFIELD_RS_SMA_WINDOW = 200
 
 # Multi-timeframe Mansfield RS SMA windows (trading days)
@@ -37,6 +38,7 @@ def compute_features(
     df = df.sort_values("Date")
     close = pd.to_numeric(df["Close"], errors="raise")
     high = pd.to_numeric(df["High"], errors="raise")
+    low = pd.to_numeric(df["Low"], errors="raise")
 
     # Moving averages
     # Optimize to float32 for storage efficiency (sufficient precision for financial indicators)
@@ -71,6 +73,10 @@ def compute_features(
     # 1Y new high (High is the highest high in last ~1 year trading days, inclusive)
     roll_max = high.rolling(window=NEW_HIGH_WINDOW_TRADING_DAYS, min_periods=NEW_HIGH_WINDOW_TRADING_DAYS).max()
     df["IsNewHigh1Y"] = high.eq(roll_max).astype("boolean")
+
+    # 1Y new low (Low is the lowest low in last ~1 year trading days, inclusive)
+    roll_min = low.rolling(window=NEW_LOW_WINDOW_TRADING_DAYS, min_periods=NEW_LOW_WINDOW_TRADING_DAYS).min()
+    df["IsNewLow1Y"] = low.eq(roll_min).astype("boolean")
 
     return df
 
