@@ -112,18 +112,22 @@ SMA_n(t) = (Close(t) + Close(t-1) + ... + Close(t-n+1)) / n
   - 0에 가까울수록 상대적 성과가 부진
   - 각 날짜의 전체 종목 중 상대적 순위를 나타냄 (횡단면 비교)
 
-#### 신고가 여부
+#### 신고가/신저가 여부
 | 컬럼명 | 데이터 타입 | 설명 |
 |--------|------------|------|
 | `IsNewHigh1Y` | boolean | 1년(252 거래일) 신고가 여부 |
+| `IsNewLow1Y` | boolean | 1년(252 거래일) 신저가 여부 |
 
 **계산 방식**:
 ```
-IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
+IsNewHigh1Y(t) = High(t) == max(High(t-251), ..., High(t))
+IsNewLow1Y(t) = Low(t) == min(Low(t-251), ..., Low(t))
 ```
 - **윈도우**: 252 거래일 (약 1년)
 - **최소 기간**: 252 거래일 미만인 경우 NA
-- **의미**: True이면 해당 일자가 최근 1년 내 최고 종가
+- **의미**: 
+  - `IsNewHigh1Y`가 True이면 해당 일자가 최근 1년 내 최고 고가
+  - `IsNewLow1Y`가 True이면 해당 일자가 최근 1년 내 최저 저가
 
 ---
 
@@ -215,7 +219,7 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
   "tickers_requested": 1234,
   "tickers_succeeded": 1234,
   "row_count": 3456789,
-  "column_count": 21,
+  "column_count": 22,
   "file_size_bytes": 123456789,
   "indicators": {
     "moving_averages": [5, 10, 20, 60, 120, 200],
@@ -236,6 +240,9 @@ IsNewHigh1Y(t) = Close(t) == max(Close(t-251), ..., Close(t))
       "adjusted": true
     },
     "new_high_1y": {
+      "window": 252
+    },
+    "new_low_1y": {
       "window": 252
     }
   },
