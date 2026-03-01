@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .indicators import MANSFIELD_RS_SMA_WINDOW
+from .indicators import MANSFIELD_RS_SMA_WINDOW, MRS_WINDOWS
 
 
 INDUSTRY_LEVEL_L = "L"
@@ -172,21 +172,36 @@ def compute_industry_feature_frame(
         )
         # Optimize to float32 for storage efficiency
         out["MansfieldRS"] = ((rs_raw / rs_sma - 1.0) * 100.0).astype("float32")
+        
+        # Multi-timeframe MRS (raw values, percentiles calculated later in orchestrator)
+        for col_name, window in MRS_WINDOWS.items():
+            rs_sma_n = rs_raw.groupby(out["IndustryKey"]).transform(
+                lambda s: s.rolling(window=window, min_periods=window).mean()
+            )
+            out[f"{col_name}_raw"] = ((rs_raw / rs_sma_n - 1.0) * 100.0).astype("float32")
     else:
         out["MansfieldRS"] = pd.NA
+        for col_name in MRS_WINDOWS.keys():
+            out[f"{col_name}_raw"] = pd.NA
 
-    return out[
-        [
-            "Date",
-            "Level",
-            "IndustryLarge",
-            "IndustryMid",
-            "IndustrySmall",
-            "IndustryKey",
-            "IndustryClose",
-            "IndustryReturn",
-            "ConstituentCount",
-            "MansfieldRS",
-        ]
-    ].sort_values(["Level", "IndustryLarge", "IndustryMid", "IndustrySmall", "Date"])
+    # Build column list dynamically to include MRS raw columns
+    output_columns = [
+        "Date",
+        "Level",
+        "IndustryLarge",
+        "IndustryMid",
+        "IndustrySmall",
+        "IndustryKey",
+        "IndustryClose",
+        "IndustryReturn",
+        "ConstituentCount",
+        "MansfieldRS",
+    ]
+    # Add MRS raw columns if they exist
+    for col_name in MRS_WINDOWS.keys():
+        raw_col = f"{col_name}_raw"
+        if raw_col in out.columns:
+            output_columns.append(raw_col)
+    
+    return out[output_columns].sort_values(["Level", "IndustryLarge", "IndustryMid", "IndustrySmall", "Date"])
 
