@@ -107,7 +107,7 @@ jobs:
         exit $VALIDATION_EXIT_CODE
 
     - name: Send Validation Failure to Telegram
-      if: failure() && steps.validate.outputs.validation_failed == 'true'
+      if: failure()
       run: |
         # Read validation errors and send to Telegram
         if [ -f validation_errors.txt ]; then
