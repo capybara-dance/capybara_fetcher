@@ -410,7 +410,8 @@ streamlit run streamlit_app.py
 
 ## 8. 업데이트 주기
 
-- **자동 업데이트**: 평일 오후 5시 (KST) GitHub Actions 스케줄 실행
+- **자동 업데이트**: 한국시간 평일 기준 매 1시간마다 GitHub Actions 스케줄 실행
+- **릴리즈 정리**: `data-` 태그 릴리즈 중 10일이 지난 항목은 워크플로우에서 자동 삭제
 - **수동 업데이트**: GitHub Actions의 "Update Feature Cache" 워크플로우를 수동으로 실행 가능
 
 ---

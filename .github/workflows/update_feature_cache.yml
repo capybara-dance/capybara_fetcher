@@ -22,8 +22,11 @@ on:
           - korea_investment
           - fdr
   schedule:
-    # Weekdays 17:00 KST == 08:00 UTC
-    - cron: '0 0,8 * * 1-5'
+    # Every hour on KST weekdays (Mon-Fri)
+    # KST weekday 09:00-23:00 => UTC Mon-Fri 00:00-14:00
+    - cron: '0 0-14 * * 1-5'
+    # KST weekday 00:00-08:00 => UTC Sun-Thu 15:00-23:00
+    - cron: '0 15-23 * * 0-4'
 
 permissions:
   contents: write
@@ -247,3 +250,57 @@ jobs:
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID_TEST }}
+
+    - name: Cleanup Old Releases (older than 10 days)
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const retentionDays = 10;
+          const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+          core.info(`Cutoff date: ${cutoff.toISOString()}`);
+
+          const releases = await github.paginate(github.rest.repos.listReleases, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            per_page: 100,
+          });
+
+          for (const release of releases) {
+            const tagName = release.tag_name || "";
+            if (!tagName.startsWith("data-")) {
+              continue;
+            }
+
+            const publishedAt = release.published_at || release.created_at;
+            if (!publishedAt) {
+              continue;
+            }
+
+            const publishedDate = new Date(publishedAt);
+            if (publishedDate >= cutoff) {
+              continue;
+            }
+
+            core.info(`Deleting release ${release.id} (${tagName}) from ${publishedAt}`);
+            await github.rest.repos.deleteRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+            });
+
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${tagName}`,
+              });
+              core.info(`Deleted tag ${tagName}`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.warning(`Tag ${tagName} already deleted.`);
+              } else {
+                throw error;
+              }
+            }
+          }
