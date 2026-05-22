@@ -22,17 +22,41 @@ on:
           - korea_investment
           - fdr
   schedule:
-    # Every hour across full KST weekdays (Mon-Fri 00:00-23:00)
-    # Segment A: KST 09:00-23:00 => UTC Mon-Fri 00:00-14:00
-    - cron: '0 0-14 * * 1-5'
-    # Segment B: KST 00:00-08:00 => UTC Sun-Thu 15:00-23:00
-    - cron: '0 15-23 * * 0-4'
+    # KST weekday 07:00-18:00, hourly.
+    # Runs at 07:00-08:00 KST are skipped by the check-time job (guard: KST >= 09:00).
+    # Actual releases are produced only for KST 09:00-18:00.
+    # Segment A: KST 09:00-18:00 Mon-Fri => UTC 00:00-09:00 Mon-Fri
+    - cron: '0 0-9 * * 1-5'
+    # Segment B: KST 07:00-08:00 Mon-Fri => UTC 22:00-23:00 Sun-Thu
+    - cron: '0 22-23 * * 0-4'
 
 permissions:
   contents: write
 
 jobs:
+  check-time:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
+    outputs:
+      should_run: ${{ steps.time_check.outputs.should_run }}
+    steps:
+    - name: Check KST Time Window
+      id: time_check
+      run: |
+        KST_HOUR=$(date +'%H' | sed 's/^0//')
+        echo "Current KST hour: ${KST_HOUR}"
+        if [ "${{ github.event_name }}" = "schedule" ] && [ "${KST_HOUR}" -lt 9 ]; then
+          echo "Before 09:00 KST (hour=${KST_HOUR}), skipping scheduled run"
+          echo "should_run=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "Within window or manual dispatch, proceeding"
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+        fi
+
   generate-cache:
+    needs: check-time
+    if: needs.check-time.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     env:
       TZ: Asia/Seoul
