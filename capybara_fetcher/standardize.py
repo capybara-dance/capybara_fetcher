@@ -76,6 +76,17 @@ def standardize_ohlcv(raw_df: pd.DataFrame, *, ticker: str) -> pd.DataFrame:
     df["Close"] = df["Close"].astype("Int32")
 
     df = df.dropna(subset=["Date", "Close"]).sort_values("Date")
+
+    # pykrx can expose an empty daily placeholder for a suspended/inactive
+    # security. It is distinguishable from an invalid traded row only when
+    # every OHLC value and volume are zero, so keep all other zero-price rows
+    # for the release validator to reject and report.
+    empty_placeholder = (
+        df[["Open", "High", "Low", "Close"]].eq(0).fillna(False).all(axis=1)
+        & df["Volume"].eq(0).fillna(False)
+    )
+    df = df.loc[~empty_placeholder]
+
     # Enforce one row per date (keep last) to avoid downstream index collisions.
     df = df.drop_duplicates(subset=["Date"], keep="last")
 
@@ -87,4 +98,3 @@ def standardize_ohlcv(raw_df: pd.DataFrame, *, ticker: str) -> pd.DataFrame:
         raise ValueError("No valid rows after standardization")
 
     return df
-

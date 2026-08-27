@@ -127,7 +127,7 @@ def validate_data_completeness(df: pd.DataFrame, meta: dict[str, Any]) -> None:
         raise ValidationError("Universe data has no tickers")
     
     # Requirement: Ticker count must be strictly greater than 3800 (exclusive)
-    REQUIRED_TICKER_THRESHOLD = 3700
+    REQUIRED_TICKER_THRESHOLD = 3800
     if actual_tickers <= REQUIRED_TICKER_THRESHOLD:
         raise ValidationError(
             f"Ticker count too low: {actual_tickers} (must be > {REQUIRED_TICKER_THRESHOLD})"
@@ -161,7 +161,19 @@ def validate_data_quality(df: pd.DataFrame) -> None:
         close_min = df["Close"].min()
         close_max = df["Close"].max()
         if close_min <= 0:
-            raise ValidationError(f"Close prices have invalid values <= 0: min={close_min}")
+            invalid = df.loc[df["Close"] <= 0]
+            detail_columns = [
+                col
+                for col in ["Date", "Ticker", "Open", "High", "Low", "Close", "Volume"]
+                if col in invalid.columns
+            ]
+            examples = invalid[detail_columns].head(10).copy()
+            if "Date" in examples.columns:
+                examples["Date"] = pd.to_datetime(examples["Date"]).dt.strftime("%Y-%m-%d")
+            raise ValidationError(
+                f"Close prices have {len(invalid)} invalid values <= 0: min={close_min}; "
+                f"examples={examples.to_dict(orient='records')}"
+            )
         if close_max > 10_000_000:  # Sanity check for extreme values
             logger.warning(f"⚠ Close prices have very high values: max={close_max}")
         logger.info(f"✓ Close price range: {close_min:.2f} to {close_max:.2f}")

@@ -30,3 +30,38 @@ def test_standardize_raises_on_empty():
     with pytest.raises(ValueError):
         standardize_ohlcv(pd.DataFrame(), ticker="000000")
 
+
+def test_standardize_drops_empty_zero_ohlcv_placeholder():
+    idx = pd.to_datetime(["2025-01-02", "2025-01-03"])
+    raw = pd.DataFrame(
+        {
+            "시가": [100, 0],
+            "고가": [120, 0],
+            "저가": [90, 0],
+            "종가": [110, 0],
+            "거래량": [1000, 0],
+        },
+        index=idx,
+    )
+
+    out = standardize_ohlcv(raw, ticker="005930")
+
+    assert out["Date"].tolist() == [pd.Timestamp("2025-01-02")]
+
+
+def test_standardize_preserves_non_placeholder_zero_close():
+    idx = pd.to_datetime(["2025-01-02"])
+    raw = pd.DataFrame(
+        {
+            "시가": [100],
+            "고가": [120],
+            "저가": [90],
+            "종가": [0],
+            "거래량": [1000],
+        },
+        index=idx,
+    )
+
+    out = standardize_ohlcv(raw, ticker="005930")
+
+    assert out["Close"].tolist() == [0]

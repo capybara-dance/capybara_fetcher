@@ -204,8 +204,14 @@ def test_validate_data_quality_invalid_prices():
         "Volume": [1000] * 100,
     })
     
-    with pytest.raises(ValidationError, match="invalid values"):
+    with pytest.raises(ValidationError, match="invalid values") as exc_info:
         validate_data_quality(df)
+
+    message = str(exc_info.value)
+    assert "1 invalid values" in message
+    assert "005930" in message
+    assert "2025-01-01" in message
+    assert "Close': -10" in message
 
 
 def test_validate_data_quality_negative_volume():
