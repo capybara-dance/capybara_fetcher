@@ -14,7 +14,7 @@ import pandas as pd
 import FinanceDataReader as fdr
 
 from ..provider import DataProvider
-from .provider_utils import load_master_json
+from .provider_utils import add_delisted_from_master, load_master_json
 
 
 @dataclass(frozen=True)
@@ -125,8 +125,13 @@ class FdrProvider(DataProvider):
         # Create market mapping dictionary
         ticker_codes = master["Code"].astype(str).str.zfill(6).tolist()
         market_by_ticker = dict(zip(ticker_codes, master["Market"].tolist()))
-        
-        return tickers, market_by_ticker
+
+        # `fdr.StockListing()` describes **today**, so on its own this list can only
+        # ever contain survivors. The orchestrator iterates this list rather than the
+        # rows of `load_stock_master()`, so delisted names would never be fetched.
+        return add_delisted_from_master(
+            tickers, market_by_ticker, self.load_stock_master(), market=market
+        )
 
     def fetch_ohlcv(
         self,

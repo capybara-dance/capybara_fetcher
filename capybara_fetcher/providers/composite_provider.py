@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from .provider_utils import add_delisted_from_master
+
 from ..provider import DataProvider
 from .pykrx_provider import PykrxProvider
 from .korea_investment_provider import KoreaInvestmentProvider
@@ -92,15 +94,25 @@ class CompositeProvider(DataProvider):
         """
         List tickers from the composite provider.
         
-        Delegates to the internal KoreaInvestmentProvider,
-        same as KoreaInvestmentProvider.list_tickers.
-        
+        Delegates to the internal KoreaInvestmentProvider for **currently listed**
+        names, then unions in the delisted names from the local master.
+
+        That second step is not optional. KIS answers "what is listed today", and the
+        orchestrator iterates this list rather than the rows of ``load_stock_master()``
+        — so without it, delisted names sit in the JSON and are never fetched. Measured
+        before this was added: 1 of 492 delisted codes made it into this list.
+
         Returns:
           - tickers: list of 6-digit strings (sorted)
           - market_by_ticker: mapping ticker -> market label (if known)
         """
         korea_investment_provider = object.__getattribute__(self, "_korea_investment_provider")
-        return korea_investment_provider.list_tickers(asof_date=asof_date, market=market)
+        tickers, market_by_ticker = korea_investment_provider.list_tickers(
+            asof_date=asof_date, market=market
+        )
+        return add_delisted_from_master(
+            tickers, market_by_ticker, self.load_stock_master(), market=market
+        )
 
     def load_stock_master(
         self,

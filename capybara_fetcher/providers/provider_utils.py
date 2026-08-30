@@ -66,3 +66,44 @@ def load_master_json(path: str) -> pd.DataFrame:
     if out.empty:
         raise ValueError(f"stock master has no valid rows: {path}")
     return out
+
+
+def add_delisted_from_master(
+    tickers: list[str],
+    market_by_ticker: dict[str, str],
+    master: pd.DataFrame,
+    *,
+    market: str | None = None,
+) -> tuple[list[str], dict[str, str]]:
+    """Union a live ticker list with the delisted names in the local master.
+
+    **Providers that ask an exchange "what is listed?" can only ever answer with
+    survivors.** `KoreaInvestmentProvider` downloads the KIS master and `FdrProvider`
+    calls `fdr.StockListing()`; both describe today. The orchestrator iterates
+    `list_tickers()`, not the rows of `load_stock_master()`, so delisted names added to
+    the local JSON are never fetched — the master grows and the release does not change.
+
+    That was measured: of 492 delisted codes in the master, exactly **1** appeared in
+    `CompositeProvider.list_tickers()`.
+
+    Live entries win on the market label — the local master can be stale, the exchange
+    listing is not.
+    """
+    if master is None or master.empty or "DelistingDate" not in master.columns:
+        return tickers, market_by_ticker
+
+    dead = master[master["DelistingDate"].notna()]
+    if market:
+        dead = dead[dead["Market"].astype(str).str.strip() == str(market).strip()]
+    if dead.empty:
+        return tickers, market_by_ticker
+
+    known = set(tickers)
+    merged = dict(market_by_ticker)
+    for code, mkt in zip(dead["Code"], dead["Market"]):
+        code = str(code).strip().zfill(6)
+        if code not in known:
+            known.add(code)
+            merged[code] = str(mkt).strip()
+
+    return sorted(known), merged
