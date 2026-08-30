@@ -1,5 +1,10 @@
 # Data Providers
 
+> ⚠️ **수집기를 손대기 전에 [`arch.md` 의 「수집기가 조용히 성공하는 자리」](../../arch.md#️-수집기가-조용히-성공하는-자리)를 읽을 것.**
+> 이 저장소가 실제로 밟은 실패는 대부분 예외로 오지 않았다 — 차단이 빈 결과로 오고,
+> 조회 실패가 exit 0 으로 끝나고, 마스터에 넣은 종목을 `list_tickers()` 가 안 봤다.
+
+
 This directory contains implementations of the `DataProvider` protocol for fetching Korean stock market data.
 
 ## Available Providers
