@@ -19,7 +19,19 @@ def main() -> None:
     df = pd.DataFrame(data)
 
     # basic sanity / column order
-    cols = ["Code", "Name", "Market", "IndustryLarge", "IndustryMid", "IndustrySmall", "SharesOutstanding"]
+    # DelistingDate/DelistingReason are null for live names. They are carried through
+    # so consumers can tell a legitimately truncated series from a fetch hole.
+    cols = [
+        "Code",
+        "Name",
+        "Market",
+        "IndustryLarge",
+        "IndustryMid",
+        "IndustrySmall",
+        "SharesOutstanding",
+        "DelistingDate",
+        "DelistingReason",
+    ]
     for c in cols:
         if c not in df.columns:
             df[c] = pd.NA

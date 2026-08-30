@@ -134,3 +134,143 @@ def test_update_names_from_fdr_preserves_other_columns():
     assert result['IndustryLarge'].iloc[0] == '전기전자'
     assert result['IndustryMid'].iloc[0] == '반도체'
     assert result['SharesOutstanding'].iloc[0] == 1000000
+
+
+# ─────────────────────────────────────────────────────────────
+# Delisted universe (survivorship bias)
+#
+# The master is built from a Seibro Excel snapshot of *currently listed* stocks, so
+# delisted names were never even queried. That biases more than the missing rows:
+# MRS_* are cross-sectional percentile ranks computed over whatever is in the frame,
+# so ranking survivors only distorts the survivors' percentiles too.
+# ─────────────────────────────────────────────────────────────
+
+from build_krx_stock_master import _fetch_delisted_data, _merge_delisted  # noqa: E402
+
+
+def _delisted_row(code, market="KOSDAQ", date="2020-01-02", name="폐지사"):
+    return {
+        "Code": code,
+        "Name": name,
+        "Market": market,
+        "IndustryLarge": None,
+        "IndustryMid": None,
+        "IndustrySmall": None,
+        "SharesOutstanding": 1000.0,
+        "DelistingDate": date,
+        "DelistingReason": "테스트",
+    }
+
+
+def _live_row(code, market="KOSDAQ", name="상장사", industry="IT"):
+    return {
+        "Code": code,
+        "Name": name,
+        "Market": market,
+        "IndustryLarge": industry,
+        "IndustryMid": industry,
+        "IndustrySmall": industry,
+        "SharesOutstanding": 9999.0,
+    }
+
+
+def test_merge_delisted_appends_names_not_in_the_master():
+    master = pd.DataFrame([_live_row("005930")])
+    delisted = pd.DataFrame([_delisted_row("004320")])
+
+    out, appended, marked = _merge_delisted(master, delisted)
+
+    assert appended == 1 and marked == 0
+    assert set(out["Code"]) == {"005930", "004320"}
+    assert out.loc[out["Code"] == "004320", "DelistingDate"].item() == "2020-01-02"
+
+
+def test_merge_delisted_marks_stale_excel_rows_instead_of_duplicating():
+    """**The Seibro Excel snapshot goes stale.**
+
+    At the time of writing, 61 names KRX had already delisted in 2026 were still in it.
+    A plain concat + drop_duplicates would keep the Excel row and leave them looking
+    alive — exactly the bias this change removes.
+    """
+    master = pd.DataFrame([_live_row("032980", name="바이온")])
+    delisted = pd.DataFrame([_delisted_row("032980", date="2026-07-01", name="바이온")])
+
+    out, appended, marked = _merge_delisted(master, delisted)
+
+    assert appended == 0, "이미 있는 코드를 또 넣으면 안 된다"
+    assert marked == 1
+    assert len(out) == 1
+    assert out["DelistingDate"].item() == "2026-07-01"
+
+
+def test_merge_delisted_keeps_the_richer_excel_fields():
+    """The Excel row wins on industry/shares — the delisting listing has neither
+    in the master's taxonomy."""
+    master = pd.DataFrame([_live_row("032980", industry="산업재")])
+    delisted = pd.DataFrame([_delisted_row("032980")])
+
+    out, _, _ = _merge_delisted(master, delisted)
+
+    assert out["IndustryLarge"].item() == "산업재"
+    assert out["SharesOutstanding"].item() == 9999.0
+
+
+def test_merge_delisted_treats_the_same_code_on_another_market_as_distinct():
+    master = pd.DataFrame([_live_row("003670", market="KOSPI")])
+    delisted = pd.DataFrame([_delisted_row("003670", market="KOSDAQ")])
+
+    out, appended, marked = _merge_delisted(master, delisted)
+
+    assert appended == 1 and marked == 0
+    assert len(out) == 2
+
+
+def test_merge_delisted_leaves_live_rows_unmarked():
+    master = pd.DataFrame([_live_row("005930"), _live_row("000660")])
+    delisted = pd.DataFrame([_delisted_row("004320")])
+
+    out, _, _ = _merge_delisted(master, delisted)
+
+    live = out[out["Code"].isin(["005930", "000660"])]
+    assert live["DelistingDate"].isna().all(), (
+        "상장 중인 종목에 폐지일이 붙으면 시계열이 잘린 것으로 오해된다"
+    )
+
+
+@pytest.mark.external
+def test_fetch_delisted_data_returns_master_shaped_rows():
+    """Requires network. One bulk query, no per-ticker loop."""
+    df = _fetch_delisted_data(since="2015-01-01")
+
+    assert not df.empty
+    assert set(df.columns) == {
+        "Code", "Name", "Market", "IndustryLarge", "IndustryMid",
+        "IndustrySmall", "SharesOutstanding", "DelistingDate", "DelistingReason",
+    }
+    assert df["Code"].str.len().eq(6).all()
+    for col in ["Code", "Name", "Market", "DelistingDate", "SharesOutstanding"]:
+        assert df[col].notna().all(), f"{col} 에 결측이 있으면 안 된다"
+
+
+@pytest.mark.external
+def test_fetch_delisted_data_excludes_konex_by_default():
+    """KONEX is not part of the listed universe this cache covers."""
+    assert set(_fetch_delisted_data(since="2015-01-01")["Market"]) <= {"KOSPI", "KOSDAQ"}
+    assert "KONEX" in set(
+        _fetch_delisted_data(since="2015-01-01", include_konex=True)["Market"]
+    )
+
+
+@pytest.mark.external
+def test_fetch_delisted_data_keeps_only_common_stock():
+    """The listing also carries 신주인수권증서 · 수익증권 · 선박투자회사 etc."""
+    df = _fetch_delisted_data(since="2015-01-01")
+    # 주권 only — a few hundred, not the full ~1,600 rows of every security type.
+    assert 300 < len(df) < 900
+
+
+@pytest.mark.external
+def test_fetch_delisted_data_respects_the_since_bound():
+    recent = _fetch_delisted_data(since="2024-01-01")
+    assert (recent["DelistingDate"] >= "2024-01-01").all()
+    assert len(recent) < len(_fetch_delisted_data(since="2015-01-01"))

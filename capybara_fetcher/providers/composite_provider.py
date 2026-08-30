@@ -113,7 +113,8 @@ class CompositeProvider(DataProvider):
         Loads stock master data from local JSON file which includes KOSPI, KOSDAQ, and ETF data.
         
         Returns a DataFrame that includes at least:
-          Code, Name, Market, IndustryLarge, IndustryMid, IndustrySmall, SharesOutstanding
+          Code, Name, Market, IndustryLarge, IndustryMid, IndustrySmall, SharesOutstanding,
+          DelistingDate, DelistingReason
         """
         # asof_date reserved for future providers
         
@@ -128,6 +129,9 @@ class CompositeProvider(DataProvider):
             "IndustryMid",
             "IndustrySmall",
             "SharesOutstanding",
+            # Null for live names — see provider_utils._MASTER_COLS.
+            "DelistingDate",
+            "DelistingReason",
         ]
         
         # Load master data from JSON (includes KOSPI, KOSDAQ, and ETF)

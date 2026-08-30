@@ -15,6 +15,11 @@ _MASTER_COLS = [
     "IndustryMid",
     "IndustrySmall",
     "SharesOutstanding",
+    # Present only for rows that came from the delisting listing; null for live names.
+    # Consumers need this to tell "the series legitimately ends here" from "the fetch
+    # has a hole", and to tell 피흡수합병 from a stock that went to zero.
+    "DelistingDate",
+    "DelistingReason",
 ]
 
 
@@ -51,6 +56,12 @@ def load_master_json(path: str) -> pd.DataFrame:
     out["IndustryMid"] = out["IndustryMid"].astype(str).str.strip()
     out["IndustrySmall"] = out["IndustrySmall"].astype(str).str.strip()
     out["SharesOutstanding"] = pd.to_numeric(out["SharesOutstanding"], errors="coerce").astype("Int64")
+    # Left as-is (nullable strings): live rows have no delisting date, and coercing
+    # them to NaT/"" would make "still listed" indistinguishable from "unknown".
+    out["DelistingDate"] = out["DelistingDate"].where(out["DelistingDate"].notna(), None)
+    out["DelistingReason"] = out["DelistingReason"].where(
+        out["DelistingReason"].notna(), None
+    )
     out = out.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"]).sort_values(["Market", "Code"])
     if out.empty:
         raise ValueError(f"stock master has no valid rows: {path}")
