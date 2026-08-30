@@ -98,3 +98,42 @@ def test_composite_list_tickers_contains_every_delisted_code():
     assert delisted, "마스터에 폐지 종목이 없다 — 먼저 build_krx_stock_master.py 를 돌릴 것"
     missing = delisted - set(tickers)
     assert not missing, f"수집 대상에서 빠진 폐지 종목 {len(missing)}건: {sorted(missing)[:5]}"
+
+
+def test_union_is_idempotent():
+    """provider 마다 각자 적용한다 — `CompositeProvider` 는 이미 union 한
+    `KoreaInvestmentProvider` 에 위임한 뒤 또 한다.
+
+    두 번 적용해도 같아야, 각 provider 가 자기 보장을 들고 있어도 안전하다.
+    """
+    master = _master([_live("005930"), _dead("004320")])
+    once = add_delisted_from_master(["005930"], {"005930": "KOSPI"}, master)
+    twice = add_delisted_from_master(*once, master)
+    assert once == twice
+
+
+@pytest.mark.external
+def test_korea_investment_list_tickers_contains_every_delisted_code():
+    """`--provider korea_investment` 는 CLI 가 공식 지원한다.
+
+    provider 선택에 따라 산출물의 생존편향 여부가 달라지면 안 된다.
+    """
+    import os
+
+    key, secret = os.environ.get("HT_KE"), os.environ.get("HT_SE")
+    if not (key and secret):
+        pytest.skip("HT_KE / HT_SE 없음")
+
+    from capybara_fetcher.providers.korea_investment_provider import (
+        KoreaInvestmentProvider,
+    )
+
+    provider = KoreaInvestmentProvider(
+        master_json_path="data/krx_stock_master.json", appkey=key, appsecret=secret
+    )
+    tickers, _ = provider.list_tickers()
+    master = provider.load_stock_master()
+    delisted = set(master.loc[master["DelistingDate"].notna(), "Code"])
+
+    assert delisted, "마스터에 폐지 종목이 없다"
+    assert not (delisted - set(tickers))

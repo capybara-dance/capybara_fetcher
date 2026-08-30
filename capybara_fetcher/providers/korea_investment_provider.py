@@ -17,7 +17,7 @@ import pandas as pd
 
 from ..provider import DataProvider
 from .korea_investment_auth import KISAuth
-from .provider_utils import load_master_json
+from .provider_utils import add_delisted_from_master, load_master_json
 
 
 @dataclass(frozen=True)
@@ -85,7 +85,16 @@ class KoreaInvestmentProvider(DataProvider):
         ticker_codes = master["Code"].astype(str).str.zfill(6).tolist()
         market_by_ticker = dict(zip(ticker_codes, master["Market"].tolist()))
 
-        return tickers, market_by_ticker
+        # The KIS master describes **what is listed today**, so on its own this list can
+        # only ever contain survivors. `--provider korea_investment` is a supported CLI
+        # choice, and without this union the survivorship bias of the output would
+        # depend on which provider you picked.
+        #
+        # KIS does serve delisted names — measured 8/8 on a random sample of the
+        # delisted codes in the master.
+        return add_delisted_from_master(
+            tickers, market_by_ticker, self.load_stock_master(), market=market
+        )
 
     def _build_master_from_kis(self) -> pd.DataFrame:
         """Build combined market master (KOSPI/KOSDAQ/ETF) from KIS files."""

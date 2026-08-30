@@ -88,6 +88,11 @@ def add_delisted_from_master(
 
     Live entries win on the market label — the local master can be stale, the exchange
     listing is not.
+
+    **Idempotent.** Every provider that answers "what should we fetch" applies this, and
+    `CompositeProvider` also applies it after delegating to `KoreaInvestmentProvider`
+    which already did. Applying it twice is a no-op, and each provider keeping its own
+    call means the guarantee does not silently disappear if the delegation changes.
     """
     if master is None or master.empty or "DelistingDate" not in master.columns:
         return tickers, market_by_ticker
