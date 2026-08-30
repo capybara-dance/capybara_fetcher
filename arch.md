@@ -143,9 +143,12 @@
 
 #### 알려진 부채
 
-`scripts/build_krx_stock_master.py` 의 `_fetch_etf_data()` 는 여전히 **2번 패턴**이다 —
-실패하면 경고만 내고 빈 프레임을 돌려줘, ETF 1,163건이 조용히 빠진 마스터가 만들어질 수
-있다. 폐지 종목 쪽은 `DelistedFetchError` 로 고쳤지만 ETF 는 아직이다.
+| | 패턴 | 이슈 |
+|---|---|---|
+| `_fetch_etf_data()` 가 실패해도 경고만 내고 빈 프레임을 돌려준다 — ETF 1,163건이 조용히 빠진 마스터가 만들어질 수 있다 | **2번** | [#42](https://github.com/capybara-dance/capybara_fetcher/issues/42) |
+| `KoreaInvestmentProvider.fetch_ohlcv()` 가 이력을 100행에서 자른다 — `FHKST03010100` 은 호출당 100건인데 페이지네이션이 없다 | **3번** | [#41](https://github.com/capybara-dance/capybara_fetcher/issues/41) |
+
+둘 다 예외를 내지 않는다. 폐지 종목 쪽 2번 패턴은 `DelistedFetchError` 로 고쳤다.
 
 ## 5. Remaining Tasks
 
