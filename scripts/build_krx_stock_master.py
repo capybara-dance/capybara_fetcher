@@ -143,6 +143,18 @@ def _fetch_etf_data(master_json_path: str) -> pd.DataFrame:
 DEFAULT_DELISTED_FROM = "2015-01-01"
 
 
+class DelistedFetchError(RuntimeError):
+    """The delisting listing could not be fetched.
+
+    **This has to be fatal.** ``--include-delisted`` is the default, so degrading to an
+    empty frame would write a master that *looks* survivorship-free — the build exits 0,
+    the release publishes, and every consumer inherits the full bias with nothing in the
+    output saying so. Failing loudly is the only way the omission is noticed.
+
+    ``--no-delisted`` is the way to build without them **on purpose**.
+    """
+
+
 def _fetch_delisted_data(
     *, since: str = DEFAULT_DELISTED_FROM, include_konex: bool = False
 ) -> pd.DataFrame:
@@ -164,13 +176,20 @@ def _fetch_delisted_data(
     """
     try:
         df = fdr.StockListing("KRX-DELISTING")
-    except Exception as e:  # noqa: BLE001 — never block the build on this
-        warnings.warn(f"Failed to fetch delisted listing: {e}")
-        return pd.DataFrame()
+    except Exception as e:
+        raise DelistedFetchError(
+            f"Failed to fetch the delisting listing: {e}\n"
+            "Refusing to build a master that silently omits delisted names — the "
+            "release would look survivorship-free while carrying the full bias.\n"
+            "Pass --no-delisted to build without them on purpose."
+        ) from e
 
     if df is None or df.empty:
-        warnings.warn("No delisted data fetched")
-        return pd.DataFrame()
+        raise DelistedFetchError(
+            "The delisting listing came back empty.\n"
+            "This is a fetch failure, not a fact about the market — KRX has ~4,200 "
+            "delisted securities on record. Pass --no-delisted to skip on purpose."
+        )
 
     df = df.copy()
     df["DelistingDate"] = pd.to_datetime(df["DelistingDate"], errors="coerce")
@@ -184,8 +203,11 @@ def _fetch_delisted_data(
     df = df[df["Market"].isin(markets)]
 
     if df.empty:
-        warnings.warn(f"No delisted 주권 since {since}")
-        return pd.DataFrame()
+        raise DelistedFetchError(
+            f"No delisted 주권 found since {since} in markets {markets}.\n"
+            "The listing was non-empty, so this points at a schema change "
+            "(SecuGroup / Market / DelistingDate) rather than at the market."
+        )
 
     out = pd.DataFrame(
         {
@@ -210,6 +232,24 @@ def _fetch_delisted_data(
     out = out.dropna(subset=["Code"]).drop_duplicates(subset=["Code", "Market"])
     print(f"Fetched {len(out)} delisted entries since {since} (markets: {markets})")
     return out
+
+
+def _write_master_json(master: pd.DataFrame, out_path: Path) -> None:
+    """Write the master as **standard** JSON.
+
+    pandas leaves ``NaN`` where a live row has no delisting fields, and
+    ``json.dumps`` writes those as a bare ``NaN`` token — **which is not valid JSON**.
+    Strict parsers reject the file and README promises ``null``.
+
+    Missing values are converted first, and ``allow_nan=False`` makes any survivor a
+    hard error so this cannot silently regress.
+    """
+    records = master.astype(object).where(master.notna(), None).to_dict(orient="records")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(
+        json.dumps(records, ensure_ascii=False, indent=2, allow_nan=False),
+        encoding="utf-8",
+    )
 
 
 def _merge_delisted(
@@ -302,8 +342,7 @@ def main() -> None:
 
     out_path = Path(args.output_json)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    records = master.to_dict(orient="records")
-    out_path.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
+    _write_master_json(master, out_path)
 
     print(f"Wrote {len(master)} rows -> {out_path}")
     etf_count = len(master) - len(kospi) - len(kosdaq) - delisted_count

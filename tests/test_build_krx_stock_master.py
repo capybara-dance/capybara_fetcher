@@ -274,3 +274,111 @@ def test_fetch_delisted_data_respects_the_since_bound():
     recent = _fetch_delisted_data(since="2024-01-01")
     assert (recent["DelistingDate"] >= "2024-01-01").all()
     assert len(recent) < len(_fetch_delisted_data(since="2015-01-01"))
+
+
+# ─────────────────────────────────────────────────────────────
+# 회귀 (PR #40 리뷰)
+# ─────────────────────────────────────────────────────────────
+
+import json  # noqa: E402
+
+from build_krx_stock_master import (  # noqa: E402
+    DelistedFetchError,
+    _write_master_json,
+)
+
+
+def test_fetch_delisted_data_raises_when_the_listing_fails(monkeypatch):
+    """**빈 프레임으로 물러서면 안 된다.**
+
+    `--include-delisted` 가 기본값이라, 네트워크 오류를 빈 결과로 바꾸면 빌드가 exit 0
+    으로 끝나고 **생존편향을 그대로 가진 마스터가 "폐지 포함"처럼 릴리즈된다.**
+    출력 어디에도 빠졌다는 말이 없다.
+    """
+    import build_krx_stock_master as mod
+
+    monkeypatch.setattr(
+        mod.fdr,
+        "StockListing",
+        lambda *a, **k: (_ for _ in ()).throw(ConnectionError("boom")),
+    )
+
+    with pytest.raises(DelistedFetchError, match="--no-delisted"):
+        mod._fetch_delisted_data()
+
+
+def test_fetch_delisted_data_raises_on_an_empty_listing(monkeypatch):
+    """빈 응답은 시장에 대한 사실이 아니라 조회 실패다 — KRX 에 4,200건이 있다."""
+    import build_krx_stock_master as mod
+
+    monkeypatch.setattr(mod.fdr, "StockListing", lambda *a, **k: pd.DataFrame())
+
+    with pytest.raises(DelistedFetchError, match="empty"):
+        mod._fetch_delisted_data()
+
+
+def test_fetch_delisted_data_raises_when_the_schema_changes(monkeypatch):
+    """목록은 왔는데 필터 후 0건 → 스키마가 바뀐 것이다."""
+    import build_krx_stock_master as mod
+
+    monkeypatch.setattr(
+        mod.fdr,
+        "StockListing",
+        lambda *a, **k: pd.DataFrame(
+            {
+                "Symbol": ["004320"],
+                "Name": ["울트라건설"],
+                "Market": ["KOSPI"],
+                "SecuGroup": ["신주인수권증서"],  # 주권이 아니다
+                "DelistingDate": ["2015-04-13"],
+                "Reason": ["x"],
+                "ListingShares": [100],
+            }
+        ),
+    )
+
+    with pytest.raises(DelistedFetchError, match="schema change"):
+        mod._fetch_delisted_data()
+
+
+def _reject_constants(constant: str) -> None:
+    raise ValueError(f"non-standard {constant}")
+
+
+def test_write_master_json_emits_null_not_nan(tmp_path):
+    """pandas 의 NaN 을 그대로 쓰면 `NaN` 토큰이 되어 **유효한 JSON 이 아니다.**
+
+    엄격한 파서가 거부하고, README 의 "상장 중인 종목은 null" 계약과도 어긋난다.
+    `main()` 이 쓰는 바로 그 함수를 시험한다 — 직렬화 패턴을 테스트가 재현하면
+    `main()` 이 다른 짓을 해도 안 잡힌다.
+    """
+    merged, _, _ = _merge_delisted(
+        pd.DataFrame([_live_row("005930")]),
+        pd.DataFrame([_delisted_row("004320", market="KOSPI")]),
+    )
+    assert merged["DelistingDate"].isna().any(), "라이브 행에 결측이 있어야 하는 상황"
+
+    path = tmp_path / "master.json"
+    _write_master_json(merged, path)
+
+    assert "NaN" not in path.read_text(encoding="utf-8")
+    loaded = json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_constants)
+    live = next(r for r in loaded if r["Code"] == "005930")
+    assert live["DelistingDate"] is None
+    assert live["DelistingReason"] is None
+
+
+def test_committed_master_json_is_standard_json():
+    """저장소에 커밋된 마스터 자체를 지킨다.
+
+    함수만 시험하면 **이미 잘못 쓰인 파일**은 계속 남는다. 실제로 그랬다.
+    """
+    path = Path(__file__).parent.parent / "data" / "krx_stock_master.json"
+    text = path.read_text(encoding="utf-8")
+
+    records = json.loads(text, parse_constant=_reject_constants)
+    assert records, "마스터가 비어 있다"
+
+    live = [r for r in records if r.get("DelistingDate") is None]
+    dead = [r for r in records if r.get("DelistingDate") is not None]
+    assert live and dead, "상장 종목과 폐지 종목이 모두 있어야 한다"
