@@ -2,6 +2,7 @@
 Tests for scripts/build_krx_stock_master.py
 """
 import sys
+from datetime import date
 from pathlib import Path
 import pandas as pd
 import pytest
@@ -288,6 +289,53 @@ from build_krx_stock_master import (  # noqa: E402
 )
 
 
+def _fdr_delisting_listing():
+    return pd.DataFrame(
+        {
+            "Symbol": ["004320"],
+            "Name": ["울트라건설"],
+            "Market": ["KOSPI"],
+            "SecuGroup": ["주권"],
+            "DelistingDate": ["2015-04-13"],
+            "Reason": ["상장폐지"],
+            "ListingShares": [100],
+        }
+    )
+
+
+def test_fetch_delisted_data_uses_recent_snapshot_when_fdr_is_empty(monkeypatch):
+    import build_krx_stock_master as mod
+
+    monkeypatch.setattr(mod.fdr, "StockListing", lambda *a, **k: pd.DataFrame())
+    monkeypatch.setattr(mod, "_fetch_recent_delisting_snapshot", _fdr_delisting_listing)
+
+    df = mod._fetch_delisted_data()
+
+    assert df["Code"].tolist() == ["004320"]
+    assert df["DelistingDate"].tolist() == ["2015-04-13"]
+
+
+def test_fetch_recent_delisting_snapshot_uses_latest_available_day(monkeypatch):
+    import build_krx_stock_master as mod
+
+    calls = []
+
+    def fake_read_csv(url, **kwargs):
+        calls.append(url)
+        if url.endswith("2026-09-07.csv"):
+            return _fdr_delisting_listing()
+        raise OSError("not published")
+
+    monkeypatch.setattr(mod.pd, "read_csv", fake_read_csv)
+
+    df = mod._fetch_recent_delisting_snapshot(today=date(2026, 9, 8))
+
+    assert not df.empty
+    assert calls == [
+        f"{mod.FDR_DELISTING_CACHE_BASE_URL}/2026-09-07.csv"
+    ]
+
+
 def test_fetch_delisted_data_raises_when_the_listing_fails(monkeypatch):
     """**빈 프레임으로 물러서면 안 된다.**
 
@@ -302,6 +350,7 @@ def test_fetch_delisted_data_raises_when_the_listing_fails(monkeypatch):
         "StockListing",
         lambda *a, **k: (_ for _ in ()).throw(ConnectionError("boom")),
     )
+    monkeypatch.setattr(mod, "_fetch_recent_delisting_snapshot", pd.DataFrame)
 
     with pytest.raises(DelistedFetchError, match="--no-delisted"):
         mod._fetch_delisted_data()
@@ -312,6 +361,7 @@ def test_fetch_delisted_data_raises_on_an_empty_listing(monkeypatch):
     import build_krx_stock_master as mod
 
     monkeypatch.setattr(mod.fdr, "StockListing", lambda *a, **k: pd.DataFrame())
+    monkeypatch.setattr(mod, "_fetch_recent_delisting_snapshot", pd.DataFrame)
 
     with pytest.raises(DelistedFetchError, match="empty"):
         mod._fetch_delisted_data()

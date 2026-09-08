@@ -1,4 +1,5 @@
 import argparse
+from datetime import date, timedelta
 import json
 import sys
 import warnings
@@ -141,6 +142,11 @@ def _fetch_etf_data(master_json_path: str) -> pd.DataFrame:
 
 #: 릴리즈 프레임이 2015-01-02 부터라 그 이전 폐지분은 쓸 데가 없다.
 DEFAULT_DELISTED_FROM = "2015-01-01"
+FDR_DELISTING_CACHE_BASE_URL = (
+    "https://raw.githubusercontent.com/FinanceData/fdr_krx_data_cache/"
+    "master/data/listing/delisting"
+)
+FDR_DELISTING_CACHE_LOOKBACK_DAYS = 7
 
 
 class DelistedFetchError(RuntimeError):
@@ -153,6 +159,36 @@ class DelistedFetchError(RuntimeError):
 
     ``--no-delisted`` is the way to build without them **on purpose**.
     """
+
+
+def _fetch_recent_delisting_snapshot(today: date | None = None) -> pd.DataFrame:
+    """Load the most recent available FDR delisting snapshot.
+
+    FDR can point at a KRX business date before its corresponding cache CSV has been
+    published. In that interval ``StockListing("KRX-DELISTING")`` returns an empty
+    frame rather than an error. Try only recent snapshots: a stale historical master
+    must still fail loudly rather than silently masking a prolonged upstream outage.
+    """
+    today = today or date.today()
+    for days_ago in range(1, FDR_DELISTING_CACHE_LOOKBACK_DAYS + 1):
+        snapshot_date = today - timedelta(days=days_ago)
+        url = f"{FDR_DELISTING_CACHE_BASE_URL}/{snapshot_date.isoformat()}.csv"
+        try:
+            df = pd.read_csv(url, dtype={"Symbol": str, "ToSymbol": str})
+        except Exception as exc:
+            warnings.warn(
+                f"Failed to load FDR delisting snapshot for {snapshot_date}: {exc}"
+            )
+            continue
+
+        if df.empty:
+            warnings.warn(f"FDR delisting snapshot for {snapshot_date} was empty")
+            continue
+
+        print(f"Fetched {len(df)} delisting entries from FDR snapshot {snapshot_date}")
+        return df
+
+    return pd.DataFrame()
 
 
 def _fetch_delisted_data(
@@ -174,19 +210,20 @@ def _fetch_delisted_data(
     ``fdr.StockListing('KRX-DELISTING')`` is a single bulk query (~4,200 rows covering
     1960~present) that carries the delisting date and reason.
     """
+    fdr_error = None
     try:
         df = fdr.StockListing("KRX-DELISTING")
-    except Exception as e:
-        raise DelistedFetchError(
-            f"Failed to fetch the delisting listing: {e}\n"
-            "Refusing to build a master that silently omits delisted names — the "
-            "release would look survivorship-free while carrying the full bias.\n"
-            "Pass --no-delisted to build without them on purpose."
-        ) from e
+    except Exception as exc:
+        fdr_error = exc
+        df = pd.DataFrame()
 
     if df is None or df.empty:
+        df = _fetch_recent_delisting_snapshot()
+
+    if df is None or df.empty:
+        detail = f" ({fdr_error})" if fdr_error else ""
         raise DelistedFetchError(
-            "The delisting listing came back empty.\n"
+            f"The delisting listing came back empty{detail}.\n"
             "This is a fetch failure, not a fact about the market — KRX has ~4,200 "
             "delisted securities on record. Pass --no-delisted to skip on purpose."
         )
