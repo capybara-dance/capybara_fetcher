@@ -146,7 +146,7 @@ FDR_DELISTING_CACHE_BASE_URL = (
     "https://raw.githubusercontent.com/FinanceData/fdr_krx_data_cache/"
     "master/data/listing/delisting"
 )
-FDR_DELISTING_CACHE_LOOKBACK_DAYS = 7
+FDR_DELISTING_CACHE_LOOKBACK_DAYS = 30
 
 
 class DelistedFetchError(RuntimeError):
@@ -166,8 +166,8 @@ def _fetch_recent_delisting_snapshot(today: date | None = None) -> pd.DataFrame:
 
     FDR can point at a KRX business date before its corresponding cache CSV has been
     published. In that interval ``StockListing("KRX-DELISTING")`` returns an empty
-    frame rather than an error. Try only recent snapshots: a stale historical master
-    must still fail loudly rather than silently masking a prolonged upstream outage.
+    frame rather than an error. The upstream cache can also lag for more than a week,
+    so allow up to 30 days of lookback while still failing loudly on a prolonged outage.
     """
     today = today or date.today()
     for days_ago in range(1, FDR_DELISTING_CACHE_LOOKBACK_DAYS + 1):
