@@ -190,6 +190,7 @@ def send_telegram_message(message: str, bot_token: str, chat_id: str) -> bool:
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     data = {
         "chat_id": chat_id,
+        "message_thread_id": 14,  # TEST room: 데이터수집
         "text": message,
         "parse_mode": "HTML",
     }
